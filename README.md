@@ -8,48 +8,48 @@
 * EventSelect Clone
 
 ## Functions
-* Circular Queue Clone
-TEST
+* Circular Queue
+  * Test
 
-* Critical Section Clone
-
-
-* Exception Clone
+* Critical Section
 
 
-* Log Clone
+* Exception
 
 
-* Memory Leak Clone
+* Log
 
 
-* Memory Pool Clone
+* Memory Leak
 
 
-* Minidump Clone
+* Memory Pool
 
 
-* SocketAddress Clone
+* Minidump
 
 
-* Uncopyable Clone
+* SocketAddress
+
+
+* Uncopyable
 
 
 ## Network
-* Socket Clone
+* Socket
 
 
 
-* Session Clone
+* Session
 
 
 
 ## IOCP
-* IOCP Clone
+* IOCP
 
 
 
 ## EventSelect
-* EventSelect Clone
+* EventSelect
 
 
