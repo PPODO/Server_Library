@@ -3,8 +3,18 @@
 #include <Network/Socket/UDP/UDPSocket.h>
 
 namespace NETWORK {
+	namespace SESSION {
+		namespace NETWORKSESSION {
+			class CNetworkSession;
+		}
+	}
+
 	namespace UTIL {
 		namespace NETWORKSESSION {
+			namespace DETAIL {
+				inline ::SOCKET GetSocketValueFromNetworkSession(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session);
+			}
+
 			enum ESESSIONTYPE { EST_CLIENT, EST_SERVER };
 		}
 	}
@@ -13,6 +23,7 @@ namespace NETWORK {
 		namespace NETWORKSESSION {
 			// 파생 클래스는 CNetSession 클래스를 통해 '구현'되기에 private 상속을 사용.
 			class CNetworkSession {
+				friend ::SOCKET UTIL::NETWORKSESSION::DETAIL::GetSocketValueFromNetworkSession(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session);
 			private:
 				NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE m_ProtocolType;
 
@@ -87,6 +98,23 @@ namespace NETWORK {
 				}
 
 			};
+		}
+	}
+
+	namespace UTIL {
+		namespace NETWORKSESSION {
+			namespace DETAIL {
+				inline ::SOCKET GetSocketValueFromNetworkSession(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session) {
+					return ProtocolType == BASESOCKET::EPT_TCP ? BASESOCKET::GetSocketValue(Session.m_TCPSocket) : BASESOCKET::GetSocketValue(Session.m_UDPSocket);
+				}
+			}
+
+			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, std::shared_ptr<SESSION::NETWORKSESSION::CNetworkSession> Session) {
+				return DETAIL::GetSocketValueFromNetworkSession(ProtocolType, *Session);
+			}
+			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session) {
+				return DETAIL::GetSocketValueFromNetworkSession(ProtocolType, Session);
+			}
 		}
 	}
 }

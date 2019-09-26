@@ -1,6 +1,6 @@
 #pragma once
-#include <Network/Session/NetworkSession/ClientSession/ClientSession.h>
-#include <Network/Session/NetworkSession/ServerSession/ServerSession.h>
+#include <Network/Session/NetworkSession/PacketSession/ServerSession/ServerSession.h>
+#include <Network/Session/NetworkSession/PacketSession/ClientSession/ClientSession.h>
 #include <Functions/Functions/CriticalSection/CriticalSection.h>
 #include <Functions/Functions/Uncopyable/Uncopyable.h>
 #include <Functions/Functions/Log/Log.h>
@@ -8,6 +8,16 @@
 #include <thread>
 
 namespace NETWORK {
+	namespace UTIL {
+		namespace IOCP {
+			namespace DETAIL {
+				inline bool CreateCompletionPort(const ::SOCKET& Socket, const HANDLE& hIOCP, const ULONG_PTR& CompletionPort);
+			}
+
+			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const std::shared_ptr<SESSION::PACKETSESSION::CPacketSession> Session);
+		}
+	}
+
 	namespace NETWORKMODEL {
 		namespace IOCP {
 			using namespace FUNCTIONS::LOG;
@@ -24,6 +34,7 @@ namespace NETWORK {
 
 			private:
 				HANDLE m_hIOCP;
+				HANDLE m_hWaitForInitializedThread;
 
 			private:
 				std::vector<std::thread> m_WorkerThreads;
@@ -41,7 +52,7 @@ namespace NETWORK {
 				bool InitializeWorkerThread();
 
 			private:
-				void ProcessWorkerThread();
+				void ProcessWorkerThread(const size_t ThreadNumber);
 
 			public:
 				bool Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
@@ -49,7 +60,7 @@ namespace NETWORK {
 			};
 			
 			template<typename SERVERTYPE, typename CLIENTTYPE>
-			CIOCP<SERVERTYPE, CLIENTTYPE>::CIOCP(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : m_ProtocolType(ProtocolType), m_hIOCP(INVALID_HANDLE_VALUE) {
+			CIOCP<SERVERTYPE, CLIENTTYPE>::CIOCP(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : m_ProtocolType(ProtocolType), m_hIOCP(INVALID_HANDLE_VALUE), m_hWaitForInitializedThread(INVALID_HANDLE_VALUE) {
 				m_ClientSessions.resize(MAX_CLIENT_COUNT);
 
 				if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) == SOCKET_ERROR) {
@@ -63,18 +74,20 @@ namespace NETWORK {
 				m_ClientSessions.clear();
 
 				for (auto& Iterator : m_WorkerThreads) {
-					if (Iterator.joinable()) {
-						PostQueuedCompletionStatus(m_hIOCP, 0, 0, nullptr);
-						Iterator.join();
-					}
+					PostQueuedCompletionStatus(m_hIOCP, 0, 0, nullptr);
 				}
-				m_WorkerThreads.clear();
+
+				while (true) {
+				}
+				if (m_hWaitForInitializedThread || m_hWaitForInitializedThread != INVALID_HANDLE_VALUE) {
+					CloseHandle(m_hWaitForInitializedThread);
+					m_hWaitForInitializedThread = INVALID_HANDLE_VALUE;
+				}
 
 				if (m_hIOCP || m_hIOCP != INVALID_HANDLE_VALUE) {
 					CloseHandle(m_hIOCP);
 					m_hIOCP = INVALID_HANDLE_VALUE;
 				}
-
 				WSACleanup();
 			}
 
@@ -94,25 +107,27 @@ namespace NETWORK {
 				}
 				
 				try {
-					m_ServerSession = std::make_shared<SERVERTYPE>(m_ProtocolType);
-
-					if (m_ServerSession->Initialize(BindAddress) && UTIL::IOCP::RegisterIOCompletionPort(m_ProtocolType, m_hIOCP, m_ServerSession) && (m_ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP)) {
-						for (auto& Iterator : m_ClientSessions) {
-							std::shared_ptr<CClientSession> Client = std::make_shared<CLIENTTYPE>(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP);
-							if (Client && Client->Initialize(m_ServerSession)) {
-								Iterator = Client;
-							}
-							else {
-								return false;
+				/*	m_ServerSession = std::make_shared<SERVERTYPE>(m_ProtocolType);
+					if (m_ServerSession->Initialize(BindAddress) && UTIL::IOCP::RegisterIOCompletionPort(m_ProtocolType, m_hIOCP, m_ServerSession)) {
+						if ((m_ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP)) {
+							for (auto& Iterator : m_ClientSessions) {
+								std::shared_ptr<CClientSession> Client = std::make_shared<CLIENTTYPE>(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP);
+								if (Client && Client->Initialize(m_ServerSession)) {
+									Iterator = Client;
+								}
+								else {
+									return false;
+								}
 							}
 						}
-					}
+					}*/
 				}
 				catch (const std::bad_alloc& Exception) {
 					CLog::WriteLog(L"Initialize IOCP : %s!", Exception.what());
 					return false;
 				}
-				return true;
+				
+				return SetEvent(m_hWaitForInitializedThread);
 			}
 
 			template<typename SERVERTYPE, typename CLIENTTYPE>
@@ -122,6 +137,10 @@ namespace NETWORK {
 					return false;
 				}
 
+				if ((m_hWaitForInitializedThread = CreateEvent(nullptr, false, false, nullptr)) == NULL) {
+					CLog::WriteLog(L"Initialize IOCP Handle : Failed To Wait For Initialize Handle!");
+					return false;
+				}
 				return true;
 			}
 
@@ -130,24 +149,26 @@ namespace NETWORK {
 				SYSTEM_INFO SysInfo;
 				GetSystemInfo(&SysInfo);
 
-				size_t NumberOfProcessor = SysInfo.dwNumberOfProcessors * 2;
+				size_t NumberOfProcessor = 2;
 				for (size_t i = 0; i < NumberOfProcessor; i++) {
-					m_WorkerThreads.push_back(std::thread(&CIOCP<SERVERTYPE, CLIENTTYPE>::ProcessWorkerThread, this));
+					m_WorkerThreads.push_back(std::thread(&CIOCP<SERVERTYPE, CLIENTTYPE>::ProcessWorkerThread, this, i));
 				}
 				return true;
 			}
 
 			template<typename SERVERTYPE, typename CLIENTTYPE>
-			void CIOCP<SERVERTYPE, CLIENTTYPE>::ProcessWorkerThread() {
+			void CIOCP<SERVERTYPE, CLIENTTYPE>::ProcessWorkerThread(const size_t ThreadNumber) {
 				using namespace UTIL::BASESOCKET;
 
 				DWORD RecvBytes = 0;
 				LPOVERLAPPED Overlapped = nullptr;
 				void* CompletionKey = nullptr;
 				
+				WaitForSingleObject(m_hWaitForInitializedThread, INFINITE);
 				while (true) {
 					bool Succeed = GetQueuedCompletionStatus(m_hIOCP, &RecvBytes, reinterpret_cast<PULONG_PTR>(&CompletionKey), &Overlapped, INFINITE);
 
+					std::cout << "Work!" << ThreadNumber << std::endl;
 					if (!CompletionKey) {
 						CLog::WriteLog(L"Shutdown!");
 						return;
@@ -198,9 +219,16 @@ namespace NETWORK {
 				}
 			}
 
-			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const std::shared_ptr<SESSION::NETWORKSESSION::CNetworkSession> Session) {
-			
-				return SOCKET::INVALID_SOCKET_VALUE;
+			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const std::shared_ptr<SESSION::PACKETSESSION::CPacketSession> Session) {
+				if (ProtocolType & BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
+					::SOCKET Socket = UTIL::PACKETSESSION::GetSocketValue(BASESOCKET::EPROTOCOLTYPE::EPT_TCP, Session);
+					if (!DETAIL::CreateCompletionPort(Socket, hIOCP, reinterpret_cast<ULONG_PTR&>(*Session))) { return false; }
+				}
+				if (ProtocolType & BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
+					::SOCKET Socket = UTIL::PACKETSESSION::GetSocketValue(BASESOCKET::EPROTOCOLTYPE::EPT_UDP, Session);
+					if (!DETAIL::CreateCompletionPort(Socket, hIOCP, reinterpret_cast<ULONG_PTR&>(*Session))) { return false; }
+				}
+				return true;
 			}
 		}
 	}

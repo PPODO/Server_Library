@@ -1,6 +1,6 @@
 #pragma once
-#include <Network/Session/NetworkSession/NetworkSession.h>
-#include <Network/Session/NetworkSession/ServerSession/ServerSession.h>
+#include <Network/Session/NetworkSession/PacketSession/PacketSession.h>
+#include <Network/Session/NetworkSession/PacketSession/ServerSession/ServerSession.h>
 
 namespace NETWORK {
 	namespace SESSION {
@@ -9,28 +9,25 @@ namespace NETWORK {
 		}
 
 		namespace CLIENTSESSION {
-			class CClientSession {
-			private:
-				std::shared_ptr<NETWORKSESSION::CNetworkSession> m_NetworkSession;
-
+			class CClientSession : public PACKETSESSION::CPacketSession {
 			public:
 				explicit CClientSession(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
 				virtual ~CClientSession();
 
 			public:
 				inline bool Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAddress) {
-					return m_NetworkSession->Initialize(ConnectAddress);
+					return GetNetworkSession()->Initialize(ConnectAddress);
 				}
 				inline bool Initialize(SERVERSESSION::CServerSession& ListenSession) {
-					return m_NetworkSession->Initialize(ListenSession.m_NetworkSession);
+					return GetNetworkSession()->Initialize(ListenSession.GetNetworkSession());
 				}
 				inline bool Initialize(std::shared_ptr<SERVERSESSION::CServerSession> ListenSession) {
-					return m_NetworkSession->Initialize(ListenSession->m_NetworkSession);
+					return GetNetworkSession()->Initialize(ListenSession->GetNetworkSession());
 				}
 
 			public:
 				inline bool Write(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType, const char* const SendData, const size_t& DataLength) {
-					return m_NetworkSession->Write(UTIL::NETWORKSESSION::EST_CLIENT, SendData, DataLength);
+					return GetNetworkSession()->Write(UTIL::NETWORKSESSION::EST_CLIENT, SendData, DataLength);
 				}
 				inline bool WriteTo(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType) {
 					
@@ -41,7 +38,7 @@ namespace NETWORK {
 					return true;//CNetworkSession::Read(EST_CLIENT);
 				}
 				inline bool ReadFrom() {
-					return m_NetworkSession->ReadFrom(UTIL::NETWORKSESSION::EST_CLIENT);
+					return GetNetworkSession()->ReadFrom(UTIL::NETWORKSESSION::EST_CLIENT);
 				}
 
 			};

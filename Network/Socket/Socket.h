@@ -1,14 +1,25 @@
 #pragma once
 #include <Functions/Functions/SocketAddress/SocketAddress.h>
+#include <memory>
 
 namespace NETWORK {
-	namespace SOCKET { const short INVALID_SOCKET_VALUE = static_cast<::SOCKET>(-1); }
+	namespace SOCKET { 
+		const short INVALID_SOCKET_VALUE = static_cast<::SOCKET>(-1);
+		namespace BASESOCKET {
+			class CBaseSocket;
+		}
+	}
 
 	namespace UTIL {
 		namespace BASESOCKET {
+			namespace DETAIL {
+				inline ::SOCKET GetSocketValueFromBaseSocketClass(SOCKET::BASESOCKET::CBaseSocket& Socket);
+			}
+
 			enum EPROTOCOLTYPE {
 				EPT_TCP = (1 << 0),
 				EPT_UDP = (1 << 1),
+				EPT_BOTH = (EPT_TCP | EPT_UDP)
 			};
 
 			enum class EIOTYPE : uint8_t {
@@ -44,6 +55,7 @@ namespace NETWORK {
 			static const size_t MAX_RECEIVE_BUFFER_SIZE = 1024;
 
 			class CBaseSocket {
+				friend ::SOCKET UTIL::BASESOCKET::DETAIL::GetSocketValueFromBaseSocketClass(CBaseSocket& Socket);
 			private:
 				::SOCKET m_Socket;
 
@@ -67,6 +79,24 @@ namespace NETWORK {
 				inline ::SOCKET GetSocketHandle() const { return m_Socket; }
 
 			};
+		}
+	}
+
+	namespace UTIL {
+		namespace BASESOCKET {
+			namespace DETAIL {
+				inline ::SOCKET GetSocketValueFromBaseSocketClass(SOCKET::BASESOCKET::CBaseSocket& Socket) {
+					return Socket.m_Socket;
+				}
+			}
+
+			inline ::SOCKET GetSocketValue(std::shared_ptr<SOCKET::BASESOCKET::CBaseSocket> Socket) {
+				return DETAIL::GetSocketValueFromBaseSocketClass(*Socket);
+			}
+
+			inline ::SOCKET GetSocketValue(SOCKET::BASESOCKET::CBaseSocket& Socket) {
+				return DETAIL::GetSocketValueFromBaseSocketClass(Socket);
+			}
 		}
 	}
 }

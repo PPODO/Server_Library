@@ -25,6 +25,9 @@
 
 * Memory Pool
   * 
+
+* Minidump
+  * 
  ``` c
  #include <iostream>
  #include <Functions/Functions/Minidump/Minidump.h>
@@ -38,10 +41,8 @@
      return 0;
  }
  ```
- // 덤프파일이 존재하는 폴더(이미지)
 
-* Minidump
-  * 
+ // 덤프파일이 존재하는 폴더(이미지)
 
 * SocketAddress
   * 
