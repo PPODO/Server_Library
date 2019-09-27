@@ -42,7 +42,7 @@
  }
  ```
 
- // 덤프파일이 존재하는 폴더(이미지)
+ ![MiniDumpImage](./Image/MiniDumpImage.png)
 
 * SocketAddress
   * 
