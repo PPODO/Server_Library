@@ -42,7 +42,7 @@
  }
  ```
 
- ![MiniDumpImage](./Image/MiniDumpImage.png)
+ ![MiniDumpImage](https://user-images.githubusercontent.com/37787879/65747332-25cd2700-e13c-11e9-971a-a737d09a9ec2.png)
 
 * SocketAddress
   * 
