@@ -1,44 +1,59 @@
 #pragma once
 #include <Network/Session/NetworkSession/PacketSession/PacketSession.h>
-#include <Network/Session/NetworkSession/PacketSession/ServerSession/ServerSession.h>
 
 namespace NETWORK {
 	namespace SESSION {
-		namespace SERVERSESSION {
-			class CServerSession;
-		}
-
 		namespace CLIENTSESSION {
-			class CClientSession : public PACKETSESSION::CPacketSession {
+			class CClientSession;
+		}
+	}
+
+	namespace UTIL {
+		namespace CLIENTSESSION {
+			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::CLIENTSESSION::CClientSession& Session);
+		}
+	}
+
+	namespace SESSION {
+		namespace CLIENTSESSION {
+			// 클라이언트에서만 사용할 수 있습니다.
+			// 혼동이 있을 수 있으므로 has a 로 구현할 수도?
+			class CClientSession {
+				friend ::SOCKET UTIL::CLIENTSESSION::GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::CLIENTSESSION::CClientSession& Session);
+
+				class CClientSessionImplement : public PACKETSESSION::CPacketSession {
+				public:
+					explicit CClientSessionImplement(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : PACKETSESSION::CPacketSession(ProtocolType) {}
+					virtual ~CClientSessionImplement() {}
+
+				};
+
+			private:
+				CClientSessionImplement m_Session;
+
 			public:
 				explicit CClientSession(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
 				virtual ~CClientSession();
 
 			public:
 				inline bool Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAddress) {
-					return GetNetworkSession()->Initialize(ConnectAddress);
-				}
-				inline bool Initialize(SERVERSESSION::CServerSession& ListenSession) {
-					return GetNetworkSession()->Initialize(ListenSession.GetNetworkSession());
-				}
-				inline bool Initialize(std::shared_ptr<SERVERSESSION::CServerSession> ListenSession) {
-					return GetNetworkSession()->Initialize(ListenSession->GetNetworkSession());
+					return m_Session.GetNetworkSession()->Initialize(ConnectAddress);
 				}
 
 			public:
-				inline bool Write(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType, const char* const SendData, const size_t& DataLength) {
-					return GetNetworkSession()->Write(UTIL::NETWORKSESSION::EST_CLIENT, SendData, DataLength);
+				inline bool Write(const char* const SendData, const size_t& DataLength) {
+					return m_Session.GetNetworkSession()->WriteEventSelect(SendData, DataLength);
 				}
-				inline bool WriteTo(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType) {
-					
+				inline bool WriteTo() {
+					return true;// GetNetworkSession()->WriteToEventSelect();
 				}
 
 			public:
 				inline bool Read() {
-					return true;//CNetworkSession::Read(EST_CLIENT);
+					return true;// GetNetworkSession()->ReadEventSelect();
 				}
 				inline bool ReadFrom() {
-					return GetNetworkSession()->ReadFrom(UTIL::NETWORKSESSION::EST_CLIENT);
+					return m_Session.GetNetworkSession()->ReadFromEventSelect();
 				}
 
 			};
@@ -47,8 +62,9 @@ namespace NETWORK {
 
 	namespace UTIL {
 		namespace CLIENTSESSION {
-
-
+			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::CLIENTSESSION::CClientSession& Session) {
+				return PACKETSESSION::GetSocketValue(ProtocolType, Session.m_Session);
+			}
 		}
 	}
 }

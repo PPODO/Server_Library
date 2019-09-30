@@ -11,34 +11,25 @@ namespace NETWORK {
 
 	namespace UTIL {
 		namespace NETWORKSESSION {
-			namespace DETAIL {
-				inline ::SOCKET GetSocketValueFromNetworkSession(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session);
-			}
-
-			enum ESESSIONTYPE { EST_CLIENT, EST_SERVER };
+			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::CNetworkSession& Session);
 		}
 	}
 
 	namespace SESSION {
 		namespace NETWORKSESSION {
-			// 파생 클래스는 CNetSession 클래스를 통해 '구현'되기에 private 상속을 사용.
+			// NetworkSession 클래스는 is a 관계를 가질 수 없음.
 			class CNetworkSession {
-				friend ::SOCKET UTIL::NETWORKSESSION::DETAIL::GetSocketValueFromNetworkSession(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session);
+				friend ::SOCKET UTIL::NETWORKSESSION::GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::CNetworkSession& Session);
 			private:
 				NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE m_ProtocolType;
 
 			private:
-				std::shared_ptr<SOCKET::TCPIP::CTCPIPSocket> m_TCPSocket;
-				std::shared_ptr<SOCKET::UDPIP::CUDPIPSocket> m_UDPSocket;
-
-			private:
-				NETWORK::UTIL::BASESOCKET::OVERLAPPED_EX m_SendOverlapped;
-				NETWORK::UTIL::BASESOCKET::OVERLAPPED_EX m_RecvOverlapped;
-				NETWORK::UTIL::BASESOCKET::OVERLAPPED_EX m_AcceptOverlapped;
+				std::unique_ptr<SOCKET::TCPIP::CTCPIPSocket> m_TCPSocket;
+				std::unique_ptr<SOCKET::UDPIP::CUDPIPSocket> m_UDPSocket;
 
 			public:
 				explicit CNetworkSession(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
-				~CNetworkSession();
+				virtual ~CNetworkSession();
 
 			public:
 				inline bool Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAddress) {
@@ -53,48 +44,40 @@ namespace NETWORK {
 					}
 					return true;
 				}
-				inline bool Initialize(std::shared_ptr<CNetworkSession> ListenSession) {
-					return m_TCPSocket->Accept(ListenSession->m_TCPSocket, ListenSession->m_AcceptOverlapped);
+				inline bool Initialize(CNetworkSession& ListenSession, UTIL::BASESOCKET::OVERLAPPED_EX& AcceptOverlapped) {
+					return m_TCPSocket->Accept(*ListenSession.m_TCPSocket, AcceptOverlapped);
 				}
 
 			public:
-				inline bool Write(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType, const char* const SendData, const size_t& DataLength) {
-					if (SessionType == UTIL::NETWORKSESSION::EST_CLIENT) {
-						return m_TCPSocket->Write(SendData, DataLength);
-					}
-					else {
-						return m_TCPSocket->Write(SendData, DataLength, m_SendOverlapped);
-					}
-					return false;
+				inline bool WriteIOCP(const char* const SendData, const size_t& DataLength, UTIL::BASESOCKET::OVERLAPPED_EX& SendOverlapped) {
+					return m_TCPSocket->Write(SendData, DataLength, SendOverlapped);
 				}
-				inline bool WriteTo(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType) {
-					if (SessionType == UTIL::NETWORKSESSION::EST_CLIENT) {
+				inline bool WriteToIOCP() {
 					//	return m_UDPSocket->WriteTo();
-					}
-					else {
-					//	return m_UDPSocket->WriteTo();
-					}
-					return false;
 				}
 
 			public:
-				inline bool Read(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType, char* const ReadBuffer, size_t& ReadedSize) {
-					if (SessionType == UTIL::NETWORKSESSION::EST_CLIENT) {
-						return m_TCPSocket->Read(ReadBuffer, ReadedSize);
-					}
-					else {
-						return m_TCPSocket->Read(ReadBuffer, ReadedSize, m_RecvOverlapped);
-					}
-					return false;
+				inline bool WriteEventSelect(const char* const SendData, const size_t& DataLength){
+					return m_TCPSocket->Write(SendData, DataLength);
 				}
-				inline bool ReadFrom(const UTIL::NETWORKSESSION::ESESSIONTYPE& SessionType) {
-					if (SessionType == UTIL::NETWORKSESSION::EST_CLIENT) {
-						return true;
-					}
-					else {
-						return true;
-					}
-					return false;
+				inline bool WriteToEventSelect() {
+					//	return m_UDPSocket->WriteTo();
+				}
+
+			public:
+				inline bool ReadIOCP(UTIL::BASESOCKET::OVERLAPPED_EX& RecvOverlapped) {
+					return m_TCPSocket->Read(RecvOverlapped);
+				}
+				inline bool ReadEventSelect(char* const ReadBuffer, size_t& ReadedSize) {
+					return m_TCPSocket->Read(ReadBuffer, ReadedSize);
+				}
+
+			public:
+				inline bool ReadFromIOCP() {
+					return true;
+				}
+				inline bool ReadFromEventSelect() {
+					return true;
 				}
 
 			};
@@ -103,17 +86,8 @@ namespace NETWORK {
 
 	namespace UTIL {
 		namespace NETWORKSESSION {
-			namespace DETAIL {
-				inline ::SOCKET GetSocketValueFromNetworkSession(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session) {
-					return ProtocolType == BASESOCKET::EPT_TCP ? BASESOCKET::GetSocketValue(Session.m_TCPSocket) : BASESOCKET::GetSocketValue(Session.m_UDPSocket);
-				}
-			}
-
-			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, std::shared_ptr<SESSION::NETWORKSESSION::CNetworkSession> Session) {
-				return DETAIL::GetSocketValueFromNetworkSession(ProtocolType, *Session);
-			}
-			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, SESSION::NETWORKSESSION::CNetworkSession& Session) {
-				return DETAIL::GetSocketValueFromNetworkSession(ProtocolType, Session);
+			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::CNetworkSession& Session) {
+				return ProtocolType == BASESOCKET::EPROTOCOLTYPE::EPT_TCP ? BASESOCKET::GetSocketValue(*Session.m_TCPSocket) : BASESOCKET::GetSocketValue(*Session.m_UDPSocket);
 			}
 		}
 	}

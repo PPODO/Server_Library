@@ -38,11 +38,9 @@ namespace FUNCTIONS {
 		public:
 			explicit CCriticalSectionGuard(DETAIL::CCriticalSection& CriticalSection) : m_CriticalSection(CriticalSection) {
 				m_CriticalSection.Lock();
-				std::cout << "Lock\n";
 			}
 
 			~CCriticalSectionGuard() {
-				std::cout << "UnLock\n";
 				m_CriticalSection.UnLock();
 			}
 

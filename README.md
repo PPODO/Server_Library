@@ -42,7 +42,8 @@
   * 
 
 ### Minidump
-  * 
+  * 프로그램이 모종의 이유로 종료되었을 때의 상황을 기록한 덤프파일을 생성해줍니다.
+  * 클래스 선언 없이 헤더파일만 include하면 됩니다.
  ``` c
  #include <iostream>
  #include <Functions/Functions/Minidump/Minidump.h>
@@ -70,7 +71,10 @@
  네이티브 전용으로 디버깅 했을 때
 
 ### SocketAddress
-  * 
+  * WinSock의 sockaddr 구조체를 사용하기 편하게 래핑한 클래스입니다.
+ ``` c
+
+ ```
 
 ### Uncopyable
   * 특정 클래스의 생성자를 통한 복사 및 대입을 통한 복사가 불가능하도록 만들 때 사용하는 클래스입니다.

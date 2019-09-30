@@ -3,6 +3,12 @@
 #include <memory>
 
 namespace NETWORK {
+	namespace SESSION {
+		namespace SERVERSESSION {
+			class CServerSession;
+		}
+	}
+
 	namespace SOCKET { 
 		const short INVALID_SOCKET_VALUE = static_cast<::SOCKET>(-1);
 		namespace BASESOCKET {
@@ -12,11 +18,7 @@ namespace NETWORK {
 
 	namespace UTIL {
 		namespace BASESOCKET {
-			namespace DETAIL {
-				inline ::SOCKET GetSocketValueFromBaseSocketClass(SOCKET::BASESOCKET::CBaseSocket& Socket);
-			}
-
-			enum EPROTOCOLTYPE {
+			enum class EPROTOCOLTYPE {
 				EPT_TCP = (1 << 0),
 				EPT_UDP = (1 << 1),
 				EPT_BOTH = (EPT_TCP | EPT_UDP)
@@ -24,24 +26,32 @@ namespace NETWORK {
 
 			enum class EIOTYPE : uint8_t {
 				EIT_NONE,
+				EIT_DISCONNECT,
 				EIT_ACCEPT,
 				EIT_READ,
 				EIT_WRITE,
 			};
 
+			// 서버에서만 사용 가능합니다.
 			typedef struct OVERLAPPED_EX {
 				WSAOVERLAPPED m_Overlapped;
 				EIOTYPE m_IOType;
-				void* m_Owner;
+				SESSION::SERVERSESSION::CServerSession* m_Owner;
 
 			public:
 				OVERLAPPED_EX() : m_IOType(EIOTYPE::EIT_NONE), m_Owner(nullptr) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
-				OVERLAPPED_EX(const EIOTYPE& Type, void* const Owner) : m_IOType(Type), m_Owner(Owner) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
+				OVERLAPPED_EX(const EIOTYPE& Type, SESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
 
 			};
 
-			inline ::SOCKET CreateSocketByProtocolType(const EPROTOCOLTYPE& ProtocolType) {
-				::SOCKET NewSocket = ProtocolType == EPROTOCOLTYPE::EPT_TCP ? WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED) : WSASocket(AF_INET, SOCK_DGRAM, IPPROTO_UDP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+			inline ::SOCKET GetSocketValue(const SOCKET::BASESOCKET::CBaseSocket& Socket);
+
+			inline bool operator&(const EPROTOCOLTYPE& lhs, const EPROTOCOLTYPE& rhs) {
+				return (static_cast<int>(lhs) & static_cast<int>(rhs));
+			}
+
+			static inline ::SOCKET CreateSocketByProtocolType(const EPROTOCOLTYPE& ProtocolType) {
+				::SOCKET NewSocket = WSASocketA(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
 				if (NewSocket == SOCKET::INVALID_SOCKET_VALUE) {
 					return SOCKET::INVALID_SOCKET_VALUE;
 				}
@@ -55,7 +65,7 @@ namespace NETWORK {
 			static const size_t MAX_RECEIVE_BUFFER_SIZE = 1024;
 
 			class CBaseSocket {
-				friend ::SOCKET UTIL::BASESOCKET::DETAIL::GetSocketValueFromBaseSocketClass(CBaseSocket& Socket);
+				friend ::SOCKET UTIL::BASESOCKET::GetSocketValue(const CBaseSocket& Socket);
 			private:
 				::SOCKET m_Socket;
 
@@ -67,6 +77,7 @@ namespace NETWORK {
 
 			protected:
 				inline char* const GetReceiveBufferPtr() { return m_ReceiveMessageBuffer; }
+				inline ::SOCKET GetSocketHandle() const { return m_Socket; }
 
 			public:
 				explicit CBaseSocket(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
@@ -75,27 +86,14 @@ namespace NETWORK {
 			public:
 				bool Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
 
-			public:
-				inline ::SOCKET GetSocketHandle() const { return m_Socket; }
-
 			};
 		}
 	}
 
 	namespace UTIL {
 		namespace BASESOCKET {
-			namespace DETAIL {
-				inline ::SOCKET GetSocketValueFromBaseSocketClass(SOCKET::BASESOCKET::CBaseSocket& Socket) {
-					return Socket.m_Socket;
-				}
-			}
-
-			inline ::SOCKET GetSocketValue(std::shared_ptr<SOCKET::BASESOCKET::CBaseSocket> Socket) {
-				return DETAIL::GetSocketValueFromBaseSocketClass(*Socket);
-			}
-
-			inline ::SOCKET GetSocketValue(SOCKET::BASESOCKET::CBaseSocket& Socket) {
-				return DETAIL::GetSocketValueFromBaseSocketClass(Socket);
+			inline ::SOCKET GetSocketValue(const SOCKET::BASESOCKET::CBaseSocket& Socket) {
+				return Socket.m_Socket;
 			}
 		}
 	}

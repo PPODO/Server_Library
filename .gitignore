@@ -33,7 +33,6 @@
 
 #folder
 .vs/
-x64/
 Debug/
 Release/
 EventSelect/Debug/
@@ -51,6 +50,8 @@ Network/x64/
 
 #file
 *.sln
+x64/Debug/*.pdb
+x64/Release/*.pdb
 EventSelect/*.vcxproj
 EventSelect/*.vcxproj.filters
 EventSelect/*.vcxproj.user
