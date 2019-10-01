@@ -42,7 +42,7 @@ namespace FUNCTIONS {
 			public:
 				explicit CMemoryPool(const uint32_t& MaxPoolCount, const uint32_t& AllocBlockSize) : m_MaxPoolCount(MaxPoolCount), m_AllocBlockSize(AllocBlockSize), m_CurrentIndex(0) { }
 
-				~CMemoryPool() {
+				virtual ~CMemoryPool() {
 					for (auto It : m_MemoryPoolList) {
 						delete It;
 					}
