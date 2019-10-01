@@ -4,8 +4,10 @@
 
 namespace NETWORK {
 	namespace SESSION {
-		namespace SERVERSESSION {
-			class CServerSession;
+		namespace NETWORKSESSION {
+			namespace SERVERSESSION {
+				class CServerSession;
+			}
 		}
 	}
 
@@ -17,31 +19,37 @@ namespace NETWORK {
 	}
 
 	namespace UTIL {
+		namespace NETWORKSESSION {
+			namespace SERVERSESSION {
+				namespace DETAIL {
+					enum class EIOTYPE : uint8_t {
+						EIT_NONE,
+						EIT_DISCONNECT,
+						EIT_ACCEPT,
+						EIT_READ,
+						EIT_WRITE,
+					};
+
+					// 서버에서만 사용 가능합니다.
+					typedef struct OVERLAPPED_EX {
+						WSAOVERLAPPED m_Overlapped;
+						EIOTYPE m_IOType;
+						SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* m_Owner;
+
+					public:
+						OVERLAPPED_EX() : m_IOType(EIOTYPE::EIT_NONE), m_Owner(nullptr) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
+						OVERLAPPED_EX(const EIOTYPE& Type, SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
+
+					};
+				}
+			}
+		}
+
 		namespace BASESOCKET {
 			enum class EPROTOCOLTYPE {
 				EPT_TCP = (1 << 0),
 				EPT_UDP = (1 << 1),
 				EPT_BOTH = (EPT_TCP | EPT_UDP)
-			};
-
-			enum class EIOTYPE : uint8_t {
-				EIT_NONE,
-				EIT_DISCONNECT,
-				EIT_ACCEPT,
-				EIT_READ,
-				EIT_WRITE,
-			};
-
-			// 서버에서만 사용 가능합니다.
-			typedef struct OVERLAPPED_EX {
-				WSAOVERLAPPED m_Overlapped;
-				EIOTYPE m_IOType;
-				SESSION::SERVERSESSION::CServerSession* m_Owner;
-
-			public:
-				OVERLAPPED_EX() : m_IOType(EIOTYPE::EIT_NONE), m_Owner(nullptr) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
-				OVERLAPPED_EX(const EIOTYPE& Type, SESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
-
 			};
 
 			inline ::SOCKET GetSocketValue(const SOCKET::BASESOCKET::CBaseSocket& Socket);
@@ -85,6 +93,7 @@ namespace NETWORK {
 
 			public:
 				bool Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
+				bool CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize);
 
 			};
 		}

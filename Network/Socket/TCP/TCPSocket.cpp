@@ -43,7 +43,7 @@ bool CTCPIPSocket::Connect(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAdd
 	return true;
 }
 
-bool CTCPIPSocket::Accept(CTCPIPSocket& ListenSocket, NETWORK::UTIL::BASESOCKET::OVERLAPPED_EX& AcceptOverlapped) {
+bool CTCPIPSocket::Accept(const CTCPIPSocket& ListenSocket, NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& AcceptOverlapped) {
 	int Flag = 0, Size = sizeof(int);
 	if (getsockopt(GetSocketHandle(), SOL_SOCKET, SO_ACCEPTCONN, reinterpret_cast<char*>(&Flag), &Size) == SOCKET_ERROR) {
 		CLog::WriteLog(L"");
@@ -61,13 +61,29 @@ bool CTCPIPSocket::Accept(CTCPIPSocket& ListenSocket, NETWORK::UTIL::BASESOCKET:
 	return true;
 }
 
-bool CTCPIPSocket::WriteProcess(const char* const SendData, const size_t& DataLength, WSAOVERLAPPED* const SendOverlapped) {
-	DWORD SendBytes = 0;
-	WSABUF SendBuffer;
-	SendBuffer.buf = const_cast<char* const>(SendData);
-	SendBuffer.len = DataLength;
+bool CTCPIPSocket::Write(const char* const SendData, const size_t& DataLength, WSAOVERLAPPED* const SendOverlapped) {
+	return UTIL::TCPIP::Send(GetSocketHandle(), SendData, DataLength, SendOverlapped);
+}
 
-	if (WSASend(GetSocketHandle(), &SendBuffer, 1, &SendBytes, 0, SendOverlapped, nullptr) == SOCKET_ERROR) {
+bool CTCPIPSocket::Read(char* const ReadBuffer, size_t&& ReadedSize, WSAOVERLAPPED* const RecvOverlapped) {
+	if (UTIL::TCPIP::Receive(GetSocketHandle(), GetReceiveBufferPtr(), ReadedSize, RecvOverlapped)) {
+		if (ReadBuffer) {
+			CopyReceiveBuffer(ReadBuffer, ReadedSize);
+		}
+		return true;
+	}
+	return false;
+}
+
+// UTIL
+
+inline bool NETWORK::UTIL::TCPIP::Send(const::SOCKET& Socket, const char* const SendBuffer, const size_t& SendBufferSize, WSAOVERLAPPED* const SendOverlapped) {
+	DWORD SendBytes = 0;
+	WSABUF Buffer;
+	Buffer.buf = const_cast<char* const>(SendBuffer);
+	Buffer.len = SendBufferSize;
+
+	if (WSASend(Socket, &Buffer, 1, &SendBytes, 0, SendOverlapped, nullptr) == SOCKET_ERROR) {
 		if (WSAGetLastError() != WSA_IO_PENDING && WSAGetLastError() != WSAEWOULDBLOCK) {
 			CLog::WriteLog(L"WSA Send : Failed To WSA Send! - %d", WSAGetLastError());
 			return false;
@@ -76,26 +92,28 @@ bool CTCPIPSocket::WriteProcess(const char* const SendData, const size_t& DataLe
 	return true;
 }
 
-bool CTCPIPSocket::ReadProcess(char* const ReadBuffer, size_t& ReadedSize) {
-	DWORD RecvBytes = 0;
-	if (UTIL::TCPIP::Recv(GetSocketHandle(), GetReceiveBufferPtr(), BASESOCKET::MAX_RECEIVE_BUFFER_SIZE, &RecvBytes, nullptr)) {
-		CopyMemory(ReadBuffer, GetReceiveBufferPtr(), RecvBytes);
-		ReadedSize = RecvBytes;
+inline bool NETWORK::UTIL::TCPIP::Receive(const::SOCKET& Socket, char* const ReceiveBuffer, size_t& ReceiveBufferSize, WSAOVERLAPPED* const RecvOverlapped) {
+	DWORD RecvBytes = 0, Flag = 0;
+	WSABUF RecvBuffer;
+	RecvBuffer.buf = ReceiveBuffer;
+	RecvBuffer.len = SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE;
 
-		return true;
+	if (WSARecv(Socket, &RecvBuffer, 1, &RecvBytes, &Flag, RecvOverlapped, nullptr) == SOCKET_ERROR) {
+		if (WSAGetLastError() != WSA_IO_PENDING && WSAGetLastError() != WSAEWOULDBLOCK) {
+			FUNCTIONS::LOG::CLog::WriteLog(L"WSA Recv : Failed To WSA Recv! - %d", WSAGetLastError());
+			return false;
+		}
 	}
-	return false;
+	ReceiveBufferSize = RecvBytes;
+
+	return true;
 }
 
-bool CTCPIPSocket::ReadProcess(char* const ReadBuffer, size_t&& ReadedSize, WSAOVERLAPPED* const RecvOverlapped) {
-	return UTIL::TCPIP::Recv(GetSocketHandle(), GetReceiveBufferPtr(), BASESOCKET::MAX_RECEIVE_BUFFER_SIZE, nullptr, RecvOverlapped);
-}
-
-bool NETWORK::UTIL::TCPIP::ReUseSocket(const::SOCKET& Socket, UTIL::BASESOCKET::OVERLAPPED_EX& DisconnectOverlapped) {
+bool NETWORK::UTIL::TCPIP::SocketRecycling(const::SOCKET& Socket, WSAOVERLAPPED* const DisconnectOverlapped) {
 	shutdown(Socket, SD_BOTH);
-	if (!TransmitFile(Socket, NULL, 0, 0, &DisconnectOverlapped.m_Overlapped, nullptr, TF_DISCONNECT | TF_REUSE_SOCKET)) {
+	if (!TransmitFile(Socket, NULL, 0, 0, DisconnectOverlapped, nullptr, TF_DISCONNECT | TF_REUSE_SOCKET)) {
 		if (WSAGetLastError() != WSA_IO_PENDING) {
-			CLog::WriteLog(L"EQWEASDD! - %d", WSAGetLastError());
+			CLog::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError());
 		}
 		return true;
 	}

@@ -7,7 +7,6 @@ using namespace NETWORK::SOCKET::BASESOCKET;
 using namespace FUNCTIONS::LOG;
 
 CBaseSocket::CBaseSocket(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : m_Socket(UTIL::BASESOCKET::CreateSocketByProtocolType(ProtocolType)) {
-
 	ZeroMemory(m_ReceiveMessageBuffer, MAX_BUFFER_LENGTH);
 }
 
@@ -20,6 +19,13 @@ bool CBaseSocket::Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
 		CLog::WriteLog("Bind Failed");
 		return false;
 	}
+	return true;
+}
+
+bool CBaseSocket::CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize) {
+	if (!Buffer) { return false; }
+	CopyMemory(Buffer, m_ReceiveMessageBuffer, RecvSize);
+
 	return true;
 }
 

@@ -59,7 +59,7 @@ namespace NETWORK {
 				virtual ~CUDPIPSocket() override;
 
 			public:
-				bool WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const size_t& DataLength, UTIL::BASESOCKET::OVERLAPPED_EX& SendOverlapped);
+				bool WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const size_t& DataLength, UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped);
 
 			};
 		}
