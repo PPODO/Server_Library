@@ -1,4 +1,5 @@
 #include "IOCP.hpp"
+#include <mutex>
 
 using namespace NETWORK;
 using namespace FUNCTIONS::LOG;
@@ -56,7 +57,7 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeWorkerThread() {
 }
 
 void NETWORK::NETWORKMODEL::IOCP::CIOCP::ProcessWorkerThread() {
-	using namespace UTIL::BASESOCKET;
+	using namespace UTIL::NETWORKSESSION::SERVERSESSION::DETAIL;
 
 	DWORD RecvBytes = 0;
 	LPOVERLAPPED Overlapped = nullptr;
@@ -65,7 +66,6 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::ProcessWorkerThread() {
 	while (true) {
 		bool Succeed = GetQueuedCompletionStatus(m_hIOCP, &RecvBytes, reinterpret_cast<PULONG_PTR>(&CompletionKey), &Overlapped, INFINITE);
 
-		CLog::WriteLog(L"asdasd");
 		if (!CompletionKey) {
 			CLog::WriteLog(L"Shutdown!");
 			return;
@@ -100,34 +100,40 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::ProcessWorkerThread() {
 	}
 }
 
-bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOAccept(SESSION::SERVERSESSION::CServerSession* const Owner) {
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOAccept(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner) {
 	if (Owner && UTIL::IOCP::RegisterIOCompletionPort(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, m_hIOCP, *Owner) && Owner->Read()) {
 		CLog::WriteLog(L"Accept!");
 		return true;
-	}	
+	}
 	return false;
 }
 
-bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(SESSION::SERVERSESSION::CServerSession* const Owner) {
-	if (Owner && Owner->Reload()) {
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner) {
+	if (Owner && Owner->SocketRecycling()) {
 		CLog::WriteLog(L"Try Disconnect!");
 		return true;
 	}
 	return false;
 }
 
-bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIODisconnect(SESSION::SERVERSESSION::CServerSession* const Owner) {
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIODisconnect(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner) {
 	if (Owner && Owner->Initialize(*m_ServerSession)) {
-		CLog::WriteLog(L"Disconnect!");
+		CLog::WriteLog(L"Disconnect is Successful!");
 		return true;
 	}
 	return false;
 }
 
-bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIORead(SESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes) {
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIORead(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes) {
 	if (Owner) {
-		std::cout << "Read!\n";
-		return true;
+		if (Owner->Read()) {
+			CLog::WriteLog(L"Read!");
+			return true;
+		}
+
+		if (WSAGetLastError() == WSAECONNRESET) {
+			return Owner->SocketRecycling();
+		}
 	}
 	return false;
 }

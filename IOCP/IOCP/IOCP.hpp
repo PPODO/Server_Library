@@ -1,5 +1,5 @@
 #pragma once
-#include <Network/Session/NetworkSession/PacketSession/ServerSession/ServerSession.h>
+#include <Network/Session/NetworkSession/ServerSession/ServerSession.h>
 #include <Functions/Functions/CriticalSection/CriticalSection.h>
 #include <Functions/Functions/Uncopyable/Uncopyable.h>
 #include <Functions/Functions/Log/Log.h>
@@ -10,10 +10,10 @@ namespace NETWORK {
 	namespace UTIL {
 		namespace IOCP {
 			namespace DETAIL {
-				inline bool CreateCompletionPort(const ::SOCKET& Socket, const HANDLE& hIOCP, const ULONG_PTR& CompletionPort);
+				inline bool CreateCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const SESSION::NETWORKSESSION::SERVERSESSION::CServerSession& Session);
 			}
 
-			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const SESSION::SERVERSESSION::CServerSession& Session);
+			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const SESSION::NETWORKSESSION::SERVERSESSION::CServerSession& Session);
 		}
 	}
 
@@ -36,8 +36,8 @@ namespace NETWORK {
 				std::vector<std::thread> m_WorkerThreads;
 
 			private:
-				std::shared_ptr<SESSION::SERVERSESSION::CServerSession> m_ServerSession;
-				std::vector<std::shared_ptr<SESSION::SERVERSESSION::CServerSession>> m_ClientSessions;
+				std::shared_ptr<SESSION::NETWORKSESSION::SERVERSESSION::CServerSession> m_ServerSession;
+				std::vector<std::shared_ptr<SESSION::NETWORKSESSION::SERVERSESSION::CServerSession>> m_ClientSessions;
 
 			public:
 				explicit CIOCP(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
@@ -55,10 +55,10 @@ namespace NETWORK {
 				void ProcessWorkerThread();
 
 			private:
-				bool OnIOAccept(SESSION::SERVERSESSION::CServerSession* const Owner);
-				bool OnIOTryDisconnect(SESSION::SERVERSESSION::CServerSession* const Owner);
-				bool OnIODisconnect(SESSION::SERVERSESSION::CServerSession* const Owner);
-				bool OnIORead(SESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes);
+				bool OnIOAccept(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner);
+				bool OnIOTryDisconnect(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner);
+				bool OnIODisconnect(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner);
+				bool OnIORead(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes);
 				//bool OnIOWrite();
 
 			public:
@@ -69,7 +69,7 @@ namespace NETWORK {
 
 			template<typename SERVERTYPE>
 			bool CIOCP::Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
-				using namespace SESSION::SERVERSESSION;
+				using namespace SESSION::NETWORKSESSION::SERVERSESSION;
 
 				if (!std::is_base_of<CServerSession, SERVERTYPE>()) {
 					FUNCTIONS::LOG::CLog::WriteLog(L"Initialize IOCP : Type Must Be Derived From CServerSession");
@@ -96,7 +96,7 @@ namespace NETWORK {
 						if (m_ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
 							// 
 							for (size_t i = 0; i < MAX_CLIENT_COUNT; i++) {
-								std::shared_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession> Client(std::make_shared<SERVERTYPE>(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP));
+								std::shared_ptr<NETWORK::SESSION::NETWORKSESSION::SERVERSESSION::CServerSession> Client(std::make_shared<SERVERTYPE>(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP));
 								if (Client && Client->Initialize(*m_ServerSession)) {
 									m_ClientSessions.emplace_back(Client);
 									continue;
@@ -123,19 +123,25 @@ namespace NETWORK {
 	namespace UTIL {
 		namespace IOCP {
 			namespace DETAIL {
-				inline bool CreateCompletionPort(const ::SOCKET& Socket, const HANDLE& hIOCP, const ULONG_PTR& CompletionPort) {
-					return static_cast<bool>(CreateIoCompletionPort(reinterpret_cast<HANDLE>(Socket), hIOCP, CompletionPort, 0));
+				inline bool CreateCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const SESSION::NETWORKSESSION::SERVERSESSION::CServerSession& Session) {
+					::SOCKET Socket = UTIL::NETWORKSESSION::SERVERSESSION::GetSocketValue(ProtocolType, Session);
+					if (!CreateIoCompletionPort(reinterpret_cast<HANDLE>(Socket), hIOCP, reinterpret_cast<const ULONG_PTR&>(Session), 0)) {
+						if (WSAGetLastError() != ERROR_INVALID_PARAMETER) {
+							return false;
+						}
+					}
+					return true;
 				}
 			}
 
-			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const SESSION::SERVERSESSION::CServerSession& Session) {
+			inline bool RegisterIOCompletionPort(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const HANDLE& hIOCP, const SESSION::NETWORKSESSION::SERVERSESSION::CServerSession& Session) {
+				// TransmitFile함수로 소켓을 재활용해도 IOCP에 등록된 정보는 그대로 남음. CreateIoCompletionPort함수에서 ERROR_INVALID_PARAMETER는 이미 등록된 정보라는 뜻이므로
+				// 해당 에러는 무시할 수 있도록 처리
 				if (ProtocolType & BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
-					::SOCKET Socket = UTIL::SERVERSESSION::GetSocketValue(BASESOCKET::EPROTOCOLTYPE::EPT_TCP, Session);
-					if (!DETAIL::CreateCompletionPort(Socket, hIOCP, reinterpret_cast<const ULONG_PTR&>(Session))) { return false; }
+					if (!DETAIL::CreateCompletionPort(BASESOCKET::EPROTOCOLTYPE::EPT_TCP, hIOCP, Session)) { return false; }
 				}
 				if (ProtocolType & BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
-					::SOCKET Socket = UTIL::SERVERSESSION::GetSocketValue(BASESOCKET::EPROTOCOLTYPE::EPT_UDP, Session);
-					if (!DETAIL::CreateCompletionPort(Socket, hIOCP, reinterpret_cast<const ULONG_PTR&>(Session))) { return false; }
+					if (!DETAIL::CreateCompletionPort(BASESOCKET::EPROTOCOLTYPE::EPT_UDP, hIOCP, Session)) { return false; }
 				}
 				return true;
 			}
