@@ -1,4 +1,5 @@
 #pragma once
+#include <Network/Session/PacketSession/PacketSession.h>
 #include <Network/Socket/TCP/TCPSocket.h>
 #include <Network/Socket/UDP/UDPSocket.h>
 
@@ -11,16 +12,22 @@ namespace NETWORK {
 
 	namespace UTIL {
 		namespace NETWORKSESSION {
+			namespace SERVERSESSION {
+				namespace DETAIL {
+					struct OVERLAPPED_EX;
+				}
+			}
+
 			inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::CNetworkSession& Session);
 		}
 	}
 
 	namespace SESSION {
 		namespace NETWORKSESSION {
-			// NetworkSession 클래스는 is a 관계를 가질 수 없음.
 			class CNetworkSession {
 				friend ::SOCKET UTIL::NETWORKSESSION::GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::CNetworkSession& Session);
 			private:
+				SESSION::PACKETSESSION::CPacketSession m_PacketSession;
 				NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE m_ProtocolType;
 
 			private:
@@ -44,13 +51,13 @@ namespace NETWORK {
 					}
 					return true;
 				}
-				inline bool Initialize(CNetworkSession& ListenSession, UTIL::BASESOCKET::OVERLAPPED_EX& AcceptOverlapped) {
+				inline bool Initialize(CNetworkSession& ListenSession, UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& AcceptOverlapped) {
 					return m_TCPSocket->Accept(*ListenSession.m_TCPSocket, AcceptOverlapped);
 				}
 
 			public:
-				inline bool WriteIOCP(const char* const SendData, const size_t& DataLength, UTIL::BASESOCKET::OVERLAPPED_EX& SendOverlapped) {
-					return m_TCPSocket->Write(SendData, DataLength, SendOverlapped);
+				inline bool WriteIOCP(const char* const SendData, const size_t& DataLength, UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
+					return m_TCPSocket->Write(SendData, DataLength, &SendOverlapped.m_Overlapped);
 				}
 				inline bool WriteToIOCP() {
 					//	return m_UDPSocket->WriteTo();
@@ -58,18 +65,18 @@ namespace NETWORK {
 
 			public:
 				inline bool WriteEventSelect(const char* const SendData, const size_t& DataLength){
-					return m_TCPSocket->Write(SendData, DataLength);
+					return m_TCPSocket->Write(SendData, DataLength, nullptr);
 				}
 				inline bool WriteToEventSelect() {
 					//	return m_UDPSocket->WriteTo();
 				}
 
 			public:
-				inline bool ReadIOCP(UTIL::BASESOCKET::OVERLAPPED_EX& RecvOverlapped) {
-					return m_TCPSocket->Read(RecvOverlapped);
+				inline bool ReadIOCP(UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& RecvOverlapped) {
+					return m_TCPSocket->Read(nullptr, size_t(), &RecvOverlapped.m_Overlapped);
 				}
 				inline bool ReadEventSelect(char* const ReadBuffer, size_t& ReadedSize) {
-					return m_TCPSocket->Read(ReadBuffer, ReadedSize);
+					return m_TCPSocket->Read(ReadBuffer, std::move(ReadedSize), nullptr);
 				}
 
 			public:
