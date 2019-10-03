@@ -126,8 +126,9 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIODisconnect(SESSION::NETWORKSESSION:
 
 bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIORead(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes) {
 	if (Owner) {
-		if (Owner->Read()) {
+		if (Owner->GetReceivedData(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, RecvBytes)) {
 			CLog::WriteLog(L"Read!");
+			
 			return true;
 		}
 
@@ -135,5 +136,10 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIORead(SESSION::NETWORKSESSION::SERVE
 			return Owner->SocketRecycling();
 		}
 	}
+	return false;
+}
+
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReadFrom(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes) {
+
 	return false;
 }

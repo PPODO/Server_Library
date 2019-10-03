@@ -8,13 +8,19 @@ namespace FUNCTIONS {
 		static const size_t MAX_QUEUE_LENGTH = 256;
 
 		namespace QUEUEDATA {
-			template<typename Type>
-			struct BaseData : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<Type> {
+			namespace DETAIL {
+				template<typename Type>
+				struct BaseData : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<Type> {
+				public:
+					explicit BaseData() {};
+
+				};
+			}
+
+			struct CPacketQueueData : public QUEUEDATA::DETAIL::BaseData<CPacketQueueData> {
 			public:
-				explicit BaseData() {};
 
 			};
-
 		}
 
 		template<typename DATATYPE>

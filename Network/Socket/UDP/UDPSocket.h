@@ -7,7 +7,7 @@
 namespace FUNCTIONS {
 	namespace CIRCULARQUEUE {
 		namespace QUEUEDATA {
-			struct ReliableData : public BaseData<ReliableData> {
+			struct ReliableData : public DETAIL::BaseData<ReliableData> {
 			public:
 				void* const m_Data;
 				size_t m_DataSize;

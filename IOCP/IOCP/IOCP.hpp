@@ -1,5 +1,7 @@
 #pragma once
+#include <Network/Packet/BasePacket.hpp>
 #include <Network/Session/NetworkSession/ServerSession/ServerSession.h>
+#include <Functions/Functions/CircularQueue/CircularQueue.hpp>
 #include <Functions/Functions/CriticalSection/CriticalSection.h>
 #include <Functions/Functions/Uncopyable/Uncopyable.h>
 #include <Functions/Functions/Log/Log.h>
@@ -60,6 +62,10 @@ namespace NETWORK {
 				bool OnIODisconnect(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner);
 				bool OnIORead(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes);
 				//bool OnIOWrite();
+				
+			private:
+				bool OnIOReadFrom(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes);
+				//bool OnIOWriteTo();
 
 			public:
 				template<typename SERVERTYPE>

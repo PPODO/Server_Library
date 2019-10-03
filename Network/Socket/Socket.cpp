@@ -22,11 +22,9 @@ bool CBaseSocket::Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
 	return true;
 }
 
-bool CBaseSocket::CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize) {
-	if (!Buffer) { return false; }
+void CBaseSocket::CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize) {
+	if (!Buffer) { throw ""; }
 	CopyMemory(Buffer, m_ReceiveMessageBuffer, RecvSize);
-
-	return true;
 }
 
 void CBaseSocket::Destroy() {

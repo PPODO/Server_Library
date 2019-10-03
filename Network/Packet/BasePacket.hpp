@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include <Functions/Functions/MemoryPool/MemoryPool.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
@@ -8,6 +7,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/string.hpp>
+#include <string>
 
 namespace NETWORK {
 	namespace PACKET {
@@ -22,17 +22,36 @@ namespace NETWORK {
 	}
 
 	namespace PACKET {
+		namespace DETAIL {
+			struct PACKET_INFORMATION {
+			public:
+				uint8_t m_PacketType;
+				uint8_t m_MessageType;
+				uint16_t m_PacketSize;
+
+			public:
+				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(0) {};
+				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize) {};
+
+			public:
+				static size_t GetSize() { return sizeof(PACKET_INFORMATION); }
+
+			};
+		}
+
 		struct PACKET_STRUCTURE {
 		public:
-			uint8_t m_PacketType;
-			uint8_t m_MessageType;
-			std::string m_PacketData;
+			DETAIL::PACKET_INFORMATION m_PacketInformation;
+			const char* m_PacketData;
 
 		public:
-			PACKET_STRUCTURE() noexcept : m_PacketType(0), m_MessageType(0) {};
-			PACKET_STRUCTURE(const uint8_t& PacketType, const uint8_t& MessageType, const std::string&& PacketData) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketData(PacketData) {};
-			PACKET_STRUCTURE(PACKET_STRUCTURE&& rhs) noexcept : m_PacketType(rhs.m_PacketType), m_MessageType(rhs.m_MessageType), m_PacketData(rhs.m_PacketData) {}
-
+			PACKET_STRUCTURE() noexcept : m_PacketInformation(), m_PacketData(nullptr) {};
+			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, const char* const PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData) {};
+			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, std::string& PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData.c_str()) {};
+			PACKET_STRUCTURE(PACKET_STRUCTURE&& rhs) noexcept : m_PacketInformation(rhs.m_PacketInformation), m_PacketData(rhs.m_PacketData) {
+				rhs.m_PacketData = nullptr;
+			}
+			
 		};
 
 		namespace BASEPACKET {

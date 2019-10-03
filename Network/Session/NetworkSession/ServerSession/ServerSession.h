@@ -26,13 +26,28 @@ namespace NETWORK {
 					friend ::SOCKET UTIL::NETWORKSESSION::SERVERSESSION::GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::SERVERSESSION::CServerSession& Session);
 
 				private:
-					NETWORKSESSION::CNetworkSession m_NetworkSession;
+					class CServerSessionImple : public NETWORKSESSION::CNetworkSession {
+					public:
+						CServerSessionImple(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : NETWORKSESSION::CNetworkSession(ProtocolType) {}
+						virtual ~CServerSessionImple() {}
+					};
 
 				private:
+					CServerSessionImple m_Session;
+
+				private:
+					FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_GetReceivedDataLock;
+					
+				private:
+					// For TCP
 					NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_SendOverlapped;
 					NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_RecvOverlapped;
 					NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_AcceptOverlapped;
 					NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_DisconnectOverlapped;
+
+				private:
+					NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_SendToOverlapped;
+					NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_RecvFromOverlapped;
 
 				public:
 					explicit CServerSession(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
@@ -40,15 +55,15 @@ namespace NETWORK {
 
 				public:
 					inline bool Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
-						return m_NetworkSession.Initialize(BindAddress, SOMAXCONN);
+						return m_Session.Initialize(BindAddress, SOMAXCONN);
 					}
 					inline bool Initialize(SERVERSESSION::CServerSession& ListenSession) {
-						return m_NetworkSession.Initialize(ListenSession.m_NetworkSession, m_AcceptOverlapped);
+						return m_Session.Initialize(ListenSession.m_Session, m_AcceptOverlapped);
 					}
 
 				public:
 					inline bool Write(const char* const SendData, const size_t& DataLength) {
-						return m_NetworkSession.WriteIOCP(SendData, DataLength, m_SendOverlapped);
+						return m_Session.WriteIOCP(SendData, DataLength, m_SendOverlapped);
 					}
 					inline bool WriteTo() {
 						return true;
@@ -56,11 +71,14 @@ namespace NETWORK {
 
 				public:
 					inline bool Read() {
-						return m_NetworkSession.ReadIOCP(m_RecvOverlapped);
+						return m_Session.ReadIOCP(m_RecvOverlapped);
 					}
 					inline bool ReadFrom() {
-						return m_NetworkSession.ReadFromIOCP();
+						return m_Session.ReadFromIOCP(m_RecvFromOverlapped);
 					}
+
+				public:
+					bool GetReceivedData(const UTIL::BASESOCKET::EPROTOCOLTYPE& Protocol, const DWORD& RecvBytes);
 
 				public:
 					bool SocketRecycling() {
@@ -76,7 +94,7 @@ namespace NETWORK {
 		namespace NETWORKSESSION {
 			namespace SERVERSESSION {
 				inline ::SOCKET GetSocketValue(const BASESOCKET::EPROTOCOLTYPE& ProtocolType, const SESSION::NETWORKSESSION::SERVERSESSION::CServerSession& Session) {
-					return NETWORKSESSION::GetSocketValue(ProtocolType, Session.m_NetworkSession);
+					return NETWORKSESSION::GetSocketValue(ProtocolType, Session.m_Session);
 				}
 			}
 		}

@@ -28,6 +28,8 @@ namespace NETWORK {
 						EIT_ACCEPT,
 						EIT_READ,
 						EIT_WRITE,
+						EIT_READFROM,
+						EIT_WRITETO
 					};
 
 					// 서버에서만 사용 가능합니다.
@@ -93,7 +95,7 @@ namespace NETWORK {
 
 			public:
 				bool Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
-				bool CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize);
+				void CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize);
 
 			};
 		}
