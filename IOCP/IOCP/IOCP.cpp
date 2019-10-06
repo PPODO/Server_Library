@@ -129,17 +129,19 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIORead(SESSION::NETWORKSESSION::SERVE
 		if (Owner->GetReceivedData(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, RecvBytes)) {
 			CLog::WriteLog(L"Read!");
 			
-			return true;
-		}
-
-		if (WSAGetLastError() == WSAECONNRESET) {
-			return Owner->SocketRecycling();
+			return Owner->Read();
 		}
 	}
 	return false;
 }
 
 bool NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReadFrom(SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* const Owner, const DWORD& RecvBytes) {
+	if (Owner) {
+		if (Owner->GetReceivedData(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, RecvBytes)) {
+			CLog::WriteLog(L"Read From!");
 
+			return Owner->ReadFrom();
+		}
+	}
 	return false;
 }
