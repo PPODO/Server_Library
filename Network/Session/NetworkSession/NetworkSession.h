@@ -44,20 +44,14 @@ namespace NETWORK {
 
 				public:
 					const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const ReadSomething(const std::shared_ptr<SOCKET::BASESOCKET::CBaseSocket>& Socket, const DWORD& RecvBytes) {
-						try {
-							FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_BufferLock);
+						FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_BufferLock);
+						if (Socket) {
+							Socket->CopyReceiveBuffer(m_Buffer + m_CurrentReadedBytes, RecvBytes);
+							m_CurrentReadedBytes += RecvBytes;
 
-							if (Socket) {
-								Socket->CopyReceiveBuffer(m_Buffer + m_CurrentReadedBytes, RecvBytes);
-								m_CurrentReadedBytes += RecvBytes;
-
-								return ReceivedDataDeSerialization(m_Buffer, m_CurrentReadedBytes);
-							}
+							return ReceivedDataDeSerialization(m_Buffer, m_CurrentReadedBytes);
 						}
-						catch (const std::bad_cast& Exception) {
-							FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
-							return nullptr;
-						}
+						return nullptr;
 					}
 
 				};
