@@ -17,6 +17,7 @@ bool NETWORK::SESSION::NETWORKSESSION::SERVERSESSION::CServerSession::GetReceive
 
 	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data = m_Session.GetReceivedPacket(Protocol, RecvBytes)) {
 
+		return true;
 	}
-	return true;
+	return false;
 }
