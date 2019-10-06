@@ -64,3 +64,6 @@ IOCP/*.vcxproj.user
 Network/*.vcxproj
 Network/*.vcxproj.filters
 Network/*.vcxproj.user
+PacketGenerator/*.vcxproj
+PacketGenerator/*.vcxproj.filters
+PacketGenerator/*.vcxproj.user
