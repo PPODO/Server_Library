@@ -19,7 +19,7 @@ namespace NETWORK {
 				virtual ~CPacketSession();
 
 			private:
-				inline bool UpdateLastReceivedPacketInformation(char* const DataBuffer, uint16_t& CurrentReceivedBytes) {
+				inline bool UpdateLastReceivedPacketInformation(char* const DataBuffer, const uint16_t& CurrentReceivedBytes) {
 					using namespace NETWORK::PACKET;
 
 					if (CurrentReceivedBytes >= DETAIL::PACKET_INFORMATION::GetSize()) {
@@ -30,6 +30,15 @@ namespace NETWORK {
 						}
 						throw std::bad_cast();
 					}
+					return false;
+				}
+				bool Deserialization(char* const DataBuffer, const uint16_t& CurrentReceivedBytes) {
+					if (CurrentReceivedBytes >= m_LastPacketReceived.m_PacketInformation.m_PacketSize) {
+
+
+						return true;
+					}
+					return false;
 				}
 				inline void ClearProcessedData(char* const DataBuffer, const uint16_t& BufferStartPosition, const uint16_t& ClearLength, uint16_t& CurrentReceivedBytes, const uint16_t& MinusValue) {
 					using namespace NETWORK::PACKET;
