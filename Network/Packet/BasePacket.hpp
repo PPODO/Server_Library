@@ -42,23 +42,20 @@ namespace NETWORK {
 		struct PACKET_STRUCTURE {
 		public:
 			DETAIL::PACKET_INFORMATION m_PacketInformation;
-			const char* m_PacketData;
+			std::string m_PacketData;
 
 		public:
-			PACKET_STRUCTURE() noexcept : m_PacketInformation(), m_PacketData(nullptr) {};
-			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, const char* const PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData) {};
-			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, std::string& PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData.c_str()) {};
-			PACKET_STRUCTURE(PACKET_STRUCTURE&& rhs) noexcept : m_PacketInformation(rhs.m_PacketInformation), m_PacketData(rhs.m_PacketData) {
-				rhs.m_PacketData = nullptr;
-			}
+			PACKET_STRUCTURE() noexcept : m_PacketInformation(), m_PacketData() {};
+			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, std::string& PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData) {};
+			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, std::string&& PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData) {};
 			
 		};
 
 		namespace BASEPACKET {
-			class CBasePacket {
+			struct CBasePacket {
 				template<typename T>
 				friend NETWORK::PACKET::PACKET_STRUCTURE UTIL::PACKET::Serialize(const T& Packet);
-			private:
+			public:
 				const uint8_t m_PacketType;
 				const uint8_t m_MessageType;
 
@@ -70,9 +67,9 @@ namespace NETWORK {
 		}
 
 		template<typename T>
-		class CPacket : public BASEPACKET::CBasePacket, public FUNCTIONS::MEMORYMANAGER::CMemoryManager<T> {
+		struct CPacket : public BASEPACKET::CBasePacket, public FUNCTIONS::MEMORYMANAGER::CMemoryManager<T> {
 		public:
-			CPacket(const uint8_t& PacketType, const uint8_t& MessageType) : CBasePacket(PacketType, MessageType) {};
+			CPacket(const uint8_t& PacketType, const uint8_t& MessageType = 0) : CBasePacket(PacketType, MessageType) {};
 
 		};
 	}
@@ -94,7 +91,7 @@ namespace NETWORK {
 				}
 
 				const NETWORK::PACKET::BASEPACKET::CBasePacket* Temp = reinterpret_cast<const NETWORK::PACKET::BASEPACKET::CBasePacket*>(&Packet);
-				return NETWORK::PACKET::PACKET_STRUCTURE(Temp->m_PacketType, Temp->m_MessageType, std::move(TempBuffer));
+				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, Temp->m_MessageType, TempBuffer.length()), TempBuffer);
 			}
 
 			template<typename T>
@@ -104,7 +101,7 @@ namespace NETWORK {
 					return;
 				}
 
-				boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> InStream(PacketStructure.m_PacketData.c_str(), PacketStructure.m_PacketData.length());
+				boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> InStream(PacketStructure.m_PacketData.c_str(), PacketStructure.m_PacketInformation.m_PacketSize);
 				boost::archive::binary_iarchive ia(InStream, boost::archive::no_header);
 				ia >> Packet;
 			}
