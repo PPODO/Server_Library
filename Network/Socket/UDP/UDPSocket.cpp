@@ -49,7 +49,7 @@ CUDPIPSocket::~CUDPIPSocket() {
 	}
 }
 
-bool CUDPIPSocket::WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const size_t& DataLength, NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
+bool CUDPIPSocket::WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const size_t& DataLength, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
 	DWORD SendBytes = 0;
 	WSABUF SendBuffer;
 	SendBuffer.buf = const_cast<char* const>(SendData);

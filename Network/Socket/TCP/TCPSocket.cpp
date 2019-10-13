@@ -7,25 +7,25 @@ using namespace NETWORK::SOCKET::BASESOCKET;
 using namespace NETWORK::SOCKET::TCPIP;
 using namespace FUNCTIONS::LOG;
 
-CTCPIPSocket::CTCPIPSocket() : CBaseSocket(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
+CTCPIPSocket::CTCPIPSocket() : CBaseSocket(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
+}
+
+CTCPIPSocket::~CTCPIPSocket() {
 	LINGER OptionVar;
 	OptionVar.l_onoff = true;
 	OptionVar.l_linger = 0;
 
 	try {
-		if (setsockopt(GetSocketHandle(), SOL_SOCKET, SO_LINGER, reinterpret_cast<char*>(&OptionVar), sizeof(LINGER)) == SOCKET_ERROR) {
-			throw "Failed To Setting Linger Option! %d";
+		if (NETWORK::UTIL::BASESOCKET::SetSockOption(GetSocketHandle(), SOL_SOCKET, SO_LINGER, &OptionVar, sizeof(LINGER)) == NETWORK::ERRORCODE::ENETRESULT::ENETSOCKTOPFAIL) {
+			throw FUNCTIONS::EXCEPTION::bad_sockopt();
 		}
 	}
-	catch (const char* const Exception) {
-		CLog::WriteLog(Exception, WSAGetLastError());
+	catch (FUNCTIONS::EXCEPTION::bad_sockopt& Exception) {
+		CLog::WriteLog(Exception.what());
 	}
 }
 
-CTCPIPSocket::~CTCPIPSocket() {
-}
-
-bool CTCPIPSocket::Listen(const size_t BackLogCount) {
+bool CTCPIPSocket::Listen(const int32_t& BackLogCount) {
 	if (listen(GetSocketHandle(), BackLogCount) == SOCKET_ERROR) {
 		CLog::WriteLog(L"Listen : Failed To Listen Process! - %d", WSAGetLastError());
 		return false;
@@ -43,7 +43,7 @@ bool CTCPIPSocket::Connect(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAdd
 	return true;
 }
 
-bool CTCPIPSocket::Accept(const CTCPIPSocket& ListenSocket, NETWORK::UTIL::NETWORKSESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& AcceptOverlapped) {
+bool CTCPIPSocket::Accept(const CTCPIPSocket& ListenSocket, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& AcceptOverlapped) {
 	int Flag = 0, Size = sizeof(int);
 	if (getsockopt(GetSocketHandle(), SOL_SOCKET, SO_ACCEPTCONN, reinterpret_cast<char*>(&Flag), &Size) == SOCKET_ERROR) {
 		CLog::WriteLog(L"");
@@ -61,11 +61,11 @@ bool CTCPIPSocket::Accept(const CTCPIPSocket& ListenSocket, NETWORK::UTIL::NETWO
 	return true;
 }
 
-bool CTCPIPSocket::Write(const char* const SendData, const size_t& DataLength, WSAOVERLAPPED* const SendOverlapped) {
+bool CTCPIPSocket::Write(const char* const SendData, const size_t& DataLength, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
 	return UTIL::TCPIP::Send(GetSocketHandle(), SendData, DataLength, SendOverlapped);
 }
 
-bool CTCPIPSocket::Read(char* const ReadBuffer, size_t&& ReadedSize, WSAOVERLAPPED* const RecvOverlapped) {
+bool CTCPIPSocket::Read(char* const ReadBuffer, size_t&& ReadedSize, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& RecvOverlapped) {
 	if (UTIL::TCPIP::Receive(GetSocketHandle(), GetReceiveBufferPtr(), ReadedSize, RecvOverlapped)) {
 		if (ReadBuffer) {
 			CopyReceiveBuffer(ReadBuffer, ReadedSize);
@@ -75,15 +75,27 @@ bool CTCPIPSocket::Read(char* const ReadBuffer, size_t&& ReadedSize, WSAOVERLAPP
 	return false;
 }
 
+bool CTCPIPSocket::SocketRecycling(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& DisconnectOverlapped) {
+	shutdown(GetSocketHandle(), SD_BOTH);
+	if (!TransmitFile(GetSocketHandle(), NULL, 0, 0, &DisconnectOverlapped.m_Overlapped, nullptr, TF_DISCONNECT | TF_REUSE_SOCKET)) {
+		if (WSAGetLastError() != WSA_IO_PENDING) {
+			CLog::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError());
+		}
+		return true;
+	}
+	return true;
+}
+
 // UTIL
 
-inline bool NETWORK::UTIL::TCPIP::Send(const::SOCKET& Socket, const char* const SendBuffer, const size_t& SendBufferSize, WSAOVERLAPPED* const SendOverlapped) {
+
+inline bool NETWORK::UTIL::TCPIP::Send(const::SOCKET& Socket, const char* const SendBuffer, const size_t& SendBufferSize, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
 	DWORD SendBytes = 0;
 	WSABUF Buffer;
 	Buffer.buf = const_cast<char* const>(SendBuffer);
 	Buffer.len = SendBufferSize;
 
-	if (WSASend(Socket, &Buffer, 1, &SendBytes, 0, SendOverlapped, nullptr) == SOCKET_ERROR) {
+	if (WSASend(Socket, &Buffer, 1, &SendBytes, 0, &SendOverlapped.m_Overlapped, nullptr) == SOCKET_ERROR) {
 		if (WSAGetLastError() != WSA_IO_PENDING && WSAGetLastError() != WSAEWOULDBLOCK) {
 			CLog::WriteLog(L"WSA Send : Failed To WSA Send! - %d", WSAGetLastError());
 			return false;
@@ -92,13 +104,13 @@ inline bool NETWORK::UTIL::TCPIP::Send(const::SOCKET& Socket, const char* const 
 	return true;
 }
 
-inline bool NETWORK::UTIL::TCPIP::Receive(const::SOCKET& Socket, char* const ReceiveBuffer, size_t& ReceiveBufferSize, WSAOVERLAPPED* const RecvOverlapped) {
+inline bool NETWORK::UTIL::TCPIP::Receive(const::SOCKET& Socket, char* const ReceiveBuffer, size_t& ReceiveBufferSize, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& const RecvOverlapped) {
 	DWORD RecvBytes = 0, Flag = 0;
 	WSABUF RecvBuffer;
 	RecvBuffer.buf = ReceiveBuffer;
 	RecvBuffer.len = SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE;
 
-	if (WSARecv(Socket, &RecvBuffer, 1, &RecvBytes, &Flag, RecvOverlapped, nullptr) == SOCKET_ERROR) {
+	if (WSARecv(Socket, &RecvBuffer, 1, &RecvBytes, &Flag, &RecvOverlapped.m_Overlapped, nullptr) == SOCKET_ERROR) {
 		if (WSAGetLastError() != WSA_IO_PENDING && WSAGetLastError() != WSAEWOULDBLOCK) {
 			FUNCTIONS::LOG::CLog::WriteLog(L"WSA Recv : Failed To WSA Recv! - %d", WSAGetLastError());
 			return false;
@@ -106,16 +118,5 @@ inline bool NETWORK::UTIL::TCPIP::Receive(const::SOCKET& Socket, char* const Rec
 	}
 	ReceiveBufferSize = RecvBytes;
 
-	return true;
-}
-
-bool NETWORK::UTIL::TCPIP::SocketRecycling(const::SOCKET& Socket, WSAOVERLAPPED* const DisconnectOverlapped) {
-	shutdown(Socket, SD_BOTH);
-	if (!TransmitFile(Socket, NULL, 0, 0, DisconnectOverlapped, nullptr, TF_DISCONNECT | TF_REUSE_SOCKET)) {
-		if (WSAGetLastError() != WSA_IO_PENDING) {
-			CLog::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError());
-		}
-		return true;
-	}
 	return true;
 }

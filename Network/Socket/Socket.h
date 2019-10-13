@@ -1,13 +1,13 @@
 #pragma once
 #include <Functions/Functions/SocketAddress/SocketAddress.h>
+#include <Functions/Functions/Exception/Exception.h>
+#include <Network/Error/ErrorCode.h>
 #include <memory>
 
 namespace NETWORK {
 	namespace SESSION {
-		namespace NETWORKSESSION {
-			namespace SERVERSESSION {
-				class CServerSession;
-			}
+		namespace SERVERSESSION {
+			class CServerSession;
 		}
 	}
 
@@ -19,7 +19,7 @@ namespace NETWORK {
 	}
 
 	namespace UTIL {
-		namespace NETWORKSESSION {
+		namespace SESSION {
 			namespace SERVERSESSION {
 				namespace DETAIL {
 					enum class EIOTYPE : uint8_t {
@@ -27,20 +27,19 @@ namespace NETWORK {
 						EIT_DISCONNECT,
 						EIT_ACCEPT,
 						EIT_READ,
-						EIT_WRITE,
-						EIT_READFROM,
-						EIT_WRITETO
+						EIT_WRITE
 					};
 
 					// 서버에서만 사용 가능합니다.
 					typedef struct OVERLAPPED_EX {
 						WSAOVERLAPPED m_Overlapped;
+						WSABUF m_WSABuffer;
 						EIOTYPE m_IOType;
-						SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* m_Owner;
+						NETWORK::SESSION::SERVERSESSION::CServerSession* m_Owner;
 
 					public:
 						OVERLAPPED_EX() : m_IOType(EIOTYPE::EIT_NONE), m_Owner(nullptr) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
-						OVERLAPPED_EX(const EIOTYPE& Type, SESSION::NETWORKSESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
+						OVERLAPPED_EX(const EIOTYPE& Type, NETWORK::SESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); };
 
 					};
 				}
@@ -106,6 +105,24 @@ namespace NETWORK {
 			inline ::SOCKET GetSocketValue(const SOCKET::BASESOCKET::CBaseSocket& Socket) {
 				return Socket.m_Socket;
 			}
+
+			inline NETWORK::ERRORCODE::ENETRESULT SetSockOption(const ::SOCKET& Socket, const int32_t& Level, const int32_t& OptionName, void* const OptionVariable, const size_t& OptionLen) {
+				if (setsockopt(Socket, Level, OptionName, reinterpret_cast<char*>(OptionVariable), OptionLen) == SOCKET_ERROR) {
+					return NETWORK::ERRORCODE::ENETRESULT::ENETSOCKTOPFAIL;
+				}
+				return NETWORK::ERRORCODE::ENETRESULT::ENETSUCCESS;
+			}
 		}
+	}
+}
+
+namespace FUNCTIONS {
+	namespace EXCEPTION {
+		struct bad_sockopt : public std::exception {
+		public:
+			 char* const what() {
+				return const_cast<char* const>(std::string("Exception : Failed To Set Socket Option - " + WSAGetLastError()).c_str());
+			}
+		};
 	}
 }
