@@ -1,5 +1,5 @@
 #pragma once
-#include "../Log/Log.h"
+#include <Functions/Functions/Log/Log.h>
 #include "../CriticalSection/CriticalSection.h"
 #include <iostream>
 #include <memory>
@@ -43,21 +43,22 @@ namespace FUNCTIONS {
 				explicit CMemoryPool(const uint32_t& MaxPoolCount, const uint32_t& AllocBlockSize) : m_MaxPoolCount(MaxPoolCount), m_AllocBlockSize(AllocBlockSize), m_CurrentIndex(0) { }
 
 				virtual ~CMemoryPool() {
-					for (auto It : m_MemoryPoolList) {
+					for (auto& It : m_MemoryPoolList) {
 						delete It;
+						It = nullptr;
 					}
 				}
 
 			public:
 				void* const Allocate() {
-					if (m_MemoryPoolList.size() == m_CurrentIndex) {
+					if (m_MemoryPoolList.size() <= m_CurrentIndex) {
+						LOG::CLog::WriteLog(L"New %d", m_MaxPoolCount);
 						AllocateBlock();
 					}
 
 					auto ReturnValue = m_MemoryPoolList[m_CurrentIndex];
 					m_MemoryPoolList[m_CurrentIndex] = nullptr;
 					m_CurrentIndex++;
-
 					return ReturnValue;
 				}
 
@@ -68,6 +69,7 @@ namespace FUNCTIONS {
 
 					m_MemoryPoolList[m_CurrentIndex - 1] = static_cast<uint8_t*>(DeletePointer);
 					--m_CurrentIndex;
+					LOG::CLog::WriteLog(L"D : %d", m_CurrentIndex);
 				}
 
 			};
