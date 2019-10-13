@@ -1,4 +1,6 @@
 #pragma once
+#include <Functions/Functions/Log/Log.h>
+#include <Functions/Functions/CircularQueue/CircularQueue.hpp>
 #include <Functions/Functions/MemoryPool/MemoryPool.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
@@ -8,6 +10,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/string.hpp>
 #include <string>
+#include <climits>
 
 namespace NETWORK {
 	namespace PACKET {
@@ -30,7 +33,7 @@ namespace NETWORK {
 				uint16_t m_PacketSize;
 
 			public:
-				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(0) {};
+				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(USHRT_MAX) {};
 				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize) {};
 
 			public:
@@ -42,12 +45,13 @@ namespace NETWORK {
 		struct PACKET_STRUCTURE {
 		public:
 			DETAIL::PACKET_INFORMATION m_PacketInformation;
-			std::string m_PacketData;
+			char m_PacketData[2048];
 
 		public:
 			PACKET_STRUCTURE() noexcept : m_PacketInformation(), m_PacketData() {};
-			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, std::string& PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData) {};
-			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, std::string&& PacketData) noexcept : m_PacketInformation(PacketInfo), m_PacketData(PacketData) {};
+			PACKET_STRUCTURE(const DETAIL::PACKET_INFORMATION& PacketInfo, const std::string& PacketData) noexcept : m_PacketInformation(PacketInfo) {
+				CopyMemory(m_PacketData, PacketData.c_str(), PacketData.length());
+			};
 			
 		};
 
@@ -101,11 +105,28 @@ namespace NETWORK {
 					return;
 				}
 
-				boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> InStream(PacketStructure.m_PacketData.c_str(), PacketStructure.m_PacketInformation.m_PacketSize);
+				boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> InStream(PacketStructure.m_PacketData, PacketStructure.m_PacketInformation.m_PacketSize);
 				boost::archive::binary_iarchive ia(InStream, boost::archive::no_header);
 				ia >> Packet;
 			}
 
+		}
+	}
+}
+
+namespace FUNCTIONS {
+	namespace CIRCULARQUEUE {
+		namespace QUEUEDATA {
+			struct CPacketQueueData : public QUEUEDATA::DETAIL::BaseData<CPacketQueueData, 500> {
+			public:
+				NETWORK::PACKET::PACKET_STRUCTURE m_PacketStructure;
+				void* m_Owner;
+
+			public:
+				CPacketQueueData() : m_Owner(nullptr) { ZeroMemory(&m_PacketStructure, sizeof(NETWORK::PACKET::PACKET_STRUCTURE)); };
+				CPacketQueueData(void* const Owner, const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) : m_Owner(Owner), m_PacketStructure(PacketStructure) {};
+
+			};
 		}
 	}
 }
