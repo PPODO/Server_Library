@@ -5,22 +5,17 @@
 namespace FUNCTIONS {
 	namespace CIRCULARQUEUE {
 
-		static const size_t MAX_QUEUE_LENGTH = 256;
+		static const size_t MAX_QUEUE_LENGTH = 400;
 
 		namespace QUEUEDATA {
 			namespace DETAIL {
-				template<typename Type>
-				struct BaseData : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<Type> {
+				template<typename Type, size_t ALLOC_BLOCK_SIZE = 50>
+				struct BaseData : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<Type, ALLOC_BLOCK_SIZE> {
 				public:
 					explicit BaseData() {};
 
 				};
 			}
-
-			struct CPacketQueueData : public QUEUEDATA::DETAIL::BaseData<CPacketQueueData> {
-			public:
-
-			};
 		}
 
 		template<typename DATATYPE>
