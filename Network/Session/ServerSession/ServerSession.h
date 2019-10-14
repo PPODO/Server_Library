@@ -26,6 +26,22 @@ namespace NETWORK {
 				bool Initialize(const CServerSession& ServerSession);
 				bool SocketRecycle();
 
+			public:
+				inline bool Receive() {
+					if (m_TCPSocket) {
+						return m_TCPSocket->Read(nullptr, 0, m_ReceiveOverlapped);
+					}
+					return false;
+				}
+
+			public:
+				bool Send() {
+
+				}
+
+			public:
+				bool RegisterIOCompletionPort(const HANDLE& hIOCP);
+
 			};
 
 		}

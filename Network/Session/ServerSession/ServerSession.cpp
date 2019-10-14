@@ -53,3 +53,13 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::SocketRecycle() {
 	}
 	return true;
 }
+
+bool NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterIOCompletionPort(const HANDLE& hIOCP) {
+	if (m_TCPSocket && !CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_TCPSocket->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0)) {
+		return false;
+	}
+	if (m_UDPSocket && !CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_UDPSocket->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0)) {
+		return false;
+	}
+	return true;
+}
