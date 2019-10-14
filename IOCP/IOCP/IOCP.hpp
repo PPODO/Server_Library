@@ -2,11 +2,14 @@
 #include <vector>
 #include <thread>
 #include <Network/Session/ServerSession/ServerSession.h>
+#include <Network/Packet/BasePacket.hpp>
+#include <Functions/Functions/CircularQueue/CircularQueue.hpp>
+#include <Functions/Functions/Command/Command.h>
 
 namespace NETWORK {
 	namespace NETWORKMODEL {
 		namespace IOCP {
-			static const size_t MAX_CLIENT_COUNT = 256;
+			static const size_t MAX_CLIENT_COUNT = 500;
 
 			class CIOCP {
 			private:
@@ -28,6 +31,11 @@ namespace NETWORK {
 			private:
 				std::vector<std::thread> m_WorkerThread;
 
+			private:
+				FUNCTIONS::COMMAND::CCommand m_Command;
+
+				FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*> m_Queue;
+
 			public:
 				explicit CIOCP(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
 				virtual ~CIOCP();
@@ -41,7 +49,10 @@ namespace NETWORK {
 				virtual void OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
-				virtual void OnIOReceive(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, DWORD ReceiveBytes);
+				virtual void OnIOReceive(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
+
+			private:
+				void Destroy();
 
 			private:
 				bool InitializeHandles();
@@ -50,6 +61,9 @@ namespace NETWORK {
 
 			private:
 				void WorkerThread();
+
+			private:
+				void PacketForwardingLoop(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx);
 
 			};
 
