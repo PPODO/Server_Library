@@ -8,9 +8,6 @@ using namespace NETWORK::SOCKET::TCPIP;
 using namespace FUNCTIONS::LOG;
 
 CTCPIPSocket::CTCPIPSocket() : CBaseSocket(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
-}
-
-CTCPIPSocket::~CTCPIPSocket() {
 	LINGER OptionVar;
 	OptionVar.l_onoff = true;
 	OptionVar.l_linger = 0;
@@ -20,9 +17,12 @@ CTCPIPSocket::~CTCPIPSocket() {
 			throw FUNCTIONS::EXCEPTION::bad_sockopt();
 		}
 	}
-	catch (FUNCTIONS::EXCEPTION::bad_sockopt& Exception) {
+	catch (FUNCTIONS::EXCEPTION::bad_sockopt & Exception) {
 		CLog::WriteLog(Exception.what());
 	}
+}
+
+CTCPIPSocket::~CTCPIPSocket() {
 }
 
 bool CTCPIPSocket::Listen(const int32_t& BackLogCount) {
@@ -80,8 +80,8 @@ bool CTCPIPSocket::SocketRecycling(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL
 	if (!TransmitFile(GetSocketHandle(), NULL, 0, 0, &DisconnectOverlapped.m_Overlapped, nullptr, TF_DISCONNECT | TF_REUSE_SOCKET)) {
 		if (WSAGetLastError() != WSA_IO_PENDING) {
 			CLog::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError());
+			return false;
 		}
-		return true;
 	}
 	return true;
 }
@@ -106,11 +106,12 @@ inline bool NETWORK::UTIL::TCPIP::Send(const::SOCKET& Socket, const char* const 
 
 inline bool NETWORK::UTIL::TCPIP::Receive(const::SOCKET& Socket, char* const ReceiveBuffer, size_t& ReceiveBufferSize, NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& const RecvOverlapped) {
 	DWORD RecvBytes = 0, Flag = 0;
-	WSABUF RecvBuffer;
-	RecvBuffer.buf = ReceiveBuffer;
-	RecvBuffer.len = SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE;
 
-	if (WSARecv(Socket, &RecvBuffer, 1, &RecvBytes, &Flag, &RecvOverlapped.m_Overlapped, nullptr) == SOCKET_ERROR) {
+	RecvOverlapped.m_WSABuffer.buf = ReceiveBuffer + RecvOverlapped.m_RemainReceivedBytes;
+	RecvOverlapped.m_WSABuffer.len = SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE;
+	RecvOverlapped.m_SocketMessage = RecvOverlapped.m_WSABuffer.buf - (RecvOverlapped.m_RemainReceivedBytes < 0 ? 0 : RecvOverlapped.m_RemainReceivedBytes);
+
+	if (WSARecv(Socket, &RecvOverlapped.m_WSABuffer, 1, &RecvBytes, &Flag, &RecvOverlapped.m_Overlapped, nullptr) == SOCKET_ERROR) {
 		if (WSAGetLastError() != WSA_IO_PENDING && WSAGetLastError() != WSAEWOULDBLOCK) {
 			FUNCTIONS::LOG::CLog::WriteLog(L"WSA Recv : Failed To WSA Recv! - %d", WSAGetLastError());
 			return false;
