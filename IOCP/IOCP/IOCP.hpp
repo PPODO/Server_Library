@@ -1,4 +1,5 @@
 #pragma once
+#include <map>
 #include <vector>
 #include <thread>
 #include <Network/Session/ServerSession/ServerSession.h>
@@ -29,6 +30,10 @@ namespace NETWORK {
 				std::vector<std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession>> m_Clients;
 
 			private:
+				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_PeerLocking;
+				std::map<int, int> m_Peers;
+
+			private:
 				std::vector<std::thread> m_WorkerThread;
 
 			private:
@@ -50,6 +55,8 @@ namespace NETWORK {
 				virtual void OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIOReceive(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
+				virtual void OnIOWriteTo(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
+				virtual void OnIOReceiveFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
 
 			private:
 				void Destroy();
