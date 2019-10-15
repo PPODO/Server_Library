@@ -1,6 +1,8 @@
 #pragma once
 #include <Network/Socket/TCP/TCPSocket.h>
 #include <Network/Socket/UDP/UDPSocket.h>
+#include <vector>
+#include <algorithm>
 
 namespace NETWORK {
 	namespace SESSION {
@@ -16,6 +18,21 @@ namespace NETWORK {
 				UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_DisconnectOverlapped; 
 				UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_ReceiveOverlapped;
 				UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_SendOverlapped;
+				UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX m_ReceiveFromOverlapped;
+
+			private:
+				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ConnectionListLock;
+				std::vector<FUNCTIONS::SOCKADDR::CSocketAddress> m_ConnectedPeers;
+
+			private:
+				inline void RegisterNewPeer(const FUNCTIONS::SOCKADDR::CSocketAddress& NewPeer) {
+					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+
+					if (auto Iterator = std::find_if(m_ConnectedPeers.cbegin(), m_ConnectedPeers.cend(), [&NewPeer](const FUNCTIONS::SOCKADDR::CSocketAddress& Address) -> bool { if (NewPeer == Address) { return true; } return false;  }); Iterator == m_ConnectedPeers.cend()) {
+						m_ConnectedPeers.emplace_back(NewPeer);
+						FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+					}
+				}
 
 			public:
 				explicit CServerSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
@@ -34,8 +51,15 @@ namespace NETWORK {
 					return false;
 				}
 
+				inline bool ReceiveFrom() {
+					if (m_UDPSocket) {
+						return m_UDPSocket->ReadFrom(m_ReceiveFromOverlapped);
+					}
+					return false;
+				}
+
 			public:
-				bool Send() {
+				inline bool Send() {
 
 				}
 
