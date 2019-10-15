@@ -27,7 +27,9 @@ namespace NETWORK {
 						EIT_DISCONNECT,
 						EIT_ACCEPT,
 						EIT_READ,
-						EIT_WRITE
+						EIT_WRITE,
+						EIT_READFROM,
+						EIT_WRITETO
 					};
 
 					// 서버에서만 사용 가능합니다.
@@ -39,6 +41,8 @@ namespace NETWORK {
 						int16_t m_RemainReceivedBytes;
 						// 데이터가 덮어씌워지지 않도록 처리를 하였을데, 이전에 읽은 데이터가 남아있는 위치부터 현재 읽은 데이터까지 처리를 해야하는데, 이전에 읽은 데이터의 위치를 모르기 때문에, 그 위치를 저장하는 변수
 						char* m_SocketMessage;
+						// UDP에서 사용(RecvFrom)
+						FUNCTIONS::SOCKADDR::CSocketAddress m_RemoteAddress;
 
 						EIOTYPE m_IOType;
 						NETWORK::SESSION::SERVERSESSION::CServerSession* m_Owner;
@@ -66,7 +70,7 @@ namespace NETWORK {
 			}
 
 			static inline ::SOCKET CreateSocketByProtocolType(const EPROTOCOLTYPE& ProtocolType) {
-				::SOCKET NewSocket = WSASocketA(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+				::SOCKET NewSocket = WSASocketA(AF_INET, ProtocolType == EPROTOCOLTYPE::EPT_TCP ? SOCK_STREAM : SOCK_DGRAM, ProtocolType == EPROTOCOLTYPE::EPT_TCP ? IPPROTO_TCP : IPPROTO_UDP, nullptr, 0, WSA_FLAG_OVERLAPPED);
 				if (NewSocket == SOCKET::INVALID_SOCKET_VALUE) {
 					return SOCKET::INVALID_SOCKET_VALUE;
 				}
@@ -95,7 +99,6 @@ namespace NETWORK {
 
 			protected:
 				inline char* const GetReceiveBufferPtr() { return m_ReceiveMessageBuffer; }
-				inline ::SOCKET GetSocketHandle() const { return m_Socket; }
 
 			public:
 				explicit CBaseSocket(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
