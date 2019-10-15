@@ -3,7 +3,6 @@
 #include <string>
 #include <WinSock2.h>
 #include <WS2tcpip.h>
-#include <tuple>
 #pragma comment(lib, "ws2_32.lib")
 
 namespace FUNCTIONS {
@@ -76,22 +75,8 @@ namespace FUNCTIONS {
 			}
 
 		public:
-			static inline size_t GetSize() { return sizeof(m_Address); };
-
-		public:
-			std::tuple<std::string, USHORT> GetIPAddressAndPort() {
-				return std::make_tuple<std::string, USHORT>(std::move<std::string&&>(std::string(inet_ntoa(GetSockAddress()->sin_addr))), std::forward<USHORT>(GetSockAddress()->sin_port));
-			}
+			static inline size_t GetSize() { return sizeof(m_Address); }
 
 		};
-
-		static bool operator ==(const CSocketAddress& lhs, const CSocketAddress& rhs) {
-			auto lhsValue = const_cast<CSocketAddress&>(lhs).GetIPAddressAndPort();
-			auto rhsValue = const_cast<CSocketAddress&>(rhs).GetIPAddressAndPort();
-			if (std::get<0>(lhsValue) == std::get<0>(rhsValue)&& std::get<1>(lhsValue) == std::get<1>(rhsValue)) {
-				return true;
-			}
-			return false;
-		}
 	}
 }
