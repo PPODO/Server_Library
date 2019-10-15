@@ -80,6 +80,9 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeSession(const FUNCTIONS::SOCK
 			return false;
 		}
 
+		if ((m_ProtocolType & EPROTOCOLTYPE::EPT_UDP) && !m_Listener->ReceiveFrom()) {
+			return false;
+		}
 		if (m_ProtocolType & EPROTOCOLTYPE::EPT_TCP) {
 			for (size_t i = 0; i < MAX_CLIENT_COUNT; i++) {
 				if (std::unique_ptr<CServerSession> Client = std::make_unique<CServerSession>(EPROTOCOLTYPE::EPT_TCP); Client->Initialize(*m_Listener)) {
@@ -146,6 +149,9 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::WorkerThread() {
 				break;
 			case EIOTYPE::EIT_WRITE:
 				OnIOWrite(OverlappedEx->m_Owner);
+				break;
+			case EIOTYPE::EIT_READFROM:
+				OnIOReceiveFrom(OverlappedEx, reinterpret_cast<const uint16_t&>(RecvBytes));
 				break;
 			}
 		}
@@ -223,5 +229,13 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceive(UTIL::SESSION::SERVERSESSIO
 		if (!ReceiveOverlappedEx->m_Owner->Receive()) {
 			ReceiveOverlappedEx->m_Owner->SocketRecycle();
 		}
+	}
+}
+
+void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes) {
+	if (ReceiveFromOverlappedEx) {
+		ReceiveFromOverlappedEx->m_RemoteAddress;
+
+		std::cout << ReceiveFromOverlappedEx->m_SocketMessage << std::endl;
 	}
 }

@@ -50,6 +50,7 @@ namespace NETWORK {
 				virtual void OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIOReceive(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
+				virtual void OnIOReceiveFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
 
 			private:
 				void Destroy();
