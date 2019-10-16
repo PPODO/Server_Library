@@ -55,6 +55,16 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::SocketRecycle() {
 	return true;
 }
 
+inline bool NETWORK::SESSION::SERVERSESSION::CServerSession::SendCompletion(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) {
+	if (ProtocolType == UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
+
+	}
+	else if (ProtocolType == UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
+		return m_UDPSocket->SendCompletion();
+	}
+	return false;
+}
+
 bool NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterIOCompletionPort(const HANDLE& hIOCP) {
 	if (m_TCPSocket && !CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_TCPSocket->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0)) {
 		return false;
@@ -63,4 +73,30 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterIOCompletionPort(c
 		return false;
 	}
 	return true;
+}
+
+void NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterNewPeer(const FUNCTIONS::SOCKADDR::CSocketAddress& NewPeer) {
+	FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+
+	if (auto Iterator = std::find_if(m_ConnectedPeers.cbegin(), m_ConnectedPeers.cend(), [&NewPeer](const FUNCTIONS::SOCKADDR::CSocketAddress& Address) -> bool { if (NewPeer == Address) { return true; } return false;  }); Iterator == m_ConnectedPeers.cend()) {
+		m_ConnectedPeers.emplace_back(NewPeer);
+		FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+	}
+}
+
+bool NETWORK::UTIL::UDPIP::CheckAck(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& Overlapped) {
+	if (NETWORK::SESSION::SERVERSESSION::CServerSession* Owner = Overlapped.m_Owner; Overlapped.m_SocketMessage) {
+		const int16_t AckValue = *reinterpret_cast<const int16_t*>(Overlapped.m_SocketMessage);
+
+		if (AckValue == 9999) {
+			return Owner->SendCompletion(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP);
+		}
+		else if (AckValue == 0) {
+			int16_t AckNumber = 9999;
+			Overlapped.m_RemainReceivedBytes -= sizeof(AckValue);
+			MoveMemory(Overlapped.m_SocketMessage, Overlapped.m_SocketMessage + sizeof(AckNumber), Overlapped.m_RemainReceivedBytes);
+			return Owner->SendTo(Overlapped.m_RemoteAddress, reinterpret_cast<const char* const>(&AckNumber), sizeof(int16_t));
+		}
+	}
+	return false;
 }

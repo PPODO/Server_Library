@@ -24,16 +24,6 @@ namespace NETWORK {
 				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ConnectionListLock;
 				std::vector<FUNCTIONS::SOCKADDR::CSocketAddress> m_ConnectedPeers;
 
-			private:
-				inline void RegisterNewPeer(const FUNCTIONS::SOCKADDR::CSocketAddress& NewPeer) {
-					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
-
-					if (auto Iterator = std::find_if(m_ConnectedPeers.cbegin(), m_ConnectedPeers.cend(), [&NewPeer](const FUNCTIONS::SOCKADDR::CSocketAddress& Address) -> bool { if (NewPeer == Address) { return true; } return false;  }); Iterator == m_ConnectedPeers.cend()) {
-						m_ConnectedPeers.emplace_back(NewPeer);
-						FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
-					}
-				}
-
 			public:
 				explicit CServerSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
 				virtual ~CServerSession();
@@ -60,14 +50,43 @@ namespace NETWORK {
 
 			public:
 				inline bool Send() {
+					if (m_TCPSocket) {
+						//return m_TCPSocket->Write();
+					}
+					return false;
+				}
 
+				inline bool SendTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
+					if (m_UDPSocket) {
+						return m_UDPSocket->WriteToQueue(SendAddress, SendPacketStructure);
+					}
+					return false;
+				}
+
+				inline bool SendTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const uint16_t& SendDataLength) {
+					if (m_UDPSocket) {
+						return m_UDPSocket->WriteTo(SendAddress, SendData, SendDataLength);
+					}
+					return false;
 				}
 
 			public:
+				bool SendCompletion(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
+
+			public:
 				bool RegisterIOCompletionPort(const HANDLE& hIOCP);
+				void RegisterNewPeer(const FUNCTIONS::SOCKADDR::CSocketAddress& NewPeer);
 
 			};
 
+		}
+	}
+
+	namespace UTIL {
+		namespace UDPIP {
+			bool CheckAck(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& Overlapped);
+
+			//bool CheckAck(/* For Client Session */);
 		}
 	}
 }
