@@ -43,13 +43,15 @@ namespace NETWORK {
 						char* m_SocketMessage;
 						// UDP에서 사용(RecvFrom)
 						FUNCTIONS::SOCKADDR::CSocketAddress m_RemoteAddress;
+						// UDP에서 사용, 패킷 번호를 통해 이미 읽어온 데이터와 그렇지 않은 데이터를 구분 
+						int16_t m_LastReceivedPacketNumber;
 
 						EIOTYPE m_IOType;
 						NETWORK::SESSION::SERVERSESSION::CServerSession* m_Owner;
 
 					public:
-						OVERLAPPED_EX() : m_IOType(EIOTYPE::EIT_NONE), m_Owner(nullptr), m_RemainReceivedBytes(0), m_SocketMessage(nullptr) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); ZeroMemory(&m_WSABuffer, sizeof(WSABUF)); };
-						OVERLAPPED_EX(const EIOTYPE& Type, NETWORK::SESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner), m_RemainReceivedBytes(0), m_SocketMessage(nullptr) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); ZeroMemory(&m_WSABuffer, sizeof(WSABUF)); };
+						OVERLAPPED_EX() : m_IOType(EIOTYPE::EIT_NONE), m_Owner(nullptr), m_RemainReceivedBytes(0), m_SocketMessage(nullptr), m_LastReceivedPacketNumber(0) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); ZeroMemory(&m_WSABuffer, sizeof(WSABUF)); };
+						OVERLAPPED_EX(const EIOTYPE& Type, NETWORK::SESSION::SERVERSESSION::CServerSession* Owner) : m_IOType(Type), m_Owner(Owner), m_RemainReceivedBytes(0), m_SocketMessage(nullptr), m_LastReceivedPacketNumber(0) { ZeroMemory(&m_Overlapped, sizeof(WSAOVERLAPPED)); ZeroMemory(&m_WSABuffer, sizeof(WSABUF)); };
 
 					};
 				}
