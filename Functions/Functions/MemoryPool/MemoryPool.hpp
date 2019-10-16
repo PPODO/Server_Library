@@ -52,7 +52,6 @@ namespace FUNCTIONS {
 			public:
 				void* const Allocate() {
 					if (m_MemoryPoolList.size() <= m_CurrentIndex) {
-						LOG::CLog::WriteLog(L"New %d", m_MaxPoolCount);
 						AllocateBlock();
 					}
 
@@ -69,7 +68,6 @@ namespace FUNCTIONS {
 
 					m_MemoryPoolList[m_CurrentIndex - 1] = static_cast<uint8_t*>(DeletePointer);
 					--m_CurrentIndex;
-					LOG::CLog::WriteLog(L"D : %d", m_CurrentIndex);
 				}
 
 			};
