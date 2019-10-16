@@ -163,26 +163,31 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::PacketForwardingLoop(UTIL::SESSION::SER
 
 	while (true) {
 		PACKET_STRUCTURE PacketStructure;
-		uint16_t RemainBytes = ReceiveOverlappedEx->m_RemainReceivedBytes;
+		int16_t RemainBytes = ReceiveOverlappedEx->m_RemainReceivedBytes;
+		int16_t LastReceivedPacketNumber = ReceiveOverlappedEx->m_LastReceivedPacketNumber;
+
 		if (RemainBytes >= DETAIL::PACKET_INFORMATION::GetSize()) {
 			PacketStructure.m_PacketInformation = *reinterpret_cast<DETAIL::PACKET_INFORMATION*>(ReceiveOverlappedEx->m_SocketMessage);
 			RemainBytes -= DETAIL::PACKET_INFORMATION::GetSize();
 		}
 
-		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize) {
+		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastReceivedPacketNumber + 1) {
 			uint16_t TotalBytes = (PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize);
 
 			CopyMemory(PacketStructure.m_PacketData, ReceiveOverlappedEx->m_SocketMessage + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
+
 			FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
 
 			m_Queue.Push(QueueData);
 
+			ReceiveOverlappedEx->m_LastReceivedPacketNumber = LastReceivedPacketNumber + 1;
 			ReceiveOverlappedEx->m_RemainReceivedBytes -= TotalBytes;
 			MoveMemory(ReceiveOverlappedEx->m_SocketMessage, ReceiveOverlappedEx->m_SocketMessage + TotalBytes, ReceiveOverlappedEx->m_RemainReceivedBytes);
 		}
 		else {
 			break;
 		}
+
 	}
 }
 
@@ -225,7 +230,6 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceive(UTIL::SESSION::SERVERSESSIO
 		ReceiveOverlappedEx->m_RemainReceivedBytes += RecvBytes;
 
 		PacketForwardingLoop(ReceiveOverlappedEx);
-
 		if (!ReceiveOverlappedEx->m_Owner->Receive()) {
 			ReceiveOverlappedEx->m_Owner->SocketRecycle();
 		}
@@ -233,9 +237,15 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceive(UTIL::SESSION::SERVERSESSIO
 }
 
 void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes) {
-	if (ReceiveFromOverlappedEx) {
-		ReceiveFromOverlappedEx->m_RemoteAddress;
+	if (NETWORK::SESSION::SERVERSESSION::CServerSession* Owner = ReceiveFromOverlappedEx->m_Owner; Owner) {
+		ReceiveFromOverlappedEx->m_RemainReceivedBytes += RecvBytes;
 
-		std::cout << ReceiveFromOverlappedEx->m_SocketMessage << std::endl;
+		if (UTIL::UDPIP::CheckAck(*ReceiveFromOverlappedEx)) {
+			Owner->RegisterNewPeer(ReceiveFromOverlappedEx->m_RemoteAddress);
+			PacketForwardingLoop(ReceiveFromOverlappedEx);
+		}
+		if (!Owner->ReceiveFrom()) {
+			Owner->SocketRecycle();
+		}
 	}
 }
