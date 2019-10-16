@@ -31,10 +31,11 @@ namespace NETWORK {
 				uint8_t m_PacketType;
 				uint8_t m_MessageType;
 				uint16_t m_PacketSize;
+				uint16_t m_PacketNumber;
 
 			public:
-				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(USHRT_MAX) {};
-				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize) {};
+				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(USHRT_MAX), m_PacketNumber(0) {};
+				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize, const uint16_t& PacketNumber) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize), m_PacketNumber(PacketNumber) {};
 
 			public:
 				static size_t GetSize() { return sizeof(PACKET_INFORMATION); }
