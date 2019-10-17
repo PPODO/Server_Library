@@ -72,7 +72,13 @@ namespace NETWORK {
 			}
 
 			static inline ::SOCKET CreateSocketByProtocolType(const EPROTOCOLTYPE& ProtocolType) {
-				::SOCKET NewSocket = WSASocketA(AF_INET, ProtocolType == EPROTOCOLTYPE::EPT_TCP ? SOCK_STREAM : SOCK_DGRAM, ProtocolType == EPROTOCOLTYPE::EPT_TCP ? IPPROTO_TCP : IPPROTO_UDP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+				::SOCKET NewSocket = NETWORK::SOCKET::INVALID_SOCKET_VALUE;
+				if (ProtocolType == EPROTOCOLTYPE::EPT_TCP) {
+					NewSocket = WSASocketA(AF_INET, SOCK_STREAM, IPPROTO_TCP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+				}
+				else {
+					NewSocket = WSASocketA(AF_INET, SOCK_DGRAM, IPPROTO_UDP, nullptr, 0, WSA_FLAG_OVERLAPPED);
+				}
 				if (NewSocket == SOCKET::INVALID_SOCKET_VALUE) {
 					return SOCKET::INVALID_SOCKET_VALUE;
 				}
@@ -97,9 +103,6 @@ namespace NETWORK {
 				void Destroy();
 
 			protected:
-				void CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize);
-
-			protected:
 				inline char* const GetReceiveBufferPtr() { return m_ReceiveMessageBuffer; }
 
 			public:
@@ -108,6 +111,9 @@ namespace NETWORK {
 
 			public:
 				bool Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
+
+			public:
+				virtual bool SendCompletion() = 0;
 
 			public:
 				inline ::SOCKET GetSocket() const { return m_Socket; }

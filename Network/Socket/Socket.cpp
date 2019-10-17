@@ -22,11 +22,6 @@ bool CBaseSocket::Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
 	return true;
 }
 
-void CBaseSocket::CopyReceiveBuffer(char* const Buffer, const uint16_t& RecvSize) {
-	if (!Buffer) { throw ""; }
-	CopyMemory(Buffer, m_ReceiveMessageBuffer, RecvSize);
-}
-
 void CBaseSocket::Destroy() {
 	if (m_Socket != INVALID_SOCKET_VALUE) {
 		shutdown(m_Socket, SD_BOTH);
