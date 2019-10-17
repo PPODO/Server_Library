@@ -86,7 +86,6 @@ bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReadFrom(char* const ReceivedBuffer, 
 	if (ReceivedBuffer) {
 		UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped;
 		if (UTIL::UDPIP::ReceiveFrom(GetSocket(), ReceivedBuffer, RecvBytes, Overlapped)) {
-			CopyReceiveBuffer(ReceivedBuffer, RecvBytes);
 
 			return true;// UTIL::UDPIP::CheckAck();
 		}
