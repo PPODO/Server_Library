@@ -36,7 +36,7 @@ namespace NETWORK {
 			public:
 				inline bool Receive() {
 					if (m_TCPSocket) {
-						return m_TCPSocket->Read(nullptr, 0, m_ReceiveOverlapped);
+						return m_TCPSocket->Read(m_ReceiveOverlapped);
 					}
 					return false;
 				}
@@ -49,9 +49,16 @@ namespace NETWORK {
 				}
 
 			public:
-				inline bool Send() {
+				inline bool Send(const char* const SendData, const uint16_t& SendDataLength) {
 					if (m_TCPSocket) {
-						//return m_TCPSocket->Write();
+						return m_TCPSocket->Write(SendData, SendDataLength, m_SendOverlapped);
+					}
+					return false;
+				}
+
+				inline bool Send(const PACKET::PACKET_STRUCTURE& PacketStructure) {
+					if (m_TCPSocket) {
+						return m_TCPSocket->Write(PacketStructure, m_SendOverlapped);
 					}
 					return false;
 				}

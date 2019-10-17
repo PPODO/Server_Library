@@ -57,7 +57,7 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::SocketRecycle() {
 
 inline bool NETWORK::SESSION::SERVERSESSION::CServerSession::SendCompletion(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) {
 	if (ProtocolType == UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
-
+		return m_TCPSocket->SendCompletion();
 	}
 	else if (ProtocolType == UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
 		return m_UDPSocket->SendCompletion();
