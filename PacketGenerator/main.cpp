@@ -75,8 +75,7 @@ int main(int argc, char* argv[]) {
 								ArraySize = std::stoi(ResultWithoutSpaces.substr(ArraySizeIndex + 1, ResultWithoutSpaces.length() - ArraySizeIndex - 1));
 							}
 							std::string Type = ResultWithoutSpaces.substr(0, CenterIndex);
-							std::string Name = ResultWithoutSpaces.substr(CenterIndex + 1, ResultWithoutSpaces.length() - ArraySizeIndex - 2);
-
+							std::string Name = ResultWithoutSpaces.substr(CenterIndex + 1, ArraySizeIndex - 5);
 							Protocols.back().m_Parameters.emplace_back(Type, Name, ArraySize);
 						}
 					}
