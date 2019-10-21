@@ -220,15 +220,14 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIODisconnected(NETWORK::SESSION::SERV
 }
 
 void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-	if (Session) {
-
+	if (Session && Session->SendCompletion(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP)) {
+		CLog::WriteLog(L"Send!");
 	}
 }
 
 void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceive(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes) {
 	if (ReceiveOverlappedEx) {
 		ReceiveOverlappedEx->m_RemainReceivedBytes += RecvBytes;
-
 		PacketForwardingLoop(ReceiveOverlappedEx);
 		if (!ReceiveOverlappedEx->m_Owner->Receive()) {
 			ReceiveOverlappedEx->m_Owner->SocketRecycle();
