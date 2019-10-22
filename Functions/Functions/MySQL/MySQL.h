@@ -166,7 +166,7 @@ namespace FUNCTIONS {
 					}
 				}
 				catch (const sql::SQLException & Exception) {
-					if (Exception.getErrorCode() == 0) {
+					if (Exception.getErrorCode() != 0) {
 						FUNCTIONS::LOG::CLog::WriteLog(L"SQL Exception - %d, %s", Exception.getErrorCode(), Exception.what());
 						return false;
 					}
@@ -175,10 +175,10 @@ namespace FUNCTIONS {
 			}
 
 		public:
-			static bool ExcuteQuery(sql::Connection* const Connection, const std::string& Query, std::function<void(sql::ResultSet* const)> Processor) {
+			static bool ExecuteQuery(sql::Connection* const Connection, const std::string& Query, std::function<void(sql::ResultSet* const)> Processor) {
 				return SendQuery(Connection, Query, Processor);
 			}
-			static bool ExcuteQuery(sql::Connection* const Connection, const std::string& Query) {
+			static bool ExecuteQuery(sql::Connection* const Connection, const std::string& Query) {
 				return SendQuery(Connection, Query, nullptr);
 			}
 
