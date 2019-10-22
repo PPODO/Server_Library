@@ -96,7 +96,7 @@ namespace NETWORK {
 				}
 
 				const NETWORK::PACKET::BASEPACKET::CBasePacket* Temp = reinterpret_cast<const NETWORK::PACKET::BASEPACKET::CBasePacket*>(&Packet);
-				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, Temp->m_MessageType, TempBuffer.length()), TempBuffer);
+				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, Temp->m_MessageType, TempBuffer.length(), 1), TempBuffer);
 			}
 
 			template<typename T>
