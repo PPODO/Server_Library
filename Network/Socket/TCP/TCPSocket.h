@@ -14,7 +14,15 @@ namespace FUNCTIONS {
 
 			public:
 				CWSASendData() : m_Length(0) { ZeroMemory(m_Buffer, NETWORK::SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE); };
-				CWSASendData(const char* const Buffer, const uint16_t& Length) : m_Length(Length) { CopyMemory(m_Buffer, Buffer, Length); };
+				CWSASendData(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) : m_Length(0) {
+					CopyMemory(m_Buffer, reinterpret_cast<const char*>(&PacketStructure.m_PacketInformation), PacketStructure.m_PacketInformation.GetSize());
+					m_Length += PacketStructure.m_PacketInformation.GetSize();
+					CopyMemory(m_Buffer + m_Length, PacketStructure.m_PacketData, PacketStructure.m_PacketInformation.m_PacketSize);
+					m_Length += PacketStructure.m_PacketInformation.m_PacketSize;
+				};
+				CWSASendData(const char* const Buffer, const uint16_t& Length) : m_Length(0) {
+					CopyMemory(m_Buffer, Buffer, Length);
+				}
 
 			};
 		}
@@ -42,6 +50,17 @@ namespace NETWORK {
 				inline const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const AddWriteQueue(const char* const SendData, const uint16_t& DataLength) {
 					try {
 						if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* SendQueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData(SendData, DataLength); SendData) {
+							return m_SendMessageQueue.Push(SendQueueData);
+						}
+					}
+					catch (const std::bad_alloc & Exception) {
+						FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
+					}
+					return nullptr;
+				}
+				inline const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const AddWriteQueue(const PACKET::PACKET_STRUCTURE& PacketStructure) {
+					try {
+						if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* SendQueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData(PacketStructure); SendQueueData) {
 							return m_SendMessageQueue.Push(SendQueueData);
 						}
 					}

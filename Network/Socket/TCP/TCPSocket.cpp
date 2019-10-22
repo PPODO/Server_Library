@@ -3,6 +3,7 @@
 #include <MSWSock.h>
 #pragma comment(lib, "mswsock.lib")
 
+using namespace NETWORK;
 using namespace NETWORK::SOCKET::BASESOCKET;
 using namespace NETWORK::SOCKET::TCPIP;
 using namespace FUNCTIONS::LOG;
@@ -67,8 +68,8 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, con
 	}
 }
 
-bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const PACKET::PACKET_STRUCTURE& PacketStructure, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
-	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(reinterpret_cast<const char* const>(&PacketStructure), PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize)) {
+bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
+	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(PacketStructure)) {
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
 }
@@ -81,8 +82,8 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, con
 	}
 }
 
-bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const PACKET::PACKET_STRUCTURE& PacketStructure) {
-	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(reinterpret_cast<const char* const>(&PacketStructure), PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize)) {
+bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) {
+	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(PacketStructure)) {
 		UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX SendOverlapped;
 
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
