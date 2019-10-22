@@ -3,16 +3,13 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORK::NETWORKMODEL::IOCP::CIOCP::CIOCP(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : m_ProtocolType(ProtocolType), m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
-	try {
-		if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) == SOCKET_ERROR) {
-			throw FUNCTIONS::EXCEPTION::bad_wsastart();
-		}
-	}
-	catch (const FUNCTIONS::EXCEPTION::bad_wsastart& Exception) {
-		CLog::WriteLog(Exception.what());
-		std::abort();
-	}
+NETWORK::NETWORKMODEL::IOCP::CIOCP::CIOCP() : m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
+	InitializeWinSock();
+	m_Command.AddNewAction("shutdown", std::bind(&NETWORK::NETWORKMODEL::IOCP::CIOCP::Destroy, this));
+}
+
+NETWORK::NETWORKMODEL::IOCP::CIOCP::CIOCP(const PACKETPROCESSORLIST& ProcessorList) : m_PacketProcessors(ProcessorList), m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
+	InitializeWinSock();
 	m_Command.AddNewAction("shutdown", std::bind(&NETWORK::NETWORKMODEL::IOCP::CIOCP::Destroy, this));
 }
 
@@ -20,12 +17,12 @@ NETWORK::NETWORKMODEL::IOCP::CIOCP::~CIOCP() {
 	WSACleanup();
 }
 
-bool NETWORK::NETWORKMODEL::IOCP::CIOCP::Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::Initialize(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
 	if (!InitializeHandles()) {
 		return false;
 	}
 	
-	if (!InitializeSession(BindAddress)) {
+	if (!InitializeSession(ProtocolType, BindAddress)) {
 		return false;
 	}
 
@@ -38,6 +35,10 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::Run() {
 	while (m_bIsRunMainThread) {
 		if (!m_Queue.IsEmpty()) {
 			if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data; m_Queue.Pop(Data) && Data) {
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ProcessorListLock);
+				if (auto Iterator = m_PacketProcessors.find(Data->m_PacketStructure.m_PacketInformation.m_PacketType); Iterator != m_PacketProcessors.cend()) {
+					Iterator->second(Data);
+				}
 				delete Data;
 			}
 		}
@@ -62,6 +63,18 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::Destroy() {
 	m_Command.Shutdown();
 }
 
+void NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeWinSock() {
+	try {
+		if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) == SOCKET_ERROR) {
+			throw FUNCTIONS::EXCEPTION::bad_wsastart();
+		}
+	}
+	catch (const FUNCTIONS::EXCEPTION::bad_wsastart & Exception) {
+		CLog::WriteLog(Exception.what());
+		std::abort();
+	}
+}
+
 bool NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeHandles() {
 	if (!(m_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0))) {
 		CLog::WriteLog(L"Initialize IOCP Handle : Failed To Initialization IOCP Handle");
@@ -71,19 +84,19 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeHandles() {
 	return true;
 }
 
-bool NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeSession(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
+bool NETWORK::NETWORKMODEL::IOCP::CIOCP::InitializeSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
 	using namespace SESSION::SERVERSESSION;
 	using namespace UTIL::BASESOCKET;
 
 	try {
-		if (m_Listener = std::make_unique<CServerSession>(m_ProtocolType); !m_Listener->Initialize(BindAddress) || !m_Listener->RegisterIOCompletionPort(m_hIOCP)) {
+		if (m_Listener = std::make_unique<CServerSession>(ProtocolType); !m_Listener->Initialize(BindAddress) || !m_Listener->RegisterIOCompletionPort(m_hIOCP)) {
 			return false;
 		}
 
-		if ((m_ProtocolType & EPROTOCOLTYPE::EPT_UDP) && !m_Listener->ReceiveFrom()) {
+		if ((ProtocolType & EPROTOCOLTYPE::EPT_UDP) && !m_Listener->ReceiveFrom()) {
 			return false;
 		}
-		if (m_ProtocolType & EPROTOCOLTYPE::EPT_TCP) {
+		if (ProtocolType & EPROTOCOLTYPE::EPT_TCP) {
 			for (size_t i = 0; i < MAX_CLIENT_COUNT; i++) {
 				if (std::unique_ptr<CServerSession> Client = std::make_unique<CServerSession>(EPROTOCOLTYPE::EPT_TCP); Client->Initialize(*m_Listener)) {
 					m_Clients.push_back(std::move(Client));

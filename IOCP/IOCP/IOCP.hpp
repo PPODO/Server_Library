@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <thread>
+#include <functional>
 #include <Network/Session/ServerSession/ServerSession.h>
 #include <Network/Packet/BasePacket.hpp>
 #include <Functions/Functions/CircularQueue/CircularQueue.hpp>
@@ -11,10 +12,9 @@ namespace NETWORK {
 		namespace IOCP {
 			static const size_t MAX_CLIENT_COUNT = 500;
 
-			class CIOCP {
-			private:
-				const UTIL::BASESOCKET::EPROTOCOLTYPE m_ProtocolType;
+			typedef std::map<uint8_t, std::function<void(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const)>> PACKETPROCESSORLIST;
 
+			class CIOCP {
 			private:
 				WSADATA m_WinSockData;
 
@@ -23,6 +23,10 @@ namespace NETWORK {
 
 			private:
 				int16_t m_bIsRunMainThread;
+
+			private:
+				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ProcessorListLock;
+				PACKETPROCESSORLIST m_PacketProcessors;
 
 			private:
 				std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession> m_Listener;
@@ -34,14 +38,16 @@ namespace NETWORK {
 			private:
 				FUNCTIONS::COMMAND::CCommand m_Command;
 
+				// TODO º¸·ù
 				FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*> m_Queue;
 
 			public:
-				explicit CIOCP(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
+				explicit CIOCP();
+				explicit CIOCP(const PACKETPROCESSORLIST& ProcessorList);
 				virtual ~CIOCP();
 
 			public:
-				bool Initialize(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
+				bool Initialize(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
 				void Run();
 
 			protected:
@@ -56,8 +62,9 @@ namespace NETWORK {
 				void Destroy();
 
 			private:
+				void InitializeWinSock();
 				bool InitializeHandles();
-				bool InitializeSession(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
+				bool InitializeSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
 				void CreateWorkerThread();
 
 			private:
@@ -65,6 +72,12 @@ namespace NETWORK {
 
 			private:
 				void PacketForwardingLoop(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx);
+
+			public:
+				void InsertNewPacketProcessor(const uint8_t& Key, const std::function<void(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const)>& Value) {
+					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ProcessorListLock);
+					m_PacketProcessors.insert(std::make_pair(Key, Value));
+				}
 
 			};
 
