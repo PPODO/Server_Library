@@ -29,6 +29,17 @@ namespace NETWORK {
 		namespace UDPIP {
 			static const size_t REPEAT_COUNT_FOR_RELIABLE_SEND = 12;
 
+			struct PEERINFO {
+			public:
+				FUNCTIONS::SOCKADDR::CSocketAddress m_RemoteAddress;
+				uint16_t m_LastPacketNumber;
+
+			public:
+				PEERINFO() : m_LastPacketNumber(0) {};
+				PEERINFO(const FUNCTIONS::SOCKADDR::CSocketAddress& Address, const uint16_t& LastPacketNumber) : m_RemoteAddress(Address), m_LastPacketNumber(LastPacketNumber) {};
+
+			};
+
 			class CUDPIPSocket : public BASESOCKET::CBaseSocket {
 			private:
 				HANDLE m_hSendCompleteEvent;
@@ -52,7 +63,7 @@ namespace NETWORK {
 				virtual ~CUDPIPSocket() override;
 
 			public:
-				bool WriteToQueue(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure);
+				bool WriteToQueue(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure);
 				bool WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure);
 				bool WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const uint16_t& SendDataLength);
 

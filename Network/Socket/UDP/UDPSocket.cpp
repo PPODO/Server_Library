@@ -54,7 +54,7 @@ CUDPIPSocket::~CUDPIPSocket() {
 	}
 }
 
-bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteToQueue(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
+bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteToQueue(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
 	try {
 		if (auto ReliableData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::ReliableData(SendPacketStructure, SendAddress); m_ReliableDataQueue.Push(ReliableData)) {
 			return SetEvent(m_hNewReliableDataEvent);

@@ -105,7 +105,7 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTC
 				uint16_t RecvBytes = 0;
 				if (m_TCPIPSocket->Read(ReceivedBuffer + RemainReceivedBytes, RecvBytes)) {
 					RemainReceivedBytes += RecvBytes;
-					PacketForwardingLoop(ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber);
+					PacketForwardingLoop(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber);
 				}
 			}
 			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
@@ -135,9 +135,9 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUD
 
 			if (NetworkEvent.lNetworkEvents & FD_READ) {
 				uint16_t RecvBytes = 0;
-				if (m_TCPIPSocket->Read(ReceivedBuffer + RemainReceivedBytes, RecvBytes)) {
+				if (m_UDPIPSocket->ReadFrom(ReceivedBuffer + RemainReceivedBytes, RecvBytes)) {
 					RemainReceivedBytes += RecvBytes;
-					PacketForwardingLoop(ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber);
+					PacketForwardingLoop(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber);
 				}
 			}
 			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
@@ -148,7 +148,7 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUD
 	}
 }
 
-void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(char* const ReceivedBuffer, int16_t& RemainReceivedBytes, int16_t& LastReceivedPacketNumber) {
+void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, char* const ReceivedBuffer, int16_t& RemainReceivedBytes, int16_t& LastReceivedPacketNumber) {
 	using namespace NETWORK::PACKET;
 
 	while (true) {
@@ -161,7 +161,10 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(char
 			RemainBytes -= DETAIL::PACKET_INFORMATION::GetSize();
 		}
 
-		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastPacketNumber) {
+		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastPacketNumber + 1) {
+			if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
+				LastReceivedPacketNumber = LastPacketNumber + 1;
+			}
 			uint16_t TotalBytes = (PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize);
 
 			CopyMemory(PacketStructure.m_PacketData, ReceivedBuffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
@@ -171,8 +174,6 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(char
 			//FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
 
 			//m_Queue.Push(QueueData);
-
-			LastReceivedPacketNumber = LastPacketNumber + 1;
 			RemainReceivedBytes -= TotalBytes;
 			MoveMemory(ReceivedBuffer, ReceivedBuffer + TotalBytes, RemainReceivedBytes);
 		}

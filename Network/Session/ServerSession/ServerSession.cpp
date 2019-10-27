@@ -75,11 +75,14 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterIOCompletionPort(c
 	return true;
 }
 
-void NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterNewPeer(const FUNCTIONS::SOCKADDR::CSocketAddress& NewPeer) {
+void NETWORK::SESSION::SERVERSESSION::CServerSession::UpdatePeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress, const uint16_t& UpdatedPacketNumber) {
 	FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
 
-	if (auto Iterator = std::find_if(m_ConnectedPeers.cbegin(), m_ConnectedPeers.cend(), [&NewPeer](const FUNCTIONS::SOCKADDR::CSocketAddress& Address) -> bool { if (NewPeer == Address) { return true; } return false;  }); Iterator == m_ConnectedPeers.cend()) {
-		m_ConnectedPeers.emplace_back(NewPeer);
+	if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
+		Iterator->m_LastPacketNumber = UpdatedPacketNumber;
+	}
+	else {
+		m_ConnectedPeers.emplace_back(PeerAddress, UpdatedPacketNumber);
 		FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
 	}
 }

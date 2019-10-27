@@ -2,6 +2,7 @@
 #include <Network/Socket/TCP/TCPSocket.h>
 #include <Network/Socket/UDP/UDPSocket.h>
 #include <thread>
+#include <vector>
 #include <array>
 
 namespace NETWORK {
@@ -30,7 +31,7 @@ namespace NETWORK {
 				void EventSelectProcessorForUDP(const HANDLE& SelectEventHandle);
 
 			private:
-				void PacketForwardingLoop(char* const ReceivedBuffer, int16_t& ReceivedBytes, int16_t& LastReceivedPacketNumber);
+				void PacketForwardingLoop(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, char* const ReceivedBuffer, int16_t& ReceivedBytes, int16_t& LastReceivedPacketNumber);
 
 			public:
 				explicit CEventSelect(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress);
@@ -52,7 +53,7 @@ namespace NETWORK {
 					}
 					return false;
 				}
-				inline bool SendTo(const PACKET::PACKET_STRUCTURE& PacketStructure) {
+				inline bool SendTo(PACKET::PACKET_STRUCTURE& PacketStructure) {
 					if (m_UDPIPSocket) {
 						return m_UDPIPSocket->WriteTo(m_ServerAddress, PacketStructure);
 					}

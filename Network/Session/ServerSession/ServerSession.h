@@ -22,7 +22,7 @@ namespace NETWORK {
 
 			private:
 				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ConnectionListLock;
-				std::vector<FUNCTIONS::SOCKADDR::CSocketAddress> m_ConnectedPeers;
+				std::vector<NETWORK::SOCKET::UDPIP::PEERINFO> m_ConnectedPeers;
 
 			public:
 				explicit CServerSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
@@ -64,7 +64,8 @@ namespace NETWORK {
 				}
 
 				inline bool SendTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
-					if (m_UDPSocket) {
+					if (auto PeerInfo = GetPeerInformation(SendAddress); m_UDPSocket) {
+						SendPacketStructure.m_PacketInformation.m_PacketNumber = PeerInfo.m_LastPacketNumber;
 						return m_UDPSocket->WriteToQueue(SendAddress, SendPacketStructure);
 					}
 					return false;
@@ -82,7 +83,17 @@ namespace NETWORK {
 
 			public:
 				bool RegisterIOCompletionPort(const HANDLE& hIOCP);
-				void RegisterNewPeer(const FUNCTIONS::SOCKADDR::CSocketAddress& NewPeer);
+				void UpdatePeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress, const uint16_t& UpdatedPacketNumber);
+
+			public:
+				NETWORK::SOCKET::UDPIP::PEERINFO GetPeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
+					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+
+					if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
+						return *Iterator;
+					}
+					return NETWORK::SOCKET::UDPIP::PEERINFO();
+				}
 
 			};
 
