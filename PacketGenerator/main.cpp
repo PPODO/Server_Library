@@ -133,15 +133,12 @@ int main(int argc, char* argv[]) {
 					}
 				}
 
-				PacketDefineFile << ") : NETWORK::PACKET::CPacket<C" << It.m_ProtocolName << ">(" << It.m_ProtocolType << ", MessageType), ";
+				PacketDefineFile << ") : NETWORK::PACKET::CPacket<C" << It.m_ProtocolName << ">(" << It.m_ProtocolType << ", MessageType)";
 
 				bool bIsCannnotUseMemberInit = false;
 				for (auto ParamIt = It.m_Parameters.cbegin(); ParamIt != It.m_Parameters.cend(); ++ParamIt) {
 					if (ParamIt->m_ArraySize == 0) {
-						PacketDefineFile << "m_" << ParamIt->m_Name << '(' << ParamIt->m_Name << ")";
-						if ((ParamIt + 1) != It.m_Parameters.cend()) {
-							PacketDefineFile << ", ";
-						}
+						PacketDefineFile << ", m_" << ParamIt->m_Name << '(' << ParamIt->m_Name << ")";
 					}
 					else {
 						bIsCannnotUseMemberInit = true;
@@ -152,13 +149,13 @@ int main(int argc, char* argv[]) {
 					PacketDefineFile << " {}; \n\n";
 				}
 				else {
+					PacketDefineFile << " {\n";
 					for (const auto& ParamIt : It.m_Parameters) {
 						if (ParamIt.m_ArraySize != 0) {
-							PacketDefineFile << " {\n";
 							PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
-							PacketDefineFile << "\t}; \n\n";
 						}
 					}
+					PacketDefineFile << "\t}; \n\n";
 				}
 
 				PacketDefineFile << "protected:\n";
