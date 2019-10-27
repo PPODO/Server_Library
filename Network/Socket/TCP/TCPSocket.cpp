@@ -1,5 +1,6 @@
 #include "TCPSocket.h"
 #include <Functions/Functions/Log/Log.h>
+#include "../../../Functions/Functions/Log/Log.h"
 #include <MSWSock.h>
 #pragma comment(lib, "mswsock.lib")
 
@@ -66,12 +67,14 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, con
 	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(SendData, DataLength)) {
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
+	return false;
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
 	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(PacketStructure)) {
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
+	return false;
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, const uint16_t& DataLength) {
@@ -80,6 +83,7 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, con
 
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
+	return false;
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) {
@@ -88,6 +92,7 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_S
 
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
+	return false;
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Read(char* const ReadBuffer, uint16_t& ReadedSize) {
