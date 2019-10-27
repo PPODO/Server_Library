@@ -71,7 +71,7 @@ namespace NETWORK {
 				void WorkerThread();
 
 			private:
-				void PacketForwardingLoop(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx);
+				void PacketForwardingLoop(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx);
 
 			public:
 				void InsertNewPacketProcessor(const uint8_t& Key, const std::function<void(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const)>& Value) {
