@@ -1,6 +1,6 @@
 #pragma once
 #include <Functions/Functions/Log/Log.h>
-#include "../CriticalSection/CriticalSection.h"
+#include <Functions/Functions/CriticalSection/CriticalSection.h>
 #include <iostream>
 #include <memory>
 #include <vector>

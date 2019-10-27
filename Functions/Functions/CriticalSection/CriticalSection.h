@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 #include <Windows.h>
-#include "../Uncopyable/Uncopyable.h"
+#include <Functions/Functions/Uncopyable/Uncopyable.h>
 
 namespace FUNCTIONS {
 	namespace CRITICALSECTION {

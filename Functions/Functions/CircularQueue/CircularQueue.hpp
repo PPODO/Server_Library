@@ -1,5 +1,5 @@
 #pragma once
-#include "../CriticalSection/CriticalSection.h"
+#include <Functions/Functions/CriticalSection/CriticalSection.h>
 #include <Functions/Functions/MemoryPool/MemoryPool.hpp>
 
 namespace FUNCTIONS {
