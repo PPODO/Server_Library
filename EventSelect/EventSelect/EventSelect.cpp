@@ -185,7 +185,7 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(cons
 
 bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const UDPSocket, const FUNCTIONS::SOCKADDR::CSocketAddress& RemoteAddress, char* const ReceviedBuffer, uint16_t& ReceivedBytes, int16_t& UpdatedPacketNumber) {
 	if (UDPSocket && ReceviedBuffer) {
-		const int32_t ReadedValue = *reinterpret_cast<const int16_t*>(ReceviedBuffer);
+		const int32_t ReadedValue = *reinterpret_cast<const int32_t*>(ReceviedBuffer);
 		const int16_t AckValue = static_cast<int16_t>(ReadedValue);
 		const int16_t PacketNumber = static_cast<int16_t>((ReadedValue >> 16));
 
