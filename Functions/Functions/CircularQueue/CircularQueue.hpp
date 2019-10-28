@@ -50,6 +50,10 @@ namespace FUNCTIONS {
 			}
 
 			bool Pop() {
+				if (IsEmpty()) {
+					return false;
+				}
+
 				CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
 
 				size_t TempHead = (m_Head + 1) % MAX_QUEUE_LENGTH;
@@ -63,6 +67,10 @@ namespace FUNCTIONS {
 			}
 
 			bool Pop(DATATYPE& InData) {
+				if (IsEmpty()) {
+					return false;
+				}
+
 				CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
 
 				size_t TempHead = (m_Head + 1) % MAX_QUEUE_LENGTH;
