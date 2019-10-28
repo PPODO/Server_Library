@@ -184,7 +184,7 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::PacketForwardingLoop(const UTIL::BASESO
 			RemainBytes -= DETAIL::PACKET_INFORMATION::GetSize();
 		}
 
-		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastReceivedPacketNumber + 1) {
+		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastReceivedPacketNumber) {
 			if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
 				ReceiveOverlappedEx->m_LastReceivedPacketNumber = LastReceivedPacketNumber + 1;
 			}
