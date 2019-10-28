@@ -69,11 +69,12 @@ bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteToQueue(const FUNCTIONS::SOCKADD
 bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
 	char TempBuffer[::MAX_RECEIVE_BUFFER_SIZE] = { "\0" };
 	int16_t AckValue = 0;
+	int32_t Result = ((SendPacketStructure.m_PacketInformation.m_PacketNumber << 16) | AckValue);
 
-	CopyMemory(TempBuffer, reinterpret_cast<const char* const>(&AckValue), sizeof(AckValue));
-	CopyMemory(TempBuffer + sizeof(AckValue), reinterpret_cast<const char* const>(&SendPacketStructure.m_PacketInformation), SendPacketStructure.m_PacketInformation.GetSize());
-	CopyMemory(TempBuffer + sizeof(AckValue) + SendPacketStructure.m_PacketInformation.GetSize(), SendPacketStructure.m_PacketData, SendPacketStructure.m_PacketInformation.m_PacketSize);
-	uint16_t TotalSendBytes = sizeof(AckValue) + SendPacketStructure.m_PacketInformation.GetSize() + SendPacketStructure.m_PacketInformation.m_PacketSize;
+	CopyMemory(TempBuffer, reinterpret_cast<const char* const>(&Result), sizeof(Result));
+	CopyMemory(TempBuffer + sizeof(Result), reinterpret_cast<const char* const>(&SendPacketStructure.m_PacketInformation), SendPacketStructure.m_PacketInformation.GetSize());
+	CopyMemory(TempBuffer + sizeof(Result) + SendPacketStructure.m_PacketInformation.GetSize(), SendPacketStructure.m_PacketData, SendPacketStructure.m_PacketInformation.m_PacketSize);
+	uint16_t TotalSendBytes = sizeof(Result) + SendPacketStructure.m_PacketInformation.GetSize() + SendPacketStructure.m_PacketInformation.m_PacketSize;
 
 	return UTIL::UDPIP::SendTo(GetSocket(), SendAddress, TempBuffer, TotalSendBytes);
 }
@@ -86,8 +87,7 @@ bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReadFrom(char* const ReceivedBuffer, 
 	if (ReceivedBuffer) {
 		UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped;
 		if (UTIL::UDPIP::ReceiveFrom(GetSocket(), ReceivedBuffer, RecvBytes, Overlapped)) {
-
-			return true;// UTIL::UDPIP::CheckAck();
+			return true;
 		}
 	}
 	return false;
@@ -106,7 +106,7 @@ void NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReliableThread() {
 	SetEvent(m_hWaitForInitializeThreadEvent);
 
 	while (m_ThreadRunState) {
-		if (!m_ReliableDataQueue.IsEmpty()) {
+		if (m_ReliableDataQueue.IsEmpty()) {
 			if (WaitForSingleObject(m_hNewReliableDataEvent, INFINITE) != WAIT_OBJECT_0) {
 				CLog::WriteLog(L"");
 				continue;
@@ -117,22 +117,23 @@ void NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReliableThread() {
 			for (size_t i = 0; i < REPEAT_COUNT_FOR_RELIABLE_SEND; i++) {
 				if (WriteTo(QueueData->m_SendAddress, QueueData->m_SendPacketStructure)) {
 					if (WaitForSingleObject(m_hSendCompleteEvent, 10) == WAIT_OBJECT_0) {
-						delete QueueData;
 						break;
 					}
 				}
 			}
+			delete QueueData;
 		}
 	}
 }
 
 bool NETWORK::UTIL::UDPIP::SendTo(const::SOCKET& Socket, const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendBuffer, const uint16_t& SendBytes) {
 	UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX SendOverlapped;
+	DWORD SendedBytes;
 	WSABUF SendDataBuffer;
 	SendDataBuffer.buf = const_cast<char* const>(SendBuffer);
 	SendDataBuffer.len = SendBytes;
 
-	if (WSASendTo(Socket, &SendDataBuffer, 1, reinterpret_cast<LPDWORD>(&const_cast<uint16_t&>(SendBytes)), 0, &SendAddress, SendAddress.GetSize(), &SendOverlapped.m_Overlapped, nullptr) == SOCKET_ERROR) {
+	if (WSASendTo(Socket, &SendDataBuffer, 1, &SendedBytes, 0, &SendAddress, SendAddress.GetSize(), &SendOverlapped.m_Overlapped, nullptr) == SOCKET_ERROR) {
 		if (WSAGetLastError() != WSA_IO_PENDING && WSAGetLastError() != WSAEWOULDBLOCK) {
 			CLog::WriteLog(L"WSA Send To : Failed To WSA Send To! - %d", WSAGetLastError());
 			return false;

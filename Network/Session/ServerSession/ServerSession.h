@@ -103,8 +103,6 @@ namespace NETWORK {
 	namespace UTIL {
 		namespace UDPIP {
 			bool CheckAck(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& Overlapped);
-
-			//bool CheckAck(/* For Client Session */);
 		}
 	}
 }

@@ -83,9 +83,6 @@ namespace NETWORK {
 			bool SendTo(const ::SOCKET& Socket, const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendBuffer, const uint16_t& SendBytes);
 
 			bool ReceiveFrom(const ::SOCKET& Socket, char* const ReceivedBuffer, uint16_t& ReceivedBytes, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& ReceiveOverlapped);
-			
-			// for client
-			//bool CheckAck(char* const ReceviedBuffer);
 		}
 	}
 }

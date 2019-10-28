@@ -42,14 +42,14 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::Initialize(const FUNCTIONS
 }
 
 bool NETWORK::SESSION::SERVERSESSION::CServerSession::Initialize(const CServerSession& ServerSession) {
-	if (!m_TCPSocket->Accept(*ServerSession.m_TCPSocket, m_AcceptOverlapped)) {
+	if (m_TCPSocket && !m_TCPSocket->Accept(*ServerSession.m_TCPSocket, m_AcceptOverlapped)) {
 		return false;
 	}
 	return true;
 }
 
 bool NETWORK::SESSION::SERVERSESSION::CServerSession::SocketRecycle() {
-	if (!m_TCPSocket->SocketRecycling(m_DisconnectOverlapped)) {
+	if (m_TCPSocket && !m_TCPSocket->SocketRecycling(m_DisconnectOverlapped)) {
 		return false;
 	}
 	return true;
@@ -89,16 +89,21 @@ void NETWORK::SESSION::SERVERSESSION::CServerSession::UpdatePeerInformation(cons
 
 bool NETWORK::UTIL::UDPIP::CheckAck(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& Overlapped) {
 	if (NETWORK::SESSION::SERVERSESSION::CServerSession* Owner = Overlapped.m_Owner; Overlapped.m_SocketMessage) {
-		const int16_t AckValue = *reinterpret_cast<const int16_t*>(Overlapped.m_SocketMessage);
+		const int32_t ReadedValue = *reinterpret_cast<const int16_t*>(Overlapped.m_SocketMessage);
+		const int16_t AckValue = static_cast<int16_t>(ReadedValue);
+		const int16_t PacketNumber = static_cast<int16_t>((ReadedValue >> 16));
 
 		if (AckValue == 9999) {
+			Overlapped.m_LastReceivedPacketNumber = PacketNumber;
 			return Owner->SendCompletion(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP);
 		}
 		else if (AckValue == 0) {
 			int16_t AckNumber = 9999;
-			Overlapped.m_RemainReceivedBytes -= sizeof(AckValue);
-			MoveMemory(Overlapped.m_SocketMessage, Overlapped.m_SocketMessage + sizeof(AckNumber), Overlapped.m_RemainReceivedBytes);
-			return Owner->SendTo(Overlapped.m_RemoteAddress, reinterpret_cast<const char* const>(&AckNumber), sizeof(int16_t));
+			int16_t PacketNumber = Overlapped.m_LastReceivedPacketNumber + 1;
+			int32_t Result = ((PacketNumber << 16) | AckNumber);
+			Overlapped.m_RemainReceivedBytes -= sizeof(ReadedValue);
+			MoveMemory(Overlapped.m_SocketMessage, Overlapped.m_SocketMessage + sizeof(ReadedValue), Overlapped.m_RemainReceivedBytes);
+			return Owner->SendTo(Overlapped.m_RemoteAddress, reinterpret_cast<const char* const>(&Result), sizeof(int32_t));
 		}
 	}
 	return false;
