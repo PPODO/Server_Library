@@ -78,21 +78,18 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_S
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, const uint16_t& DataLength) {
-	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(SendData, DataLength)) {
-		UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX SendOverlapped;
+	UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX SendOverlapped;
 
-		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
-	}
-	return false;
+	return UTIL::TCPIP::Send(GetSocket(), SendData, DataLength, SendOverlapped);
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) {
-	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(PacketStructure)) {
-		UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX SendOverlapped;
+	UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX SendOverlapped;
+	char Buffer[NETWORK::SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE] = { "\0" };
+	CopyMemory(Buffer, reinterpret_cast<const char*>(&PacketStructure.m_PacketInformation), PacketStructure.m_PacketInformation.GetSize());
+	CopyMemory(Buffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketData, PacketStructure.m_PacketInformation.m_PacketSize);
 
-		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
-	}
-	return false;
+	return UTIL::TCPIP::Send(GetSocket(), Buffer, PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize, SendOverlapped);
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Read(char* const ReadBuffer, uint16_t& ReadedSize) {
