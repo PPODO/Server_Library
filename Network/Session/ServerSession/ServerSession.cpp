@@ -82,8 +82,20 @@ void NETWORK::SESSION::SERVERSESSION::CServerSession::UpdatePeerInformation(cons
 		Iterator->m_LastPacketNumber = UpdatedPacketNumber;
 	}
 	else {
-		m_ConnectedPeers.emplace_back(PeerAddress, UpdatedPacketNumber);
 		FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+		m_ConnectedPeers.emplace_back(PeerAddress, UpdatedPacketNumber);
+	}
+}
+
+NETWORK::SOCKET::UDPIP::PEERINFO NETWORK::SESSION::SERVERSESSION::CServerSession::GetPeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
+	FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+
+	if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
+		return *Iterator;
+	}
+	else {
+		FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+		return m_ConnectedPeers.emplace_back(PeerAddress, 0);
 	}
 }
 
