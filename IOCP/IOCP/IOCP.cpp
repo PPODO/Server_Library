@@ -257,6 +257,7 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(UTIL::SESSION::SERVERSE
 		ReceiveFromOverlappedEx->m_RemainReceivedBytes += RecvBytes;
 
 		if (UTIL::UDPIP::CheckAck(*ReceiveFromOverlappedEx)) {
+			ReceiveFromOverlappedEx->m_LastReceivedPacketNumber = Owner->GetPeerInformation(ReceiveFromOverlappedEx->m_RemoteAddress).m_LastPacketNumber;
 			PacketForwardingLoop(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceiveFromOverlappedEx);
 			Owner->UpdatePeerInformation(ReceiveFromOverlappedEx->m_RemoteAddress, ReceiveFromOverlappedEx->m_LastReceivedPacketNumber);
 		}
