@@ -3,7 +3,7 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) : m_hStopEvent(INVALID_HANDLE_VALUE), m_hTCPSelectEvent(INVALID_HANDLE_VALUE), m_hUDPSelectEvent(INVALID_HANDLE_VALUE), m_ThreadRunState(1), m_ServerAddress(ServerAddress) {
+NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) : m_hStopEvent(INVALID_HANDLE_VALUE), m_hTCPSelectEvent(INVALID_HANDLE_VALUE), m_hUDPSelectEvent(INVALID_HANDLE_VALUE), m_ThreadRunState(1), m_ServerAddress(ServerAddress), m_NextSendPacketNumber(0) {
 	try {
 		if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) != 0) {
 			throw FUNCTIONS::EXCEPTION::bad_wsastart();
@@ -123,7 +123,6 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUD
 	HANDLE hEvents[2] = { m_hStopEvent, SelectEventHandle };
 	char ReceivedBuffer[NETWORK::SOCKET::BASESOCKET::MAX_RECEIVE_BUFFER_SIZE] = { "\0" };
 	int16_t RemainReceivedBytes = 0;
-	int16_t LastReceivedPacketNumber = 0;
 
 	while (m_ThreadRunState) {
 		DWORD Result = WaitForMultipleObjects(2, hEvents, false, INFINITE);
@@ -135,9 +134,9 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUD
 
 			if (NetworkEvent.lNetworkEvents & FD_READ) {
 				uint16_t RecvBytes = 0;
-				if (m_UDPIPSocket->ReadFrom(ReceivedBuffer + RemainReceivedBytes, RecvBytes)) {
+				if (m_UDPIPSocket->ReadFrom(ReceivedBuffer + RemainReceivedBytes, RecvBytes) && UTIL::UDPIP::CheckAck(m_UDPIPSocket.get(), m_ServerAddress, ReceivedBuffer, RecvBytes, m_NextSendPacketNumber)) {
 					RemainReceivedBytes += RecvBytes;
-					PacketForwardingLoop(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber);
+					PacketForwardingLoop(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceivedBuffer, RemainReceivedBytes, m_NextSendPacketNumber);
 				}
 			}
 			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
@@ -161,7 +160,7 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(cons
 			RemainBytes -= DETAIL::PACKET_INFORMATION::GetSize();
 		}
 
-		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastPacketNumber + 1) {
+		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastPacketNumber) {
 			if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
 				LastReceivedPacketNumber = LastPacketNumber + 1;
 			}
@@ -182,4 +181,26 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(cons
 		}
 
 	}
+}
+
+bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const UDPSocket, const FUNCTIONS::SOCKADDR::CSocketAddress& RemoteAddress, char* const ReceviedBuffer, uint16_t& ReceivedBytes, int16_t& UpdatedPacketNumber) {
+	if (UDPSocket && ReceviedBuffer) {
+		const int32_t ReadedValue = *reinterpret_cast<const int16_t*>(ReceviedBuffer);
+		const int16_t AckValue = static_cast<int16_t>(ReadedValue);
+		const int16_t PacketNumber = static_cast<int16_t>((ReadedValue >> 16));
+
+		if (AckValue == 9999) {
+			UpdatedPacketNumber = PacketNumber;
+			return UDPSocket->SendCompletion();
+		}
+		else if (AckValue == 0) {
+			int16_t AckNumber = 9999;
+			int16_t PacketNumber = UpdatedPacketNumber + 1;
+			int32_t Result = ((PacketNumber << 16) | AckNumber);
+			ReceivedBytes -= sizeof(ReadedValue);
+			MoveMemory(ReceviedBuffer, ReceviedBuffer + sizeof(ReadedValue), ReceivedBytes);
+			return UDPSocket->WriteTo(RemoteAddress, reinterpret_cast<const char* const>(&Result), sizeof(int32_t));
+		}
+	}
+	return false;
 }

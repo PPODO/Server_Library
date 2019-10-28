@@ -22,6 +22,10 @@ namespace NETWORK {
 				std::vector<std::thread> m_EventSelectThread;
 
 			private:
+				// For UDP
+				int16_t m_NextSendPacketNumber;
+
+			private:
 				FUNCTIONS::SOCKADDR::CSocketAddress m_ServerAddress;
 				std::unique_ptr<NETWORK::SOCKET::TCPIP::CTCPIPSocket> m_TCPIPSocket;
 				std::unique_ptr<NETWORK::SOCKET::UDPIP::CUDPIPSocket> m_UDPIPSocket;
@@ -55,7 +59,8 @@ namespace NETWORK {
 				}
 				inline bool SendTo(PACKET::PACKET_STRUCTURE& PacketStructure) {
 					if (m_UDPIPSocket) {
-						return m_UDPIPSocket->WriteTo(m_ServerAddress, PacketStructure);
+						PacketStructure.m_PacketInformation.m_PacketNumber = m_NextSendPacketNumber++;
+						return m_UDPIPSocket->WriteToQueue(m_ServerAddress, PacketStructure);
 					}
 					return false;
 				}
@@ -83,10 +88,14 @@ namespace NETWORK {
 					return EventSelect.SendTo(DataBuffer, DataLength);
 				}
 				inline bool SendTo(NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect& EventSelect, const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) {
-					return EventSelect.SendTo(PacketStructure);
+					return EventSelect.SendTo(const_cast<NETWORK::PACKET::PACKET_STRUCTURE&>(PacketStructure));
 				}
 
 			}
+		}
+
+		namespace UDPIP {
+			bool CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const UDPSocket, const FUNCTIONS::SOCKADDR::CSocketAddress& RemoteAddress, char* const ReceviedBuffer, uint16_t& ReceivedBytes, int16_t& UpdatedPacketNumber);
 		}
 	}
 }
