@@ -35,7 +35,7 @@ namespace NETWORK {
 
 			public:
 				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(USHRT_MAX), m_PacketNumber(0) {};
-				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize, const uint16_t& PacketNumber) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize), m_PacketNumber(PacketNumber) {};
+				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize), m_PacketNumber(0) {};
 
 			public:
 				static size_t GetSize() { return sizeof(PACKET_INFORMATION); }
@@ -96,7 +96,7 @@ namespace NETWORK {
 				}
 
 				const NETWORK::PACKET::BASEPACKET::CBasePacket* Temp = reinterpret_cast<const NETWORK::PACKET::BASEPACKET::CBasePacket*>(&Packet);
-				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, Temp->m_MessageType, TempBuffer.length(), 1), TempBuffer);
+				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, Temp->m_MessageType, TempBuffer.length()), TempBuffer);
 			}
 
 			template<typename T>
