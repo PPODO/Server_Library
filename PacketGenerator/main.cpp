@@ -20,6 +20,7 @@ public:
 	const std::string m_ProtocolType;
 	std::string m_ProtocolName;
 	std::vector<PARAMETER> m_Parameters;
+	std::vector<std::string> m_MessageTypes;
 
 public:
 	PROTOCOL(const std::string& ProtocolType, const std::string& ProtocolName) : m_ProtocolType(ProtocolType), m_ProtocolName(ProtocolName) {};
@@ -34,6 +35,7 @@ int main(int argc, char* argv[]) {
 		if (ProtocolFile.is_open()) {
 			std::string ReadedLine;
 			bool bIsParameterOpen = false;
+			bool bIsMessageTypeOpen = false;
 
 			while (std::getline(ProtocolFile, ReadedLine)) {
 				std::string ResultWithoutSpaces;
@@ -67,16 +69,31 @@ int main(int argc, char* argv[]) {
 
 					// 시작중이라면
 					if (bIsParameterOpen) {
-						size_t CenterIndex = 0;
-						if ((CenterIndex = ResultWithoutSpaces.find('-')) != std::string::npos) {
-							size_t ArraySizeIndex = 0;
-							uint16_t ArraySize = 0;
-							if ((ArraySizeIndex = ResultWithoutSpaces.find('[')) != std::string::npos) {
-								ArraySize = std::stoi(ResultWithoutSpaces.substr(ArraySizeIndex + 1, ResultWithoutSpaces.length() - ArraySizeIndex - 1));
+						if (ResultWithoutSpaces.find('{') != std::string::npos) {
+							bIsMessageTypeOpen = true;
+							continue;
+						}
+
+						if (ResultWithoutSpaces.find('}') != std::string::npos) {
+							bIsMessageTypeOpen = false;
+							continue;
+						}
+						
+						if (bIsMessageTypeOpen) {
+							Protocols.back().m_MessageTypes.emplace_back(ResultWithoutSpaces);
+						}
+						else {
+							size_t CenterIndex = 0;
+							if ((CenterIndex = ResultWithoutSpaces.find('-')) != std::string::npos) {
+								size_t ArraySizeIndex = 0;
+								uint16_t ArraySize = 0;
+								if ((ArraySizeIndex = ResultWithoutSpaces.find('[')) != std::string::npos) {
+									ArraySize = std::stoi(ResultWithoutSpaces.substr(ArraySizeIndex + 1, ResultWithoutSpaces.length() - ArraySizeIndex - 1));
+								}
+								std::string Type = ResultWithoutSpaces.substr(0, CenterIndex);
+								std::string Name = ResultWithoutSpaces.substr(CenterIndex + 1, ArraySizeIndex - 5);
+								Protocols.back().m_Parameters.emplace_back(Type, Name, ArraySize);
 							}
-							std::string Type = ResultWithoutSpaces.substr(0, CenterIndex);
-							std::string Name = ResultWithoutSpaces.substr(CenterIndex + 1, ArraySizeIndex - 5);
-							Protocols.back().m_Parameters.emplace_back(Type, Name, ArraySize);
 						}
 					}
 				}
@@ -109,6 +126,16 @@ int main(int argc, char* argv[]) {
 				PacketDefineFile << "#pragma comment(lib, \"Network.lib\")\n";
 				PacketDefineFile << "#include \"" << HeaderName << "\"\n";
 				PacketDefineFile << "#include <Network/Packet/BasePacket.hpp>\n\n";
+
+				PacketDefineFile << "enum E" << It.m_ProtocolName << "MESSAGETYPE {\n";
+				for (auto Iterator = It.m_MessageTypes.cbegin(); Iterator != It.m_MessageTypes.cend(); ++Iterator) {
+					PacketDefineFile << '\t' << "EMT_" << (*Iterator);
+					if ((Iterator + 1) != It.m_MessageTypes.cend()) {
+						PacketDefineFile << ',';
+					}
+					PacketDefineFile << '\n';
+				}
+				PacketDefineFile << "};\n\n";
 
 				PacketDefineFile << "struct C" << It.m_ProtocolName << " : public NETWORK::PACKET::CPacket<C" << It.m_ProtocolName << "> {\n";
 				PacketDefineFile << "\tfriend boost::serialization::access;\n";
