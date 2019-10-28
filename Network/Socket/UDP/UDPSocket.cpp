@@ -156,5 +156,7 @@ bool NETWORK::UTIL::UDPIP::ReceiveFrom(const ::SOCKET& Socket, char* const Recei
 			return false;
 		}
 	}
+
+	ReceivedBytes = RecvBytes;
 	return true;
 }
