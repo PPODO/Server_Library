@@ -141,7 +141,7 @@
 
  ![2](https://user-images.githubusercontent.com/37787879/67799475-c199dc00-fac8-11e9-8e37-0220f7ff88cc.png)
 
- 프로젝트 폴더에 .log 파일이 생성됨
+ 프로젝트 폴더에 .log 파일이 생성됨(M - 멀티바이트, U - 유니코드)
 
  ![3](https://user-images.githubusercontent.com/37787879/67799522-d8d8c980-fac8-11e9-957b-af94f37b2d43.png)
 
@@ -150,6 +150,41 @@
 
 ### Memory Pool
   * 메모리 할당이 빈번할 때 사용할 수 있습니다. new/delete의 오버헤드를 줄여 프로그램의 실행속도를 높입니다.
+  * 스마트포인터 사용이 가능합니다.
+ ``` c
+ #include <iostream>
+ #include <Functions/Functions/MemoryPool/MemoryPool.hpp>
+
+ class TEST : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<TEST> {
+ private:
+     int a;
+     float b;
+     char c;
+
+ public:
+     TEST(int _a, float _b, char _c) : a(_a), b(_b), c(_c) {}
+
+ public:
+     void Print() {
+         std::cout << a << '\t' << b << '\t' << c << std::endl;
+     }
+
+ };
+
+ int main() {
+     TEST* T1 = new TEST(1, 5.f, 'A');
+     std::unique_ptr<TEST> T2 = std::make_unique<TEST>(64, 1235.f, 'B');
+     std::shared_ptr<TEST> T3 = std::make_shared<TEST>(123, 565.f, 'C');
+
+     T1->Print();
+     T2->Print();
+     T3->Print();
+
+     delete T1;	 
+	 
+     return 0;
+ }
+ ```
 
 ### Minidump
   * 프로그램이 모종의 이유로 종료되었을 때의 상황을 기록한 덤프파일을 생성해줍니다.
