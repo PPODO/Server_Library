@@ -33,17 +33,17 @@
  #include <Functions/Functions/CircularQueue/CircularQueue.hpp>
 
  namespace FUNCTIONS::CIRCULARQUEUE::QUEUEDATA {
-      struct TESTDATA : public DETAIL::BaseData<TESTDATA> {
-      public:
-	  int A;
+     struct TESTDATA : public DETAIL::BaseData<TESTDATA> {
+     public:
+         int A;
 
-      public:
-	  TESTDATA() : A(0) {}
-	  TESTDATA(const int a) : A(a) {
+     public:
+         TESTDATA() : A(0) {}
+         TESTDATA(const int a) : A(a) {
 
-	  }
+         }
 
-      };
+     };
  }
 
  int main() {
@@ -75,10 +75,10 @@
      Lock.UnLock();
 
      {
-	  FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock2(Lock);
+          FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock2(Lock);
           // 생성자가 호출됨과 동시에 Lock
 		
-	  // 소멸자가 호출됨과 동시에 UnLock
+          // 소멸자가 호출됨과 동시에 UnLock
      }	 
 	 
      return 0;
@@ -93,16 +93,16 @@
  namespace FUNCTIONS::EXCEPTION {
      struct test_exception : public std::exception {
      public:
-	 test_exception(const char* const Message) : std::exception(Message) {};
+         test_exception(const char* const Message) : std::exception(Message) {};
      };
  }
 
  int main() {
      try {
-	 throw FUNCTIONS::EXCEPTION::test_exception("Test!");
+         throw FUNCTIONS::EXCEPTION::test_exception("Test!");
      }
      catch (const std::exception& What) {
-	 std::cout << What.what();
+         std::cout << What.what();
      } 
 	 
      return 0;
@@ -113,6 +113,37 @@
   * 텍스트를 콘솔에 출력해 주는 용도로 사용합니다.
   * 멀티스레드에서 사용 가능합니다.
   * 출력된 텍스트는 .log 파일로 프로젝트 폴더에 생성됩니다.
+ ``` c
+ #include <iostream>
+ #include <Functions/Functions/Log/Log.h>
+
+ int main() {
+
+     // 멀티바이트
+     FUNCTIONS::LOG::CLog::WriteLog("HI %d", 1);
+     FUNCTIONS::LOG::CLog::WriteLog("HI %f", 1.2f);
+     FUNCTIONS::LOG::CLog::WriteLog("HI %c", 'A');
+     FUNCTIONS::LOG::CLog::WriteLog("HI %s", "ASD");
+
+     // 유니코드
+     FUNCTIONS::LOG::CLog::WriteLog(L"HI %d", 1);
+     FUNCTIONS::LOG::CLog::WriteLog(L"HI %f", 1.663f);
+     FUNCTIONS::LOG::CLog::WriteLog(L"HI %C", 'B');
+     FUNCTIONS::LOG::CLog::WriteLog(L"HI %S", "QWE");	 
+	 
+     return 0;
+ }
+ ```
+
+ ![1](https://user-images.githubusercontent.com/37787879/67799427-ab8c1b80-fac8-11e9-9ca0-a285d16b51d3.png)
+ 
+ 콘솔에 로그가 출력됨
+
+ ![2](https://user-images.githubusercontent.com/37787879/67799475-c199dc00-fac8-11e9-8e37-0220f7ff88cc.png)
+
+ 프로젝트 폴더에 .log 파일이 생성됨
+
+ ![3](https://user-images.githubusercontent.com/37787879/67799522-d8d8c980-fac8-11e9-957b-af94f37b2d43.png)
 
 ### Memory Leak
   * 메모리 누수 체크를 위해 사용됩니다. 헤더파일만 포함하면 됩니다.
