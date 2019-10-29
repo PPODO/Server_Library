@@ -53,13 +53,14 @@
      auto ReturnVal = Queue.Push(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::TESTDATA(1));
 
      if (Queue.Pop()) {}
-     if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::TESTDATA Value; Queue.Pop(Value)) {}
+     if (decltype(ReturnVal) Value; Queue.Pop(Value)) {}
 
      if (Queue.IsEmpty()) {}	 
 	 
      return 0;
  }
  ```
+
 
 ### Critical Section
   * 기존의 CRITICAL_SECTION을 조금 더 사용하기 쉽게 래핑한 클래스입니다.
@@ -84,6 +85,8 @@
      return 0;
  }
  ```
+
+
 ### Exception
   * 예외들이 정의되어 있습니다.
  ``` c
@@ -108,6 +111,7 @@
      return 0;
  }
  ```
+
 
 ### Log
   * 텍스트를 콘솔에 출력해 주는 용도로 사용합니다.
@@ -145,8 +149,10 @@
 
  ![3](https://user-images.githubusercontent.com/37787879/67799522-d8d8c980-fac8-11e9-957b-af94f37b2d43.png)
 
+
 ### Memory Leak
   * 메모리 누수 체크를 위해 사용됩니다. 헤더파일만 포함하면 됩니다.
+
 
 ### Memory Pool
   * 메모리 할당이 빈번할 때 사용할 수 있습니다. new/delete의 오버헤드를 줄여 프로그램의 실행속도를 높입니다.
@@ -186,6 +192,7 @@
  }
  ```
 
+
 ### Minidump
   * 프로그램이 모종의 이유로 종료되었을 때의 상황을 기록한 덤프파일을 생성해줍니다.
   * 클래스 선언 없이 헤더파일만 include하면 됩니다.
@@ -215,14 +222,17 @@
  
  네이티브 전용으로 디버깅 했을 때
 
+
 ### MySQL
   * 
+
 
 ### SocketAddress
   * WinSock의 sockaddr 구조체를 사용하기 편하게 래핑한 클래스입니다.
  ``` c
 
  ```
+
 
 ### Uncopyable
   * 특정 클래스의 생성자를 통한 복사 및 대입을 통한 복사가 불가능하도록 만들 때 사용하는 클래스입니다.
