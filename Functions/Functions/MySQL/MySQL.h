@@ -10,46 +10,137 @@
 #include <vector>
 #include <map>
 
+namespace std {
+	std::string to_string(const char* const _Val) {
+		return std::string(_Val);
+	}
+}
+
 namespace FUNCTIONS {
+	namespace EXCEPTION {
+		struct vector_range : public std::exception {
+		public:
+			vector_range(const char* const Message) : std::exception(Message) {};
+		};
+
+	}
+
 	namespace UTIL {
 		namespace MYSQL {
 			namespace DETAIL {
-				struct INSERTDATA {
+				struct ROW {
+				public:
 					std::string m_FieldName;
 					std::string m_Value;
 
 				public:
-					INSERTDATA(const std::string& FieldName, int16_t Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, int32_t Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, int64_t Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, uint16_t Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, uint32_t Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, uint64_t Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, float Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, double Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, char Value) : m_FieldName(FieldName), m_Value(std::to_string(Value)) {};
-					INSERTDATA(const std::string& FieldName, const std::string& Value) : m_FieldName(FieldName), m_Value(Value) {};
+					ROW() : m_FieldName(), m_Value() {};
+					ROW(const std::string& FieldName, int16_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, int32_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, int64_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, uint16_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, uint32_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, uint64_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, float Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, double Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, char Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
+					ROW(const std::string& FieldName, const std::string& Value) : m_FieldName(FieldName), m_Value(std::move(Value)) {};
 
 				};
+
+				enum class ELOGICALTYPE {
+					ELT_NONE,
+					ELT_OR,
+					ELT_AND
+				};
+
+				enum class ECONDITIONTYPE {
+					ECT_NONE,
+					ECT_LIKE,
+					ECT_BETAND,
+					ECT_IN,
+					ECT_NOTNULL,
+					ECT_NULL
+				};
+
+				struct CONDITION {
+				public:
+					ECONDITIONTYPE m_ConditionType;
+					std::string m_FieldName;
+					std::vector<std::string> m_Values;
+
+				public:
+					CONDITION() : m_ConditionType(ECONDITIONTYPE::ECT_NONE) , m_FieldName() {};
+					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName) : m_ConditionType(Type), m_FieldName(std::move(FieldName)) {};
+					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName, std::vector<std::string>& Values) : m_ConditionType(Type), m_FieldName(std::move(FieldName)), m_Values(std::move(Values)) {};
+
+				public:
+					// can throw exception
+					std::string GetConditionResult() {
+						switch (m_ConditionType) {
+						case ECONDITIONTYPE::ECT_BETAND:
+							if (m_Values.size() >= 2) {
+								auto It = m_Values.cbegin();
+								return std::string('`' + m_FieldName + "` BETWEEN '" + *It + "' AND '" + *(It + 1) + "'");
+							}
+							throw FUNCTIONS::EXCEPTION::vector_range("the size is less than 2.");
+						case ECONDITIONTYPE::ECT_IN:
+							if (m_Values.size() >= 2) {
+								auto It = m_Values.cbegin();
+								return std::string('`' + m_FieldName + "` IN ('" + *It + "', '" + *(It + 1) + "')");
+							}
+							throw FUNCTIONS::EXCEPTION::vector_range("the size is less than 2.");
+						case ECONDITIONTYPE::ECT_LIKE:
+							return std::string('`' + m_FieldName + "` LIKE '" + m_Values.front() + "'");
+						case ECONDITIONTYPE::ECT_NOTNULL:
+							return std::string('`' + m_FieldName + "` NOT IS NULL");
+						case ECONDITIONTYPE::ECT_NULL:
+							return std::string('`' + m_FieldName + "` IS NULL");
+						}
+						return std::string();
+					}
+
+				};
+
+				struct INSERTDATA {
+				public:
+					ROW m_Row;
+
+				public:
+					INSERTDATA() : m_Row() {};
+					INSERTDATA(const ROW& Row) : m_Row(Row) {};
+
+				};
+
+				struct SELECTDATA {
+				public:
+					std::vector<std::string> m_FieldNames;
+					std::vector<CONDITION> m_Conditions;
+
+				public:
+					SELECTDATA() : m_FieldNames(), m_Conditions() {};
+					SELECTDATA(std::vector<std::string>& FieldNames, std::vector<CONDITION>& Conditions) : m_FieldNames(std::move(FieldNames)), m_Conditions(std::move(Conditions)) {};
+					SELECTDATA(std::vector<std::string>&& FieldNames, std::vector<CONDITION>&& Conditions) : m_FieldNames(FieldNames), m_Conditions(Conditions) {};
+
+				};
+
+
+				static void MakeConditionList(std::vector<std::string>& ConditionLists) {}
+
+				template<typename TYPE, typename ...TYPES>
+				static void MakeConditionList(std::vector<std::string>& ConditionLists, const TYPE& Type, const TYPES&... Args) {
+					ConditionLists.emplace_back(std::to_string(Type));
+					
+					MakeConditionList(ConditionLists, Args...);
+				}
 			}
 
-			enum class EQUERYTYPE {
-				EQT_SELDB,
-				EQT_NEWDATA,
-				EQT_UPDATEDATA,
-				EQT_DELDATA
-			};
-
-			std::string SelectDataBase(const std::string& DBName) {
-				return std::string("use `" + DBName + "`");
-			}
-
-			std::string InsertNewDataToDB(const std::string& TableName, const std::vector<DETAIL::INSERTDATA>& Datas) {
+			static std::string InsertNewDataToDB(const std::string& TableName, const std::vector<DETAIL::INSERTDATA>& Datas) {
 				std::string FieldResult;
 				std::string DataResult;
 				for (auto Iterator = Datas.cbegin(); Iterator != Datas.cend(); ++Iterator) {
-					FieldResult.append(std::string("`" + Iterator->m_FieldName + "`"));
-					DataResult.append(std::string("'" + Iterator->m_Value + "'"));
+					FieldResult.append(std::string("`" + Iterator->m_Row.m_FieldName + "`"));
+					DataResult.append(std::string("'" + Iterator->m_Row.m_Value + "'"));
 					if ((Iterator + 1) != Datas.cend()) {
 						FieldResult.append(",");
 						DataResult.append(",");
@@ -58,6 +149,38 @@ namespace FUNCTIONS {
 
 				return std::string("insert into `" + TableName + "` (" + FieldResult + ") values (" + DataResult + ")");
 			}
+
+			static std::string SearchData(const std::string& TableName, const DETAIL::SELECTDATA& Data) {
+				std::string FieldResult;
+				std::string ConditionResult;
+				for (auto FieldIt = Data.m_FieldNames.cbegin(); FieldIt != Data.m_FieldNames.cend(); ++FieldIt) {
+					FieldResult.append('`' + *FieldIt + '`');
+					if ((FieldIt + 1) != Data.m_FieldNames.cend()) {
+						FieldResult.append(", ");
+					}
+				}
+
+				try {
+					for (auto CondiIt : Data.m_Conditions) {
+						ConditionResult.append(CondiIt.GetConditionResult());
+					}
+				}
+				catch (const std::exception& Exception) {
+					FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
+					return std::string();
+				}
+
+				return std::string("select " + FieldResult + " from " + TableName + ' ' + ConditionResult);
+			}
+
+			template<typename ...TYPES>
+			static DETAIL::CONDITION MakeCondition(const DETAIL::ECONDITIONTYPE& ConditionType, const std::string& FieldName, const TYPES&... Args) {
+				std::vector<std::string> ConditionList;
+				DETAIL::MakeConditionList(ConditionList, Args...);
+
+				return DETAIL::CONDITION(ConditionType, FieldName, ConditionList);
+			}
+
 		}
 	}
 
@@ -115,13 +238,14 @@ namespace FUNCTIONS {
 			}
 
 		public:
-			sql::Connection* const GetConnectionFromPoolList() {
+			sql::Connection* const GetConnectionFromPoolList(const std::string& Schema) {
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
 
 				for (auto& Iterator : m_DBConnectionList) {
 					if (sql::Connection* ReturnValue = nullptr; Iterator.second == EDBPOOLSTATE::EDBS_FREE) {
 						Iterator.second = EDBPOOLSTATE::EDBS_USED;
 						ReturnValue = Iterator.first;
+						ReturnValue->setSchema(Schema);
 						return ReturnValue;
 					}
 				}
