@@ -28,13 +28,86 @@
   * 멀티스레드 환경에서 사용 가능한 원형 큐입니다.
   * 큐 내부에 CS 객체가 있음으로 따로 동기화 작업을 해줄 필요가 없습니다.
   * QueueData는 따로 정의해야합니다.
+ ``` c
+ #include <iostream>
+ #include <Functions/Functions/CircularQueue/CircularQueue.hpp>
+
+ namespace FUNCTIONS::CIRCULARQUEUE::QUEUEDATA {
+      struct TESTDATA : public DETAIL::BaseData<TESTDATA> {
+      public:
+	  int A;
+
+      public:
+	  TESTDATA() : A(0) {}
+	  TESTDATA(const int a) : A(a) {
+
+	  }
+
+      };
+ }
+
+ int main() {
+     FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::TESTDATA> Queue;
+
+     Queue.Push(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::TESTDATA(1));
+     auto ReturnVal = Queue.Push(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::TESTDATA(1));
+
+     if (Queue.Pop()) {}
+     if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::TESTDATA Value; Queue.Pop(Value)) {}
+
+     if (Queue.IsEmpty()) {}	 
+	 
+     return 0;
+ }
+ ```
 
 ### Critical Section
   * 기존의 CRITICAL_SECTION을 조금 더 사용하기 쉽게 래핑한 클래스입니다.
   * CCriticalSectionGuard를 사용하면 데드락을 예방할 수 있습니다.
+ ``` c
+ #include <iostream>
+ #include <Functions/Functions/CriticalSection/CriticalSection.h>
 
+ int main() {
+     FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection Lock;
+
+     Lock.Lock();
+     Lock.UnLock();
+
+     {
+	  FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock2(Lock);
+          // 생성자가 호출됨과 동시에 Lock
+		
+	  // 소멸자가 호출됨과 동시에 UnLock
+     }	 
+	 
+     return 0;
+ }
+ ```
 ### Exception
   * 예외들이 정의되어 있습니다.
+ ``` c
+ #include <iostream>
+ #include <Functions/Functions/Exception/Exception.h>
+
+ namespace FUNCTIONS::EXCEPTION {
+     struct test_exception : public std::exception {
+     public:
+	 test_exception(const char* const Message) : std::exception(Message) {};
+     };
+ }
+
+ int main() {
+     try {
+	 throw FUNCTIONS::EXCEPTION::test_exception("Test!");
+     }
+     catch (const std::exception& What) {
+	 std::cout << What.what();
+     } 
+	 
+     return 0;
+ }
+ ```
 
 ### Log
   * 텍스트를 콘솔에 출력해 주는 용도로 사용합니다.
