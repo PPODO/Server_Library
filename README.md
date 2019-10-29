@@ -10,6 +10,7 @@
   * [Memory Leak](https://github.com/PPODO/Server_Library#memory-leak)
   * [Memory Pool](https://github.com/PPODO/Server_Library#memory-pool)
   * [Minidump](https://github.com/PPODO/Server_Library#minidump)
+  * [MySQL](https://github.com/PPODO/Server_Library#mysql)
   * [Socket Address](https://github.com/PPODO/Server_Library#socketaddress)
   * [Uncopyable](https://github.com/PPODO/Server_Library#uncopyable)
 
@@ -24,22 +25,27 @@
 
 ## Functions
 ### Circular Queue
-  * Test
+  * 멀티스레드 환경에서 사용 가능한 원형 큐입니다.
+  * 큐 내부에 CS 객체가 있음으로 따로 동기화 작업을 해줄 필요가 없습니다.
+  * QueueData는 따로 정의해야합니다.
 
 ### Critical Section
-  *
+  * 기존의 CRITICAL_SECTION을 조금 더 사용하기 쉽게 래핑한 클래스입니다.
+  * CCriticalSectionGuard를 사용하면 데드락을 예방할 수 있습니다.
 
 ### Exception
-  *
+  * 예외들이 정의되어 있습니다.
 
 ### Log
-  *
+  * 텍스트를 콘솔에 출력해 주는 용도로 사용합니다.
+  * 멀티스레드에서 사용 가능합니다.
+  * 출력된 텍스트는 .log 파일로 프로젝트 폴더에 생성됩니다.
 
 ### Memory Leak
-  *
+  * 메모리 누수 체크를 위해 사용됩니다. 헤더파일만 포함하면 됩니다.
 
 ### Memory Pool
-  * 
+  * 메모리 할당이 빈번할 때 사용할 수 있습니다. new/delete의 오버헤드를 줄여 프로그램의 실행속도를 높입니다.
 
 ### Minidump
   * 프로그램이 모종의 이유로 종료되었을 때의 상황을 기록한 덤프파일을 생성해줍니다.
@@ -69,6 +75,9 @@
  ![MiniDumpImage3](https://user-images.githubusercontent.com/37787879/65747545-aee45e00-e13c-11e9-9242-cdeaf58cd0f1.png)
  
  네이티브 전용으로 디버깅 했을 때
+
+### MySQL
+  * 
 
 ### SocketAddress
   * WinSock의 sockaddr 구조체를 사용하기 편하게 래핑한 클래스입니다.
