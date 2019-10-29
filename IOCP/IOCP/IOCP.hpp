@@ -23,6 +23,7 @@ namespace NETWORK {
 
 			private:
 				int16_t m_bIsRunMainThread;
+				std::vector<std::thread> m_WorkerThread;
 
 			private:
 				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ProcessorListLock;
@@ -31,9 +32,6 @@ namespace NETWORK {
 			private:
 				std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession> m_Listener;
 				std::vector<std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession>> m_Clients;
-
-			private:
-				std::vector<std::thread> m_WorkerThread;
 
 			private:
 				FUNCTIONS::COMMAND::CCommand m_Command;

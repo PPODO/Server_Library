@@ -27,7 +27,6 @@ bool NETWORK::NETWORKMODEL::IOCP::CIOCP::Initialize(const UTIL::BASESOCKET::EPRO
 	}
 
 	CreateWorkerThread();
-
 	return true;
 }
 
