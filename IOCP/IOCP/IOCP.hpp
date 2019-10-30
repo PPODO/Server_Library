@@ -31,7 +31,11 @@ namespace NETWORK {
 
 			private:
 				std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession> m_Listener;
+				// TCP
 				std::vector<std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession>> m_Clients;
+				// UDP
+				FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ConnectionListLock;
+				std::vector<NETWORK::SOCKET::UDPIP::PEERINFO> m_ConnectedPeers;
 
 			private:
 				FUNCTIONS::COMMAND::CCommand m_Command;
@@ -55,6 +59,30 @@ namespace NETWORK {
 				virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 				virtual void OnIOReceive(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
 				virtual void OnIOReceiveFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
+
+			private:
+				void UpdatePeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress, const uint16_t& UpdatedPacketNumber) {
+					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+
+					if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
+						Iterator->m_LastPacketNumber = UpdatedPacketNumber;
+					}
+					else {
+						FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+						m_ConnectedPeers.emplace_back(PeerAddress, UpdatedPacketNumber);
+					}
+				}
+				NETWORK::SOCKET::UDPIP::PEERINFO GetPeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
+					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+
+					if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
+						return *Iterator;
+					}
+					else {
+						FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+						return m_ConnectedPeers.emplace_back(PeerAddress, 0);
+					}
+				}
 
 			private:
 				void Destroy();
