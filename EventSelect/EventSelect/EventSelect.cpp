@@ -160,21 +160,22 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(cons
 			RemainBytes -= DETAIL::PACKET_INFORMATION::GetSize();
 		}
 
-		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastPacketNumber) {
-			if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
-				LastReceivedPacketNumber = LastPacketNumber + 1;
-			}
+		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize) {
 			uint16_t TotalBytes = (PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize);
+			if (PacketStructure.m_PacketInformation.m_PacketNumber == LastPacketNumber) {
+				if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
+					LastReceivedPacketNumber = LastPacketNumber + 1;
+				}
+				CopyMemory(PacketStructure.m_PacketData, ReceivedBuffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
 
-			CopyMemory(PacketStructure.m_PacketData, ReceivedBuffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
+				std::cout << PacketStructure.m_PacketData << std::endl;
 
-			std::cout << PacketStructure.m_PacketData << std::endl;
+				//FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
 
-			//FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
-
-			//m_Queue.Push(QueueData);
+				//m_Queue.Push(QueueData);
+			}
+			MoveMemory(ReceivedBuffer, ReceivedBuffer + TotalBytes, TotalBytes);
 			RemainReceivedBytes -= TotalBytes;
-			MoveMemory(ReceivedBuffer, ReceivedBuffer + TotalBytes, RemainReceivedBytes);
 		}
 		else {
 			break;

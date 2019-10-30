@@ -183,22 +183,21 @@ void NETWORK::NETWORKMODEL::IOCP::CIOCP::PacketForwardingLoop(const UTIL::BASESO
 			RemainBytes -= DETAIL::PACKET_INFORMATION::GetSize();
 		}
 
-		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize && PacketStructure.m_PacketInformation.m_PacketNumber == LastReceivedPacketNumber) {
-			if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
-				ReceiveOverlappedEx->m_LastReceivedPacketNumber = LastReceivedPacketNumber + 1;
-			}
-
+		if (RemainBytes >= PacketStructure.m_PacketInformation.m_PacketSize) {
 			uint16_t TotalBytes = (PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize);
+			if (PacketStructure.m_PacketInformation.m_PacketNumber == LastReceivedPacketNumber) {
+				if (ProtocolType & UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
+					ReceiveOverlappedEx->m_LastReceivedPacketNumber = LastReceivedPacketNumber + 1;
+				}
+				CopyMemory(PacketStructure.m_PacketData, ReceiveOverlappedEx->m_SocketMessage + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
 
-			CopyMemory(PacketStructure.m_PacketData, ReceiveOverlappedEx->m_SocketMessage + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
+				FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
+				m_Queue.Push(QueueData);
 
-			FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
-
-			m_Queue.Push(QueueData);
-
+				LastReceivedPacketNumber = ReceiveOverlappedEx->m_LastReceivedPacketNumber;
+			}
+			MoveMemory(ReceiveOverlappedEx->m_SocketMessage, ReceiveOverlappedEx->m_SocketMessage + TotalBytes, TotalBytes);
 			ReceiveOverlappedEx->m_RemainReceivedBytes -= TotalBytes;
-			LastReceivedPacketNumber = ReceiveOverlappedEx->m_LastReceivedPacketNumber;
-			MoveMemory(ReceiveOverlappedEx->m_SocketMessage, ReceiveOverlappedEx->m_SocketMessage + TotalBytes, ReceiveOverlappedEx->m_RemainReceivedBytes);
 		}
 		else {
 			break;
