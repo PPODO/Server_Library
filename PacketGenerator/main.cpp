@@ -188,6 +188,7 @@ int main(int argc, char* argv[]) {
 				PacketDefineFile << "protected:\n";
 				PacketDefineFile << "\ttemplate<typename Archive>\n";
 				PacketDefineFile << "\tvoid serialize(Archive& ar, unsigned int Version) {\n";
+				PacketDefineFile << "\t\tNETWORK::PACKET::CPacket<C" << It.m_ProtocolName << ">::serialize(ar, Version);\n\n";
 
 				for (const auto& ParamIt : It.m_Parameters) {
 					PacketDefineFile << "\t\tar& m_" << ParamIt.m_Name << ";\n";
