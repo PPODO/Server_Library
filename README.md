@@ -139,7 +139,7 @@
  }
  ```
 
- ![1](https://user-images.githubusercontent.com/37787879/67799427-ab8c1b80-fac8-11e9-9ca0-a285d16b51d3.png)
+ ![1](https://user-images.githubusercontent.com/37787879/67821767-7bad3a00-fb01-11e9-9c62-321c8f0e6392.png)
  
  콘솔에 로그가 출력됨
 
@@ -230,7 +230,23 @@
 ### SocketAddress
   * WinSock의 sockaddr 구조체를 사용하기 편하게 래핑한 클래스입니다.
  ``` c
+ #include <iostream>
+ #include <Functions/Functions/SocketAddress/SocketAddress.h>
 
+ int main() {
+     using namespace FUNCTIONS::SOCKADDR;
+
+     // IP는 자동으로 localhost(127.0.0.1)로 설정됩니다.
+     CSocketAddress Addr(1234);
+     CSocketAddress Addr1("127.0.0.1", 1234);
+
+     const sockaddr* sockaddress = &Addr;
+     sockaddr_in sockaddress_in(Addr);
+
+     bind(INVALID_SOCKET, &Addr1, Addr.GetSize());	 
+	 
+     return 0;
+ }
  ```
 
 
