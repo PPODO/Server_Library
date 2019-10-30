@@ -29,13 +29,12 @@ namespace NETWORK {
 			struct PACKET_INFORMATION {
 			public:
 				uint8_t m_PacketType;
-				uint8_t m_MessageType;
 				uint16_t m_PacketSize;
 				uint16_t m_PacketNumber;
 
 			public:
-				PACKET_INFORMATION() noexcept : m_PacketType(0), m_MessageType(0), m_PacketSize(USHRT_MAX), m_PacketNumber(0) {};
-				PACKET_INFORMATION(const uint8_t& PacketType, const uint8_t& MessageType, const uint16_t& PacketSize) noexcept : m_PacketType(PacketType), m_MessageType(MessageType), m_PacketSize(PacketSize), m_PacketNumber(0) {};
+				PACKET_INFORMATION() noexcept : m_PacketType(0), m_PacketSize(USHRT_MAX), m_PacketNumber(0) {};
+				PACKET_INFORMATION(const uint8_t& PacketType, const uint16_t& PacketSize) noexcept : m_PacketType(PacketType), m_PacketSize(PacketSize), m_PacketNumber(0) {};
 
 			public:
 				static size_t GetSize() { return sizeof(PACKET_INFORMATION); }
@@ -58,11 +57,16 @@ namespace NETWORK {
 
 		namespace BASEPACKET {
 			struct CBasePacket {
-				template<typename T>
-				friend NETWORK::PACKET::PACKET_STRUCTURE UTIL::PACKET::Serialize(const T& Packet);
+				friend boost::serialization::access;
 			public:
 				const uint8_t m_PacketType;
-				const uint8_t m_MessageType;
+				uint8_t m_MessageType;
+
+			protected:
+				template<typename Archive>
+				void serialize(Archive& ar, unsigned int Version) {
+					ar& m_MessageType;
+				}
 
 			public:
 				CBasePacket(const uint8_t& PacketType, const uint8_t& MessageType) : m_PacketType(PacketType), m_MessageType(MessageType) {};
@@ -96,7 +100,7 @@ namespace NETWORK {
 				}
 
 				const NETWORK::PACKET::BASEPACKET::CBasePacket* Temp = reinterpret_cast<const NETWORK::PACKET::BASEPACKET::CBasePacket*>(&Packet);
-				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, Temp->m_MessageType, TempBuffer.length()), TempBuffer);
+				return NETWORK::PACKET::PACKET_STRUCTURE(NETWORK::PACKET::DETAIL::PACKET_INFORMATION(Temp->m_PacketType, TempBuffer.length()), TempBuffer);
 			}
 
 			template<typename T>
