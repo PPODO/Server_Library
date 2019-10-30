@@ -1,14 +1,14 @@
 #pragma once
 #include <iostream>
 #include <fstream>
-#include "../ThreadSync/ThreadSync.h"
+#include <Functions/Functions/CriticalSection/CriticalSection.h>
 
 namespace FUNCTIONS {
 	namespace LOG {
 		static const size_t MAX_BUFFER_LENGTH = 256;
 		static const size_t MAX_DATETIME_LENGTH = 32;
 
-		class CLog : public THREADSYNC::CMultiThreadSync<CLog> {
+		class CLog {
 			enum class ECHARTYPE : uint8_t { ECT_MULTIBYTE, ECT_UNICODE };
 		private:
 			static CRITICALSECTION::DETAIL::CCriticalSection m_Lock;
@@ -70,7 +70,7 @@ namespace FUNCTIONS {
 
 		public:
 			static bool WriteLog(LPCTSTR Log, ...) {
-				CThreadSync Sync;
+				CRITICALSECTION::CCriticalSectionGuard Lock(m_Lock);
 
 				TCHAR Result[MAX_BUFFER_LENGTH] = { L"\0" };
 
@@ -83,7 +83,7 @@ namespace FUNCTIONS {
 			}
 
 			static bool WriteLog(const char* const Log, ...) {
-				CThreadSync Sync;
+				CRITICALSECTION::CCriticalSectionGuard Lock(m_Lock);
 
 				CHAR Result[MAX_BUFFER_LENGTH] = { "\0" };
 
