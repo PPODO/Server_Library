@@ -35,6 +35,8 @@ namespace FUNCTIONS {
 
 				public:
 					ROW() : m_FieldName(), m_Value() {};
+					ROW(const ROW& lvalue) : m_FieldName(lvalue.m_FieldName), m_Value(lvalue.m_Value) {};
+					ROW(ROW&& rvalue) : m_FieldName(std::move(rvalue.m_FieldName)), m_Value(std::move(rvalue.m_Value)) {};
 					ROW(const std::string& FieldName, int16_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
 					ROW(const std::string& FieldName, int32_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
 					ROW(const std::string& FieldName, int64_t Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
@@ -44,7 +46,7 @@ namespace FUNCTIONS {
 					ROW(const std::string& FieldName, float Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
 					ROW(const std::string& FieldName, double Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
 					ROW(const std::string& FieldName, char Value) : m_FieldName(FieldName), m_Value(std::move(std::to_string(Value))) {};
-					ROW(const std::string& FieldName, const std::string& Value) : m_FieldName(FieldName), m_Value(std::move(Value)) {};
+					ROW(const std::string& FieldName, const std::string& Value) : m_FieldName(FieldName), m_Value(Value) {};
 
 				};
 
@@ -71,8 +73,10 @@ namespace FUNCTIONS {
 
 				public:
 					CONDITION() : m_ConditionType(ECONDITIONTYPE::ECT_NONE) , m_FieldName() {};
-					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName) : m_ConditionType(Type), m_FieldName(std::move(FieldName)) {};
-					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName, std::vector<std::string>& Values) : m_ConditionType(Type), m_FieldName(std::move(FieldName)), m_Values(std::move(Values)) {};
+					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName) : m_ConditionType(Type), m_FieldName(FieldName) {};
+					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName, std::vector<std::string>& Values) : m_ConditionType(Type), m_FieldName(FieldName), m_Values(std::move(Values)) {};
+					CONDITION(const CONDITION& lvalue) : m_ConditionType(lvalue.m_ConditionType), m_FieldName(lvalue.m_FieldName), m_Values(lvalue.m_Values) {};
+					CONDITION(CONDITION&& rvalue) : m_ConditionType(rvalue.m_ConditionType), m_FieldName(std::move(rvalue.m_FieldName)), m_Values(std::move(rvalue.m_Values)) {};
 
 				public:
 					// can throw exception
@@ -109,6 +113,7 @@ namespace FUNCTIONS {
 				public:
 					INSERTDATA() : m_Row() {};
 					INSERTDATA(const ROW& Row) : m_Row(Row) {};
+					INSERTDATA(ROW&& Row) : m_Row(std::move(Row)) {};
 
 				};
 
@@ -119,11 +124,25 @@ namespace FUNCTIONS {
 
 				public:
 					SELECTDATA() : m_FieldNames(), m_Conditions() {};
+					SELECTDATA(const SELECTDATA& lvalue) : m_FieldNames(lvalue.m_FieldNames), m_Conditions(lvalue.m_Conditions) {};
+					SELECTDATA(SELECTDATA&& rvalue) : m_FieldNames(std::move(rvalue.m_FieldNames)), m_Conditions(std::move(rvalue.m_Conditions)) {};
 					SELECTDATA(std::vector<std::string>& FieldNames, std::vector<CONDITION>& Conditions) : m_FieldNames(std::move(FieldNames)), m_Conditions(std::move(Conditions)) {};
 					SELECTDATA(std::vector<std::string>&& FieldNames, std::vector<CONDITION>&& Conditions) : m_FieldNames(FieldNames), m_Conditions(Conditions) {};
 
 				};
 
+				struct UPATEDATA {
+				public:
+					std::vector<ROW> m_Rows;
+					std::vector<CONDITION> m_Conditions;
+
+				public:
+					UPATEDATA() {};
+					UPATEDATA(const std::vector<ROW>& Rows, const std::vector<CONDITION>& Conditions) : m_Rows(Rows), m_Conditions(Conditions) {};
+					UPATEDATA(const UPATEDATA& lvalue) : m_Rows(lvalue.m_Rows), m_Conditions(lvalue.m_Conditions) {};
+					UPATEDATA(UPATEDATA&& lvalue) : m_Rows(std::move(lvalue.m_Rows)), m_Conditions(std::move(lvalue.m_Conditions)) {};
+
+				};
 
 				static void MakeConditionList(std::vector<std::string>& ConditionLists) {}
 
@@ -135,7 +154,7 @@ namespace FUNCTIONS {
 				}
 			}
 
-			static std::string InsertNewDataToDB(const std::string& TableName, const std::vector<DETAIL::INSERTDATA>& Datas) {
+			static std::string InsertNewData(const std::string& TableName, const std::vector<DETAIL::INSERTDATA>& Datas) {
 				std::string FieldResult;
 				std::string DataResult;
 				for (auto Iterator = Datas.cbegin(); Iterator != Datas.cend(); ++Iterator) {
@@ -161,8 +180,11 @@ namespace FUNCTIONS {
 				}
 
 				try {
-					for (auto CondiIt : Data.m_Conditions) {
-						ConditionResult.append(CondiIt.GetConditionResult());
+					if (Data.m_Conditions.size() != 0) {
+						ConditionResult.append("WHERE ");
+						for (auto CondiIt : Data.m_Conditions) {
+							ConditionResult.append(CondiIt.GetConditionResult());
+						}
 					}
 				}
 				catch (const std::exception& Exception) {
@@ -171,6 +193,33 @@ namespace FUNCTIONS {
 				}
 
 				return std::string("select " + FieldResult + " from " + TableName + ' ' + ConditionResult);
+			}
+
+			static std::string UpdateData(const std::string& TableName, const DETAIL::UPATEDATA& Data) {
+				std::string UpdateResult;
+				std::string ConditionResult;
+
+				for (auto It = Data.m_Rows.cbegin(); It != Data.m_Rows.cend(); ++It) {
+					UpdateResult.append('`' + It->m_FieldName + "` = '" + It->m_Value + "'");
+					if ((It + 1) != Data.m_Rows.cend()) {
+						UpdateResult.append(", ");
+					}
+				}
+
+				try {
+					if (Data.m_Conditions.size() != 0) {
+						ConditionResult.append(" WHERE ");
+						for (auto CondiIt : Data.m_Conditions) {
+							ConditionResult.append(CondiIt.GetConditionResult());
+						}
+					}
+				}
+				catch (const std::exception& Exception) {
+					FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
+					return std::string();
+				}
+
+				return std::string("UPDATE `" + TableName + "` SET " + UpdateResult + ConditionResult);
 			}
 
 			template<typename ...TYPES>
