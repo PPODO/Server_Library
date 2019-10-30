@@ -24,7 +24,6 @@
 *.lai
 *.la
 *.a
-*.lib
 
 # Executables
 *.exe
@@ -51,7 +50,9 @@ Network/x64/
 #file
 *.sln
 x64/Debug/*.pdb
+x64/Debug/*.exe
 x64/Release/*.pdb
+x64/Release/*.exe
 EventSelect/*.vcxproj
 EventSelect/*.vcxproj.filters
 EventSelect/*.vcxproj.user
