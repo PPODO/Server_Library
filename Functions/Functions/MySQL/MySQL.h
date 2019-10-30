@@ -230,6 +230,26 @@ namespace FUNCTIONS {
 				return DETAIL::CONDITION(ConditionType, FieldName, ConditionList);
 			}
 
+			static bool ExecuteQuery(sql::Connection* const Connection, const std::string& Query, const std::function<void(sql::ResultSet* const)>& Processor = nullptr) {
+				try {
+					if (sql::Statement* const Statement = Connection->createStatement(); Statement) {
+						if (sql::ResultSet* const Result = Statement->executeQuery(Query); Result) {
+							if (Processor) {
+								Processor(Result);
+							}
+							delete Result;
+						}
+						delete Statement;
+					}
+				}
+				catch (const sql::SQLException & Exception) {
+					if (Exception.getErrorCode() != 0) {
+						FUNCTIONS::LOG::CLog::WriteLog(L"SQL Exception - %d, %S", Exception.getErrorCode(), Exception.what());
+						return false;
+					}
+				}
+				return true;
+			}
 		}
 	}
 
@@ -286,7 +306,7 @@ namespace FUNCTIONS {
 				m_DBConnectionList.clear();
 			}
 
-		public:
+		private:
 			sql::Connection* const GetConnectionFromPoolList(const std::string& Schema) {
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
 
@@ -312,6 +332,7 @@ namespace FUNCTIONS {
 				return nullptr;
 			}
 
+		public:
 			void ReleaseConnectionToPool(sql::Connection* const Connection) {
 				if (Connection) {
 					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
@@ -322,37 +343,9 @@ namespace FUNCTIONS {
 				}
 			}
 
-		};
-
-		class CMySQLManager {
-		private:
-			inline static bool SendQuery(sql::Connection* const Connection, const std::string& Query, const std::function<void(sql::ResultSet* const)>& Processor) {
-				try {
-					if (sql::Statement* const Statement = Connection->createStatement(); Statement) {
-						if (sql::ResultSet* const Result = Statement->executeQuery(Query); Result) {
-							if (Processor) {
-								Processor(Result);
-							}
-							delete Result;
-						}
-						delete Statement;
-					}
-				}
-				catch (const sql::SQLException & Exception) {
-					if (Exception.getErrorCode() != 0) {
-						FUNCTIONS::LOG::CLog::WriteLog(L"SQL Exception - %d, %s", Exception.getErrorCode(), Exception.what());
-						return false;
-					}
-				}
-				return true;
-			}
-
-		public:
-			static bool ExecuteQuery(sql::Connection* const Connection, const std::string& Query, std::function<void(sql::ResultSet* const)> Processor) {
-				return SendQuery(Connection, Query, Processor);
-			}
-			static bool ExecuteQuery(sql::Connection* const Connection, const std::string& Query) {
-				return SendQuery(Connection, Query, nullptr);
+			sql::Connection* const GetRawConnection(const std::string& Schema) { return GetConnectionFromPoolList(Schema); }
+			std::unique_ptr<sql::Connection, std::function<void(sql::Connection*)>> GetConnection(const std::string& Schema) {
+				return std::unique_ptr<sql::Connection, std::function<void(sql::Connection*)>>(GetConnectionFromPoolList(Schema), [&](sql::Connection* const Connection) { ReleaseConnectionToPool(Connection); });
 			}
 
 		};
