@@ -31,6 +31,9 @@ namespace NETWORK {
 				std::unique_ptr<NETWORK::SOCKET::UDPIP::CUDPIPSocket> m_UDPIPSocket;
 
 			private:
+				FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*> m_PacketQueue;
+
+			private:
 				void EventSelectProcessorForTCP(const HANDLE& SelectEventHandle);
 				void EventSelectProcessorForUDP(const HANDLE& SelectEventHandle);
 
@@ -67,6 +70,20 @@ namespace NETWORK {
 				inline bool SendTo(const char* const DataBuffer, const uint16_t& DataLength) {
 					if (m_UDPIPSocket) {
 						return m_UDPIPSocket->WriteTo(m_ServerAddress, DataBuffer, DataLength);
+					}
+					return false;
+				}
+
+			public:
+				// Event Select는 메인스레드에서 루프걸고 패킷을 처리해서는 안되기 때문에 따로 데이터를 빼와서 처리.
+
+				inline bool GetPacketDataFromQueue(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data) {
+					return m_PacketQueue.Pop(Data);
+				}
+				inline bool GetPacketDataFromQueue(std::unique_ptr<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData>& Data) {
+					if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* PacketData; m_PacketQueue.Pop(PacketData)) {
+						Data = std::unique_ptr<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData>(PacketData);
+						return true;
 					}
 					return false;
 				}

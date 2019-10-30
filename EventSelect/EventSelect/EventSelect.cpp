@@ -170,9 +170,8 @@ void NETWORK::NETWORKMODEL::EVENTSELECT::CEventSelect::PacketForwardingLoop(cons
 
 				std::cout << PacketStructure.m_PacketData << std::endl;
 
-				//FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(ReceiveOverlappedEx->m_Owner, PacketStructure);
-
-				//m_Queue.Push(QueueData);
+				FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(nullptr, PacketStructure);
+				m_PacketQueue.Push(QueueData);
 			}
 			MoveMemory(ReceivedBuffer, ReceivedBuffer + TotalBytes, TotalBytes);
 			RemainReceivedBytes -= TotalBytes;
