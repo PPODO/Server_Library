@@ -225,6 +225,40 @@
 
 ### MySQL
   * 
+ ``` c
+ #include <iostream>
+ #include <Functions/Functions/MySQL/MySQL.h>
+
+ FUNCTIONS::MYSQL::CMySQLPool g_DBPool("tcp://127.0.0.1:3306", "root", "", 16, 32);
+
+ void SearchResult(sql::ResultSet* Result) {
+     while (Result && Result->next()) {
+          for (unsigned int i = 1; i <= Result->getMetaData()->getColumnCount(); i++) {
+               std::cout << Result->getString(i) << '\t';
+          }
+          std::cout << std::endl;
+     }
+ }
+
+ int main() {
+     using namespace FUNCTIONS::UTIL;
+
+     auto Connection(g_DBPool.GetRawConnection("SchemaName"));
+     auto Connection2(g_DBPool.GetConnection("SchemaName"));
+
+     std::vector<MYSQL::DETAIL::INSERTDATA> InsertDatas{ MYSQL::DETAIL::ROW("FieldName", 1), MYSQL::DETAIL::ROW("FieldName2", 2.f), MYSQL::DETAIL::ROW("FieldName3", "hi!") };
+     MYSQL::ExecuteQuery(Connection, MYSQL::InsertNewData("TableName", InsertDatas));
+
+     MYSQL::DETAIL::UPATEDATA UpdateData({ MYSQL::DETAIL::ROW("FieldName2", 100.f) }, { MYSQL::MakeCondition(MYSQL::DETAIL::ECONDITIONTYPE::ECT_LIKE, "FieldName3", "hi!") });
+     MYSQL::ExecuteQuery(Connection, MYSQL::UpdateData("TableName", UpdateData));
+
+     MYSQL::DETAIL::SELECTDATA SelectData({ "*" }, { MYSQL::MakeCondition(MYSQL::DETAIL::ECONDITIONTYPE::ECT_BETAND, "FieldName2", 0.f, 5.f) });
+     MYSQL::ExecuteQuery(Connection, MYSQL::SearchData("TableName", SelectData), SearchResult);
+
+     g_DBPool.ReleaseConnectionToPool(Connection);	 
+	 
+     return 0;
+ }
 
 
 ### SocketAddress
