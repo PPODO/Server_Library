@@ -118,20 +118,3 @@ namespace NETWORK {
 		}
 	}
 }
-
-namespace FUNCTIONS {
-	namespace CIRCULARQUEUE {
-		namespace QUEUEDATA {
-			struct CPacketQueueData : public QUEUEDATA::DETAIL::BaseData<CPacketQueueData, 500> {
-			public:
-				NETWORK::PACKET::PACKET_STRUCTURE m_PacketStructure;
-				void* m_Owner;
-
-			public:
-				CPacketQueueData() : m_Owner(nullptr) { ZeroMemory(&m_PacketStructure, sizeof(NETWORK::PACKET::PACKET_STRUCTURE)); };
-				CPacketQueueData(void* const Owner, const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) : m_Owner(Owner), m_PacketStructure(PacketStructure) {};
-
-			};
-		}
-	}
-}
