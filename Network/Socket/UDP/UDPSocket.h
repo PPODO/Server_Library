@@ -38,6 +38,11 @@ namespace NETWORK {
 				PEERINFO() : m_LastPacketNumber(0) {};
 				PEERINFO(const FUNCTIONS::SOCKADDR::CSocketAddress& Address, const uint16_t& LastPacketNumber) : m_RemoteAddress(Address), m_LastPacketNumber(LastPacketNumber) {};
 
+			public:
+				bool operator==(const FUNCTIONS::SOCKADDR::CSocketAddress& Address) const {
+					if (m_RemoteAddress == Address) { return true; } return false;
+				}
+
 			};
 
 			class CUDPIPSocket : public BASESOCKET::CBaseSocket {
