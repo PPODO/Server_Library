@@ -3,7 +3,7 @@
 using namespace NETWORK::SOCKET::TCPIP;
 using namespace NETWORK::SOCKET::UDPIP;
 
-NETWORK::SESSION::SERVERSESSION::CServerSession::CServerSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) :
+NETWORK::SESSION::SERVERSESSION::CServerSession::CServerSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) : m_TCPSocket(nullptr), m_UDPSocket(nullptr),
   m_AcceptOverlapped(UTIL::SESSION::SERVERSESSION::DETAIL::EIOTYPE::EIT_ACCEPT, this)
 , m_DisconnectOverlapped(UTIL::SESSION::SERVERSESSION::DETAIL::EIOTYPE::EIT_DISCONNECT, this)
 , m_SendOverlapped(UTIL::SESSION::SERVERSESSION::DETAIL::EIOTYPE::EIT_WRITE, this)
@@ -26,6 +26,14 @@ NETWORK::SESSION::SERVERSESSION::CServerSession::CServerSession(const UTIL::BASE
 		FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
 		std::abort();
 	}
+}
+
+NETWORK::SESSION::SERVERSESSION::CServerSession::CServerSession(CServerSession&& rvalue) : m_TCPSocket(std::move(rvalue.m_TCPSocket)), m_UDPSocket(std::move(rvalue.m_UDPSocket))
+, m_AcceptOverlapped(rvalue.m_AcceptOverlapped)
+, m_DisconnectOverlapped(rvalue.m_DisconnectOverlapped)
+, m_SendOverlapped(rvalue.m_SendOverlapped)
+, m_ReceiveOverlapped(rvalue.m_ReceiveOverlapped)
+, m_ReceiveFromOverlapped(rvalue.m_ReceiveFromOverlapped) {
 }
 
 NETWORK::SESSION::SERVERSESSION::CServerSession::~CServerSession() {
@@ -77,12 +85,14 @@ bool NETWORK::SESSION::SERVERSESSION::CServerSession::RegisterIOCompletionPort(c
 
 bool NETWORK::UTIL::UDPIP::CheckAck(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& Overlapped) {
 	if (NETWORK::SESSION::SERVERSESSION::CServerSession* Owner = Overlapped.m_Owner; Overlapped.m_SocketMessage) {
-		const int32_t ReadedValue = *reinterpret_cast<const int16_t*>(Overlapped.m_SocketMessage);
+		const int32_t ReadedValue = *reinterpret_cast<const int32_t*>(Overlapped.m_SocketMessage);
 		const int16_t AckValue = static_cast<int16_t>(ReadedValue);
 		const int16_t PacketNumber = static_cast<int16_t>((ReadedValue >> 16));
 
+		// TODO PacketNumber가 이전에 받은 Number보다 작을때 따로 처리해주는 로직이 필요
 		if (AckValue == 9999) {
 			Overlapped.m_LastReceivedPacketNumber = PacketNumber;
+			Overlapped.m_RemainReceivedBytes -= sizeof(ReadedValue);
 			return Owner->SendCompletion(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP);
 		}
 		else if (AckValue == 0) {

@@ -22,6 +22,7 @@ namespace NETWORK {
 
 			public:
 				explicit CServerSession(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType);
+				explicit CServerSession(CServerSession&& rvalue);
 				virtual ~CServerSession();
 
 			public:
