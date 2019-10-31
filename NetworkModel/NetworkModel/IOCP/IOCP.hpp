@@ -15,11 +15,9 @@ namespace NETWORKMODEL {
 
 		private:
 			std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession> m_Listener;
-			// TCP
-			std::vector<std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession>> m_Clients;
-			// UDP
-			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ConnectionListLock;
-			std::vector<NETWORK::SOCKET::UDPIP::PEERINFO> m_ConnectedPeers;
+
+			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ClientListLock;
+			std::vector<DETAIL::CONNECTION> m_Clients;
 
 		private:
 			FUNCTIONS::COMMAND::CCommand m_Command;
@@ -34,7 +32,7 @@ namespace NETWORKMODEL {
 
 		protected:
 			virtual void Destroy() override;
-			virtual void OnIOAccept(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
+			virtual void OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx);
 			virtual void OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 			virtual void OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 			virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
@@ -42,27 +40,30 @@ namespace NETWORKMODEL {
 			virtual void OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
 
 		private:
-			void UpdatePeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress, const uint16_t& UpdatedPacketNumber) {
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+			DETAIL::CONNECTION* GetConnectionFromList(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ClientListLock);
 
-				if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
-					Iterator->m_LastPacketNumber = UpdatedPacketNumber;
+				if (auto It = std::find_if(m_Clients.begin(), m_Clients.end(), [&Session](DETAIL::CONNECTION& Connection) { if (Connection.m_Client == Session) { return true; } return false; }); It != m_Clients.cend()) {
+					return &(*It);
 				}
-				else {
-					FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
-					m_ConnectedPeers.emplace_back(PeerAddress, UpdatedPacketNumber);
-				}
+				return nullptr;
 			}
-			NETWORK::SOCKET::UDPIP::PEERINFO GetPeerInformation(const FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ConnectionListLock);
+			DETAIL::CONNECTION* GetConnectionFromList(FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ClientListLock);
 
-				if (const auto& Iterator = std::find_if(m_ConnectedPeers.begin(), m_ConnectedPeers.end(), [&PeerAddress](const NETWORK::SOCKET::UDPIP::PEERINFO& Address) -> bool { if (PeerAddress == Address.m_RemoteAddress) { return true; } return false; }); Iterator != m_ConnectedPeers.end()) {
-					return *Iterator;
+				if (auto It = std::find_if(m_Clients.begin(), m_Clients.end(), [&PeerAddress](DETAIL::CONNECTION& Connection) { if (Connection.m_Peer == PeerAddress) { return true; } return false; }); It != m_Clients.cend()) {
+					return &(*It);
+				}
+
+				const auto& Iterator = std::find_if(m_Clients.begin(), m_Clients.end(), [&PeerAddress](const DETAIL::CONNECTION& Connection) -> bool { if (PeerAddress.IsSameAddress(Connection.m_Client.m_Address)) { return true; } return false; });
+				if (Iterator == m_Clients.cend()) {
+					FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
+					return &(m_Clients.emplace_back(DETAIL::CONNECTION::TCPCONNECTION(), NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0)));
 				}
 				else {
-					FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
-					return m_ConnectedPeers.emplace_back(PeerAddress, 0);
+					Iterator->m_Peer = NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0);
 				}
+				return &(*Iterator);
 			}
 
 		private:

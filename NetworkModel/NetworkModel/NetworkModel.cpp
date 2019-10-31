@@ -14,15 +14,10 @@ NETWORKMODEL::DETAIL::CNetworkModel::CNetworkModel(const PACKETPROCESSORLIST& Pr
 }
 
 NETWORKMODEL::DETAIL::CNetworkModel::~CNetworkModel() {
-	Destroy();
-
 	WSACleanup();
 }
 
-void NETWORKMODEL::DETAIL::CNetworkModel::Destroy() {
-}
-
-void NETWORKMODEL::DETAIL::CNetworkModel::PacketForwardingLoop(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType,  void* const Owner, char* const ReceivedBuffer, int16_t& ReceivedBytes, int16_t& LastReceivedPacketNumber) {
+void NETWORKMODEL::DETAIL::CNetworkModel::PacketForwardingLoop(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, char* const ReceivedBuffer, int16_t& ReceivedBytes, int16_t& LastReceivedPacketNumber, void* const Owner) {
 	using namespace NETWORK::PACKET;
 
 	while (true) {
@@ -38,7 +33,7 @@ void NETWORKMODEL::DETAIL::CNetworkModel::PacketForwardingLoop(const NETWORK::UT
 			uint16_t TotalBytes = (PacketStructure.m_PacketInformation.GetSize() + PacketStructure.m_PacketInformation.m_PacketSize);
 			if (PacketStructure.m_PacketInformation.m_PacketNumber == LastReceivedPacketNumber) {
 				if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
-					LastReceivedPacketNumber++;
+					InterlockedIncrement16(&LastReceivedPacketNumber);
 				}
 				CopyMemory(PacketStructure.m_PacketData, ReceivedBuffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
 

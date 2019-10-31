@@ -1,5 +1,6 @@
 #include "EventSelect.h"
 #include <Functions/Functions/Exception/Exception.h>
+#include <iostream>
 
 using namespace FUNCTIONS::LOG;
 
@@ -7,9 +8,11 @@ NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const int PacketProcessLoo
 }
 
 NETWORKMODEL::EVENTSELECT::CEventSelect::~CEventSelect() {
+	Destroy();
 }
 
 bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) {
+	m_ServerAddress = ServerAddress;
 	try {
 		if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
 			m_TCPIPSocket = std::make_unique<NETWORK::SOCKET::TCPIP::CTCPIPSocket>();
@@ -58,6 +61,7 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::Run() {
 			if (auto Processor(GetProcessorFromList(PacketData->m_PacketStructure.m_PacketInformation.m_PacketType)); Processor) {
 				Processor(PacketData);
 			}
+			delete PacketData;
 		}
 	}
 }
@@ -109,7 +113,7 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP(const H
 				uint16_t RecvBytes = 0;
 				if (m_TCPIPSocket->Read(ReceivedBuffer + RemainReceivedBytes, RecvBytes)) {
 					RemainReceivedBytes += RecvBytes;
-					PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, nullptr, ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber);
+					PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber, this);
 				}
 			}
 			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
@@ -140,7 +144,7 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP(const H
 				uint16_t RecvBytes = 0;
 				if (m_UDPIPSocket->ReadFrom(ReceivedBuffer + RemainReceivedBytes, RecvBytes) && NETWORK::UTIL::UDPIP::CheckAck(m_UDPIPSocket.get(), m_ServerAddress, ReceivedBuffer, RecvBytes, m_NextSendPacketNumber)) {
 					RemainReceivedBytes += RecvBytes;
-					PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, nullptr, ReceivedBuffer, RemainReceivedBytes, m_NextSendPacketNumber);
+					PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceivedBuffer, RemainReceivedBytes, m_NextSendPacketNumber, this);
 				}
 			}
 			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
@@ -157,8 +161,10 @@ bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const 
 		const int16_t AckValue = static_cast<int16_t>(ReadedValue);
 		const int16_t PacketNumber = static_cast<int16_t>((ReadedValue >> 16));
 
+		// TODO PacketNumber가 이전에 받은 Number보다 작을때 따로 처리해주는 로직이 필요
 		if (AckValue == 9999) {
-			UpdatedPacketNumber = PacketNumber;
+			InterlockedExchange16(&UpdatedPacketNumber, PacketNumber);
+			ReceivedBytes -= sizeof(ReadedValue);
 			return UDPSocket->SendCompletion();
 		}
 		else if (AckValue == 0) {

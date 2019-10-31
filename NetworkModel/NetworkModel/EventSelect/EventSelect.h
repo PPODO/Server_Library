@@ -55,7 +55,8 @@ namespace NETWORKMODEL {
 			}
 			inline bool SendTo(NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) {
 				if (m_UDPIPSocket) {
-					PacketStructure.m_PacketInformation.m_PacketNumber = m_NextSendPacketNumber++;
+					PacketStructure.m_PacketInformation.m_PacketNumber = m_NextSendPacketNumber;
+					InterlockedIncrement16(&m_NextSendPacketNumber);
 					return m_UDPIPSocket->WriteToQueue(m_ServerAddress, PacketStructure);
 				}
 				return false;
