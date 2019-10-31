@@ -5,7 +5,7 @@ namespace NETWORKMODEL {
 	namespace IOCP {
 		static const size_t MAX_CLIENT_COUNT = 500;
 
-		class CIOCP : public DETAIL::CNetworkModel {
+		class CIOCP : private DETAIL::CNetworkModel {
 		private:
 			HANDLE m_hIOCP;
 

@@ -3,7 +3,7 @@
 
 namespace NETWORKMODEL {
 	namespace EVENTSELECT {
-		class CEventSelect : public DETAIL::CNetworkModel {
+		class CEventSelect : private DETAIL::CNetworkModel {
 		private:
 			const int m_PacketProcessLoopCount;
 
