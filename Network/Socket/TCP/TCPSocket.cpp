@@ -52,6 +52,9 @@ bool CTCPIPSocket::Accept(const CTCPIPSocket& ListenSocket, NETWORK::UTIL::SESSI
 		return false;
 	}
 
+	// AcceptEx가 성공했을시 버퍼에 주소가 적혀서 나오기 때문에 포인터 주소를 저장.
+	AcceptOverlapped.m_SocketMessage = GetReceiveBufferPtr();
+
 	size_t AddrLen = FUNCTIONS::SOCKADDR::CSocketAddress::GetSize() + 16;
 	// AcceptEx의 네번 째 매개변수에는 0이 들어가야함. 그렇지 않으면 Accept와 동시의 데이터를 받겠다는 뜻이 되기 때문에 어떠한 데이터가 들어오기 전 까지는 블럭됨.
 	if (!AcceptEx(ListenSocket.GetSocket(), GetSocket(), GetReceiveBufferPtr(), 0, AddrLen, AddrLen, nullptr, &AcceptOverlapped.m_Overlapped)) {
