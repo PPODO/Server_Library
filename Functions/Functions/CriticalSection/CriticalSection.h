@@ -33,15 +33,19 @@ namespace FUNCTIONS {
 
 		class CCriticalSectionGuard : private UNCOPYABLE::CUncopyable {
 		private:
-			DETAIL::CCriticalSection& m_CriticalSection;
+			DETAIL::CCriticalSection* const m_CriticalSection = nullptr;
 
 		public:
-			explicit CCriticalSectionGuard(DETAIL::CCriticalSection& CriticalSection) : m_CriticalSection(CriticalSection) {
-				m_CriticalSection.Lock();
+			explicit CCriticalSectionGuard(DETAIL::CCriticalSection* const CriticalSection) : m_CriticalSection(CriticalSection) {
+				if (m_CriticalSection) {
+					m_CriticalSection->Lock();
+				}
 			}
 
 			~CCriticalSectionGuard() {
-				m_CriticalSection.UnLock();
+				if (m_CriticalSection) {
+					m_CriticalSection->UnLock();
+				}
 			}
 
 		};

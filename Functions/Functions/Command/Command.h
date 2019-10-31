@@ -47,7 +47,7 @@ namespace FUNCTIONS {
 
 					size_t SubIndex = 0;
 					if ((SubIndex = Line.find("/cd")) != std::string::npos) {
-						CRITICALSECTION::CCriticalSectionGuard Lock(m_ActionLocking);
+						CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
 						std::string Command = Line.substr(4, Line.length() - SubIndex);
 
@@ -67,7 +67,7 @@ namespace FUNCTIONS {
 
 		private:
 			void PrintAllCommand() {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ActionLocking);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
 				for (const auto It : m_Actions) {
 					std::cout << "/cd " << It.first << std::endl;
@@ -77,19 +77,19 @@ namespace FUNCTIONS {
 		public:
 			template<typename F, typename ...A>
 			void AddNewAction(const std::string& Key, F&& Function, A&&... Argc) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ActionLocking);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
 				m_Actions.insert(std::make_pair(Key, std::bind(std::forward<F>(Function), std::forward<A>(Argc)...)));
 			}
 
 			void DeleteAction(const std::string& Key) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ActionLocking);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
 				m_Actions.erase(Key);
 			}
 
 			void ModifyAction(const std::string& Key, const std::function<void()>& NewAction) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ActionLocking);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
 				m_Actions[Key] = NewAction;
 			}

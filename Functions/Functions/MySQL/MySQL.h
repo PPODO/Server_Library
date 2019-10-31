@@ -290,13 +290,13 @@ namespace FUNCTIONS {
 					FUNCTIONS::LOG::CLog::WriteLog("SQL Error - %s", Exception.what());
 				}
 
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 				for (size_t i = 0; i < m_AllocConnectionCount; i++) {
 					m_DBConnectionList.insert(std::make_pair(CreateNewConnection(), EDBPOOLSTATE::EDBS_FREE));
 				}
 			}
 			~CMySQLPool() {
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 				for (auto& Iterator : m_DBConnectionList) {
 					if (Iterator.second == EDBPOOLSTATE::EDBS_FREE) {
@@ -308,7 +308,7 @@ namespace FUNCTIONS {
 
 		private:
 			sql::Connection* const GetConnectionFromPoolList(const std::string& Schema) {
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 				for (auto& Iterator : m_DBConnectionList) {
 					if (sql::Connection* ReturnValue = nullptr; Iterator.second == EDBPOOLSTATE::EDBS_FREE) {
@@ -335,7 +335,7 @@ namespace FUNCTIONS {
 		public:
 			void ReleaseConnectionToPool(sql::Connection* const Connection) {
 				if (Connection) {
-					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+					FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 					if (auto const Iterator = m_DBConnectionList.find(Connection); Iterator != m_DBConnectionList.cend() && Iterator->second == EDBPOOLSTATE::EDBS_USED) {
 						Iterator->second = EDBPOOLSTATE::EDBS_FREE;

@@ -84,7 +84,7 @@ namespace FUNCTIONS {
 
 		public:
 			static void* operator new(std::size_t AllocSize) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_Lock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_Lock);
 
 				if (!m_Pool) {
 					try {
@@ -103,7 +103,7 @@ namespace FUNCTIONS {
 			}
 
 			static void operator delete(void* const DeletePointer) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_Lock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_Lock);
 
 				if (DeletePointer && m_Pool) {
 					m_Pool->Delocate(DeletePointer);

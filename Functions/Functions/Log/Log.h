@@ -70,7 +70,7 @@ namespace FUNCTIONS {
 
 		public:
 			static bool WriteLog(LPCTSTR Log, ...) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_Lock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_Lock);
 
 				TCHAR Result[MAX_BUFFER_LENGTH] = { L"\0" };
 
@@ -83,7 +83,7 @@ namespace FUNCTIONS {
 			}
 
 			static bool WriteLog(const char* const Log, ...) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_Lock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_Lock);
 
 				CHAR Result[MAX_BUFFER_LENGTH] = { "\0" };
 

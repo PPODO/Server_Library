@@ -37,7 +37,7 @@ namespace FUNCTIONS {
 
 		public:
 			const DATATYPE& Push(const DATATYPE& InData) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 				size_t TempTail = (m_Tail + 1) % MAX_QUEUE_LENGTH;
 				if (TempTail == m_Tail) {
@@ -54,7 +54,7 @@ namespace FUNCTIONS {
 					return false;
 				}
 
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 				size_t TempHead = (m_Head + 1) % MAX_QUEUE_LENGTH;
 				if (TempHead == m_Head) {
@@ -71,7 +71,7 @@ namespace FUNCTIONS {
 					return false;
 				}
 
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 				size_t TempHead = (m_Head + 1) % MAX_QUEUE_LENGTH;
 				if (TempHead == m_Head) {
@@ -84,7 +84,7 @@ namespace FUNCTIONS {
 			}
 
 			bool IsEmpty() {
-				CRITICALSECTION::CCriticalSectionGuard Lock(m_ListLock);
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
 
 				if (m_Head == m_Tail) {
 					return true;
