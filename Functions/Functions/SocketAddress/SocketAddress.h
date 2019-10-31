@@ -59,9 +59,29 @@ namespace FUNCTIONS {
 				CopyMemory(&m_Address, &SocketAddress.m_Address, GetSize());
 			}
 
+			explicit CSocketAddress(const sockaddr& SocketAddress) {
+				CopyMemory(&m_Address, &SocketAddress, GetSize());
+			}
+
+			explicit CSocketAddress(const sockaddr_in& SocketAddress) {
+				CopyMemory(&m_Address, &SocketAddress, GetSize());
+			}
+
 		public:
 			const CSocketAddress& operator=(const CSocketAddress& SocketAddress) {
 				CopyMemory(&m_Address, &SocketAddress.m_Address, GetSize());
+
+				return (*this);
+			}
+
+			const CSocketAddress& operator=(const sockaddr& SocketAddress) {
+				CopyMemory(&m_Address, &SocketAddress, GetSize());
+
+				return (*this);
+			}
+
+			const CSocketAddress& operator=(const sockaddr_in& SocketAddress) {
+				CopyMemory(&m_Address, &SocketAddress, GetSize());
 
 				return (*this);
 			}
@@ -81,6 +101,17 @@ namespace FUNCTIONS {
 		public:
 			std::tuple<std::string, USHORT> GetIPAddressAndPort() {
 				return std::make_tuple<std::string, USHORT>(std::move(std::string(inet_ntoa(GetSockAddress()->sin_addr))), std::forward<USHORT>(GetSockAddress()->sin_port));
+			}
+
+		public:
+			bool IsSameAddress(const CSocketAddress& rhs) {
+				auto lhsValue = GetIPAddressAndPort();
+				auto rhsValue = const_cast<CSocketAddress&>(rhs).GetIPAddressAndPort();
+
+				if (std::get<0>(lhsValue) == std::get<0>(rhsValue)) {
+					return true;
+				}
+				return false;
 			}
 
 		};
