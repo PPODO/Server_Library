@@ -15,6 +15,9 @@
   * [Uncopyable](https://github.com/PPODO/Server_Library#uncopyable)
 
  Network
+  * [Packet](https://github.com/PPODO/Server_Library#packet)
+  * [Session](https://github.com/PPODO/Server_Library#session)
+  * [Socket](https://github.com/PPODO/Server_Library#socket)
 
 
  NetworkModel
@@ -306,17 +309,96 @@
  ```
 
 ## Network
-### Socket
+### Packet
+  * 패킷의 직렬화, 역직렬화 및 패킷과 관련된 구조체들이 정의되어 있습니다. 
 
 
 ### Session
+  * IOCP에서만 사용 가능한 클래스입니다. 
 
+
+### Socket
+  * TCP, UDP프로토콜이 정의되어 있습니다.
 
 
 ## NetworkModel
 ### EventSelect
+  * 클라이언트에서 사용 가능한 네트워크 모델입니다.
+ ```
+ #include <NetworkModel/NetworkModel/IOCP/IOCP.hpp>
+ 
+ void PacketProcessor(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const Data) {
+    // 처리
+     
+    if(auto Owner = reinterpret_cast<NETWORKMODEL::EVENTSELECT::CEventSelect*>(Data->m_Owner); Owner) {
+       CTEST TEST;
+       auto PacketStructure = NETWORK::UTIL::PACKET::Serialize<CTEST>(TEST);
+
+       Owner->Send(PacketStructure);
+    }
+ }
+ 
+ int main() {
+     NETWORKMODEL::DETAIL::PACKETPROCESSORLIST List;
+     List.insert(std::make_pair(EPACKETPROTOCOL::EPPT_RESULT, &PacketProcessor));
+
+     FUNCTIONS::SOCKADDR::CSocketAddress Address("127.0.0.1", 3550);
+     std::unique_ptr<NETWORKMODEL::EVENTSELECT::CEventSelect> Event = std::make_unique<NETWORKMODEL::EVENTSELECT::CEventSelect>(12, List);
+
+     std::thread T1([&]() {
+         while (true) {
+             std::string Id, Pass;
+
+             std::getline(std::cin, Id);
+             std::getline(std::cin, Pass);
+
+             CTEST TEST(0, 1, 2);
+             auto PacketStructure = NETWORK::UTIL::PACKET::Serialize<CTEST>(TEST);
+
+             Event->SendTo(PacketStructure);
+         }
+     });
+
+     if (Event->Initialize(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_BOTH, Address)) {
+         while (true) {
+             Event->Run();
+	 }
+     }
+
+     T1.join();
+     return 0;
+ }
 
 
 ### IOCP
+  * 서버에서 사용 가능한 네트워크 모델입니다. 
+ ```
+ #include <NetworkModel/NetworkModel/IOCP/IOCP.hpp>
+ 
+ void PacketProcessor(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const Data) {
+    // 처리
+     
+    if(auto Owner = reinterpret_cast<IOCP::CONNECTION*>(Data->Owner); Owner) { 
+        if (Owner->m_Client.m_Session) {
+            CTEST TEST;
+            auto Packet = NETWORK::UTIL::PACKET::Serialize(TEST);
 
+            Owner->m_Client.m_Session->SendTo(Packet);
+        }
+    }
+ }
+ 
+ int main() {
+     NETWORKMODEL::DETAIL::PACKETPROCESSORLIST List;
+     List.insert(std::make_pair(EPACKETPROTOCOL::EPPT_LOGIN, &PacketProcessor));
 
+     NETWORKMODEL::IOCP::CIOCP IOCP(List);
+
+     FUNCTIONS::SOCKADDR::CSocketAddress BindAddress("127.0.0.1", 3550);
+     if (IOCP.Initialize(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_BOTH, BindAddress)) {
+          IOCP.Run();
+     }
+
+     return 0;
+ }
+ ```
