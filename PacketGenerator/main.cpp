@@ -185,6 +185,22 @@ int main(int argc, char* argv[]) {
 					PacketDefineFile << "\t}; \n\n";
 				}
 
+				PacketDefineFile << "public:\n";
+				PacketDefineFile << "\t const C" << It.m_ProtocolName << "& operator=(const C" << It.m_ProtocolName << "& rhs) {\n";
+				PacketDefineFile << "\t\tm_MessageType = rhs.m_MessageType;\n";
+
+				for (const auto& ParamIt : It.m_Parameters) {
+					if (ParamIt.m_ArraySize == 0) {
+						PacketDefineFile << "\t\tm_" << ParamIt.m_Name << "= rhs.m_" << ParamIt.m_Name << ";\n";
+					}
+					else {
+						PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n\n";
+					}
+				}
+
+				PacketDefineFile << "\t\treturn (*this);\n";
+				PacketDefineFile << "\t}\n\n";
+
 				PacketDefineFile << "protected:\n";
 				PacketDefineFile << "\ttemplate<typename Archive>\n";
 				PacketDefineFile << "\tvoid serialize(Archive& ar, unsigned int Version) {\n";
