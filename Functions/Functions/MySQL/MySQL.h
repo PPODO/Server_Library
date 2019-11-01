@@ -226,6 +226,9 @@ namespace FUNCTIONS {
 						ConditionResult.append(" WHERE ");
 						for (auto CondiIt : Data.m_Conditions) {
 							ConditionResult.append(CondiIt.GetConditionResult());
+							if (CondiIt.m_LogicalType != DETAIL::ELOGICALTYPE::ELT_NONE) {
+								ConditionResult.append(CondiIt.GetLogicalResult());
+							}
 						}
 					}
 				}
