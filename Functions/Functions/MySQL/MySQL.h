@@ -11,7 +11,7 @@
 #include <map>
 
 namespace std {
-	std::string to_string(const char* const _Val) {
+	static std::string to_string(const char* const _Val) {
 		return std::string(_Val);
 	}
 }
@@ -27,6 +27,8 @@ namespace FUNCTIONS {
 
 	namespace UTIL {
 		namespace MYSQL {
+			const int DUPLICATEVALUE = 1062;
+
 			namespace DETAIL {
 				struct ROW {
 				public:
@@ -68,15 +70,16 @@ namespace FUNCTIONS {
 				struct CONDITION {
 				public:
 					ECONDITIONTYPE m_ConditionType;
+					ELOGICALTYPE m_LogicalType;
 					std::string m_FieldName;
 					std::vector<std::string> m_Values;
 
 				public:
-					CONDITION() : m_ConditionType(ECONDITIONTYPE::ECT_NONE) , m_FieldName() {};
-					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName) : m_ConditionType(Type), m_FieldName(FieldName) {};
-					CONDITION(const ECONDITIONTYPE& Type, const std::string& FieldName, std::vector<std::string>& Values) : m_ConditionType(Type), m_FieldName(FieldName), m_Values(std::move(Values)) {};
-					CONDITION(const CONDITION& lvalue) : m_ConditionType(lvalue.m_ConditionType), m_FieldName(lvalue.m_FieldName), m_Values(lvalue.m_Values) {};
-					CONDITION(CONDITION&& rvalue) : m_ConditionType(rvalue.m_ConditionType), m_FieldName(std::move(rvalue.m_FieldName)), m_Values(std::move(rvalue.m_Values)) {};
+					CONDITION() : m_ConditionType(ECONDITIONTYPE::ECT_NONE), m_LogicalType(ELOGICALTYPE::ELT_NONE), m_FieldName() {};
+					CONDITION(const ECONDITIONTYPE& Type, const ELOGICALTYPE& LogicalType, const std::string& FieldName) : m_ConditionType(Type), m_LogicalType(LogicalType), m_FieldName(FieldName) {};
+					CONDITION(const ECONDITIONTYPE& Type, const ELOGICALTYPE& LogicalType, const std::string& FieldName, std::vector<std::string>& Values) : m_ConditionType(Type), m_LogicalType(LogicalType), m_FieldName(FieldName), m_Values(Values) {};
+					CONDITION(const CONDITION& lvalue) : m_ConditionType(lvalue.m_ConditionType), m_LogicalType(lvalue.m_LogicalType), m_FieldName(lvalue.m_FieldName), m_Values(lvalue.m_Values) {};
+					CONDITION(CONDITION&& rvalue) noexcept : m_ConditionType(rvalue.m_ConditionType), m_LogicalType(rvalue.m_LogicalType), m_FieldName(std::move(rvalue.m_FieldName)), m_Values(std::move(rvalue.m_Values)) {};
 
 				public:
 					// can throw exception
@@ -104,6 +107,15 @@ namespace FUNCTIONS {
 						return std::string();
 					}
 
+					std::string GetLogicalResult() {
+						switch (m_LogicalType) {
+						case ELOGICALTYPE::ELT_AND:
+							return std::string(" AND ");
+						case ELOGICALTYPE::ELT_OR:
+							return std::string(" OR ");
+						}
+						return std::string();
+					}
 				};
 
 				struct INSERTDATA {
@@ -184,6 +196,9 @@ namespace FUNCTIONS {
 						ConditionResult.append("WHERE ");
 						for (auto CondiIt : Data.m_Conditions) {
 							ConditionResult.append(CondiIt.GetConditionResult());
+							if (CondiIt.m_LogicalType != DETAIL::ELOGICALTYPE::ELT_NONE) {
+								ConditionResult.append(CondiIt.GetLogicalResult());
+							}
 						}
 					}
 				}
@@ -223,14 +238,14 @@ namespace FUNCTIONS {
 			}
 
 			template<typename ...TYPES>
-			static DETAIL::CONDITION MakeCondition(const DETAIL::ECONDITIONTYPE& ConditionType, const std::string& FieldName, const TYPES&... Args) {
+			static DETAIL::CONDITION MakeCondition(const DETAIL::ECONDITIONTYPE& ConditionType, const DETAIL::ELOGICALTYPE& LogicalType, const std::string& FieldName, const TYPES&... Args) {
 				std::vector<std::string> ConditionList;
 				DETAIL::MakeConditionList(ConditionList, Args...);
 
-				return DETAIL::CONDITION(ConditionType, FieldName, ConditionList);
+				return DETAIL::CONDITION(ConditionType, LogicalType, FieldName, ConditionList);
 			}
 
-			static bool ExecuteQuery(sql::Connection* const Connection, const std::string& Query, const std::function<void(sql::ResultSet* const)>& Processor = nullptr) {
+			static int ExecuteQuery(sql::Connection* const Connection, const std::string& Query, const std::function<void(sql::ResultSet* const)>& Processor = nullptr) {
 				try {
 					if (sql::Statement* const Statement = Connection->createStatement(); Statement) {
 						if (sql::ResultSet* const Result = Statement->executeQuery(Query); Result) {
@@ -245,10 +260,10 @@ namespace FUNCTIONS {
 				catch (const sql::SQLException & Exception) {
 					if (Exception.getErrorCode() != 0) {
 						FUNCTIONS::LOG::CLog::WriteLog(L"SQL Exception - %d, %S", Exception.getErrorCode(), Exception.what());
-						return false;
+						return Exception.getErrorCode();
 					}
 				}
-				return true;
+				return 0;
 			}
 		}
 	}
