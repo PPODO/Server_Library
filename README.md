@@ -17,10 +17,9 @@
  Network
 
 
- IOCP
-
-
- EventSelect
+ NetworkModel
+  * [EventSelect](https://github.com/PPODO/Server_Library#eventselect)
+  * [IOCP](https://github.com/PPODO/Server_Library#iocp)
 
 
 ## Functions
@@ -76,7 +75,7 @@
      Lock.UnLock();
 
      {
-          FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock2(Lock);
+          FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock2(&Lock);
           // 생성자가 호출됨과 동시에 Lock
 		
           // 소멸자가 호출됨과 동시에 UnLock
@@ -249,10 +248,10 @@
      std::vector<MYSQL::DETAIL::INSERTDATA> InsertDatas{ MYSQL::DETAIL::ROW("FieldName", 1), MYSQL::DETAIL::ROW("FieldName2", 2.f), MYSQL::DETAIL::ROW("FieldName3", "hi!") };
      MYSQL::ExecuteQuery(Connection, MYSQL::InsertNewData("TableName", InsertDatas));
 
-     MYSQL::DETAIL::UPATEDATA UpdateData({ MYSQL::DETAIL::ROW("FieldName2", 100.f) }, { MYSQL::MakeCondition(MYSQL::DETAIL::ECONDITIONTYPE::ECT_LIKE, "FieldName3", "hi!") });
+     MYSQL::DETAIL::UPATEDATA UpdateData({ MYSQL::DETAIL::ROW("FieldName2", 100.f) }, { MYSQL::MakeCondition(MYSQL::DETAIL::ECONDITIONTYPE::ECT_LIKE,  MYSQL::DETAIL::ELOGICALTYPE::ELT_NONE,"FieldName3", "hi!") });
      MYSQL::ExecuteQuery(Connection, MYSQL::UpdateData("TableName", UpdateData));
 
-     MYSQL::DETAIL::SELECTDATA SelectData({ "*" }, { MYSQL::MakeCondition(MYSQL::DETAIL::ECONDITIONTYPE::ECT_BETAND, "FieldName2", 0.f, 5.f) });
+     MYSQL::DETAIL::SELECTDATA SelectData({ "*" }, { MYSQL::MakeCondition(MYSQL::DETAIL::ECONDITIONTYPE::ECT_BETAND, MYSQL::DETAIL::ELOGICALTYPE::ELT_NONE,"FieldName2", 0.f, 5.f) });
      MYSQL::ExecuteQuery(Connection, MYSQL::SearchData("TableName", SelectData), SearchResult);
 
      g_DBPool.ReleaseConnectionToPool(Connection);	 
@@ -310,17 +309,14 @@
 ### Socket
 
 
-
 ### Session
 
 
 
-## IOCP
-### IOCP
-
-
-
-## EventSelect
+## NetworkModel
 ### EventSelect
+
+
+### IOCP
 
 
