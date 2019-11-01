@@ -347,12 +347,12 @@
 
      std::thread T1([&]() {
          while (true) {
-             std::string Id, Pass;
+             std::string Test1, Test2;
 
-             std::getline(std::cin, Id);
-             std::getline(std::cin, Pass);
+             std::getline(std::cin, Test1);
+             std::getline(std::cin, Test2);
 
-             CTEST TEST(0, 1, 2);
+             CTEST TEST(0, Test1, Test2);
              auto PacketStructure = NETWORK::UTIL::PACKET::Serialize<CTEST>(TEST);
 
              Event->SendTo(PacketStructure);
