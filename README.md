@@ -324,7 +324,7 @@
 ## NetworkModel
 ### EventSelect
   * 클라이언트에서 사용 가능한 네트워크 모델입니다.
- ```
+ ``` c
  #include <NetworkModel/NetworkModel/IOCP/IOCP.hpp>
  
  void PacketProcessor(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const Data) {
@@ -373,7 +373,7 @@
 
 ### IOCP
   * 서버에서 사용 가능한 네트워크 모델입니다. 
- ```
+ ``` c
  #include <NetworkModel/NetworkModel/IOCP/IOCP.hpp>
  
  void PacketProcessor(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const Data) {
