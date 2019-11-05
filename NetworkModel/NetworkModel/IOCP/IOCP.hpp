@@ -8,15 +8,14 @@ namespace NETWORKMODEL {
 		struct CONNECTION {
 			struct TCPCONNECTION {
 			public:
-				NETWORK::SESSION::SERVERSESSION::CServerSession* const m_Session;
+				NETWORK::SESSION::SERVERSESSION::CServerSession* m_Session;
 				FUNCTIONS::SOCKADDR::CSocketAddress m_Address;
 
 			public:
-				TCPCONNECTION() : m_Session(nullptr), m_Address() {};
-				TCPCONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) : m_Session(Session), m_Address() {};
-				TCPCONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, const FUNCTIONS::SOCKADDR::CSocketAddress& Address) : m_Session(Session), m_Address(Address) {};
+				explicit TCPCONNECTION() : m_Session(nullptr), m_Address() {};
+				explicit TCPCONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) : m_Session(Session), m_Address() {};
+				explicit TCPCONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, const FUNCTIONS::SOCKADDR::CSocketAddress& Address) : m_Session(Session), m_Address(Address) {};
 				TCPCONNECTION(const TCPCONNECTION& lvalue) : m_Session(lvalue.m_Session), m_Address(lvalue.m_Address) {};
-				TCPCONNECTION(const TCPCONNECTION&& rvalue) : m_Session(rvalue.m_Session), m_Address(rvalue.m_Address) {};
 
 			public:
 				bool operator==(const NETWORK::SESSION::SERVERSESSION::CServerSession* Session) const {
@@ -32,12 +31,11 @@ namespace NETWORKMODEL {
 			NETWORK::SOCKET::UDPIP::PEERINFO m_Peer;
 
 		public:
-			CONNECTION() : m_Client(), m_Peer() {};
-			CONNECTION(const TCPCONNECTION& Client) : m_Client(Client), m_Peer() {};
-			CONNECTION(const NETWORK::SOCKET::UDPIP::PEERINFO& Peer) : m_Client(nullptr), m_Peer(Peer) {};
-			CONNECTION(const TCPCONNECTION& Client, const NETWORK::SOCKET::UDPIP::PEERINFO& Peer) : m_Client(Client), m_Peer(Peer) {};
-			CONNECTION(CONNECTION& lvalue) : m_Client(lvalue.m_Client), m_Peer(lvalue.m_Peer) {};
-			CONNECTION(CONNECTION&& rvalue) noexcept : m_Client(rvalue.m_Client), m_Peer(rvalue.m_Peer) {};
+			explicit CONNECTION() : m_Client(), m_Peer() {};
+			explicit CONNECTION(const TCPCONNECTION& Client) : m_Client(Client), m_Peer() {};
+			explicit CONNECTION(const NETWORK::SOCKET::UDPIP::PEERINFO& Peer) : m_Client(), m_Peer(Peer) {};
+			explicit CONNECTION(const TCPCONNECTION& Client, const NETWORK::SOCKET::UDPIP::PEERINFO& Peer) : m_Client(Client), m_Peer(Peer) {};
+			CONNECTION(const CONNECTION& lvalue) : m_Client(lvalue.m_Client), m_Peer(lvalue.m_Peer) {};
 
 		};
 
