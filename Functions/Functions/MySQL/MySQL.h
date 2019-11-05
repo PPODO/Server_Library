@@ -27,6 +27,7 @@ namespace FUNCTIONS {
 
 	namespace UTIL {
 		namespace MYSQL {
+			const int NOTEXISTREFTABLE = 1452;
 			const int DUPLICATEVALUE = 1062;
 
 			namespace DETAIL {
@@ -104,7 +105,7 @@ namespace FUNCTIONS {
 						case ECONDITIONTYPE::ECT_NULL:
 							return std::string('`' + m_FieldName + "` IS NULL");
 						}
-						return std::string();
+						return std::string("");
 					}
 
 					std::string GetLogicalResult() {
@@ -114,7 +115,7 @@ namespace FUNCTIONS {
 						case ELOGICALTYPE::ELT_OR:
 							return std::string(" OR ");
 						}
-						return std::string();
+						return std::string("");
 					}
 				};
 
@@ -124,6 +125,7 @@ namespace FUNCTIONS {
 
 				public:
 					INSERTDATA() : m_Row() {};
+					INSERTDATA(const std::string& FieldName) : m_Row(FieldName, "") {};
 					INSERTDATA(const ROW& Row) : m_Row(Row) {};
 					INSERTDATA(ROW&& Row) : m_Row(std::move(Row)) {};
 
@@ -181,11 +183,29 @@ namespace FUNCTIONS {
 				return std::string("insert into `" + TableName + "` (" + FieldResult + ") values (" + DataResult + ")");
 			}
 
+			static std::string InsertNewData(const std::string& TableName, const std::vector<DETAIL::INSERTDATA>& Datas, const std::string& Values) {
+				std::string FieldResult;
+				for (auto Iterator = Datas.cbegin(); Iterator != Datas.cend(); ++Iterator) {
+					FieldResult.append(std::string("`" + Iterator->m_Row.m_FieldName + "`")); 
+					if ((Iterator + 1) != Datas.cend()) {
+						FieldResult.append(",");
+					}
+				}
+
+				return std::string("insert into `" + TableName + "` (" + FieldResult + ") " + Values);
+			}
+
 			static std::string SearchData(const std::string& TableName, const DETAIL::SELECTDATA& Data) {
 				std::string FieldResult;
 				std::string ConditionResult;
 				for (auto FieldIt = Data.m_FieldNames.cbegin(); FieldIt != Data.m_FieldNames.cend(); ++FieldIt) {
-					FieldResult.append('`' + *FieldIt + '`');
+					// Insert와 Select를 동시에 사용 가능하도록 만듦.
+					if (FieldIt->find('\'') == std::string::npos) {
+						FieldResult.append('`' + *FieldIt + '`');
+					}
+					else {
+						FieldResult.append(*FieldIt);
+					}
 					if ((FieldIt + 1) != Data.m_FieldNames.cend()) {
 						FieldResult.append(", ");
 					}
@@ -262,7 +282,7 @@ namespace FUNCTIONS {
 				}
 				catch (const sql::SQLException & Exception) {
 					if (Exception.getErrorCode() != 0) {
-						FUNCTIONS::LOG::CLog::WriteLog(L"SQL Exception - %d, %S", Exception.getErrorCode(), Exception.what());
+						FUNCTIONS::LOG::CLog::WriteLog("SQL Exception - %d, %s", Exception.getErrorCode(), Exception.what());
 						return Exception.getErrorCode();
 					}
 				}
