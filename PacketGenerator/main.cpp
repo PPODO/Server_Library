@@ -19,7 +19,9 @@ struct PROTOCOL {
 public:
 	const std::string m_ProtocolType;
 	std::string m_ProtocolName;
+	std::vector<PARAMETER> m_Structures;
 	std::vector<PARAMETER> m_Parameters;
+	std::vector<std::string> m_Headers;
 	std::vector<std::string> m_MessageTypes;
 
 public:
@@ -36,6 +38,8 @@ int main(int argc, char* argv[]) {
 			std::string ReadedLine;
 			bool bIsParameterOpen = false;
 			bool bIsMessageTypeOpen = false;
+			bool bIsStructureTypeOpen = false;
+			bool bIsHeadersOpen = false;
 
 			while (std::getline(ProtocolFile, ReadedLine)) {
 				std::string ResultWithoutSpaces;
@@ -79,8 +83,31 @@ int main(int argc, char* argv[]) {
 							continue;
 						}
 						
+						if (ResultWithoutSpaces.find('(') != std::string::npos) {
+							bIsStructureTypeOpen = true;
+							continue;
+						}
+
+						if (ResultWithoutSpaces.find(')') != std::string::npos) {
+							bIsStructureTypeOpen = false;
+							continue;
+						}
+
+						if (ResultWithoutSpaces.find('<') != std::string::npos && ResultWithoutSpaces.find('-') == std::string::npos) {
+							bIsHeadersOpen = true;
+							continue;
+						}
+						
+						if (ResultWithoutSpaces.find('>') != std::string::npos && ResultWithoutSpaces.find('-') == std::string::npos) {
+							bIsHeadersOpen = false;
+							continue;
+						}
+
 						if (bIsMessageTypeOpen) {
 							Protocols.back().m_MessageTypes.emplace_back(ResultWithoutSpaces);
+						}
+						else if (bIsHeadersOpen) {
+							Protocols.back().m_Headers.emplace_back(ResultWithoutSpaces);
 						}
 						else {
 							size_t CenterIndex = 0;
@@ -92,7 +119,12 @@ int main(int argc, char* argv[]) {
 								}
 								std::string Type = ResultWithoutSpaces.substr(0, CenterIndex);
 								std::string Name = ResultWithoutSpaces.substr(CenterIndex + 1, ArraySizeIndex - 5);
-								Protocols.back().m_Parameters.emplace_back(Type, Name, ArraySize);
+								if (bIsStructureTypeOpen) {
+									Protocols.back().m_Structures.emplace_back(Type, Name, ArraySize);
+								}
+								else {
+									Protocols.back().m_Parameters.emplace_back(Type, Name, ArraySize);
+								}
 							}
 						}
 					}
@@ -105,6 +137,7 @@ int main(int argc, char* argv[]) {
 			for (auto It2 : It.m_Parameters) {
 				std::cout << It2.m_Type << '\t' << It2.m_Name << '\t' << It2.m_ArraySize << std::endl;
 			}
+			std::cout << std::endl << std::endl;
 		}
 
 		std::string SavePath(argv[1]);
@@ -125,17 +158,95 @@ int main(int argc, char* argv[]) {
 				PacketDefineFile << "#pragma once\n";
 				PacketDefineFile << "#pragma comment(lib, \"Network.lib\")\n";
 				PacketDefineFile << "#include \"" << HeaderName << "\"\n";
+
+				for (auto It : It.m_Headers) {
+					PacketDefineFile << "#include <" << It << ">\n";
+				}
+
 				PacketDefineFile << "#include <Network/Packet/BasePacket.hpp>\n\n";
 
-				PacketDefineFile << "enum E" << It.m_ProtocolName << "MESSAGETYPE {\n";
-				for (auto Iterator = It.m_MessageTypes.cbegin(); Iterator != It.m_MessageTypes.cend(); ++Iterator) {
-					PacketDefineFile << '\t' << "EMT_" << (*Iterator);
-					if ((Iterator + 1) != It.m_MessageTypes.cend()) {
-						PacketDefineFile << ',';
+				if (It.m_MessageTypes.size() != 0) {
+					PacketDefineFile << "enum E" << It.m_ProtocolName << "MESSAGETYPE {\n";
+					for (auto Iterator = It.m_MessageTypes.cbegin(); Iterator != It.m_MessageTypes.cend(); ++Iterator) {
+						PacketDefineFile << '\t' << "EMT_" << (*Iterator);
+						if ((Iterator + 1) != It.m_MessageTypes.cend()) {
+							PacketDefineFile << ',';
+						}
+						PacketDefineFile << '\n';
 					}
-					PacketDefineFile << '\n';
+					PacketDefineFile << "};\n\n";
 				}
-				PacketDefineFile << "};\n\n";
+
+				if (It.m_Structures.size() != 0) {
+					PacketDefineFile << "struct " << It.m_ProtocolName << " {\n";
+					PacketDefineFile << "\tfriend boost::serialization::access;\n";
+					PacketDefineFile << "public:\n";
+
+					for (const auto& ParamIt : It.m_Structures) {
+						PacketDefineFile << '\t' << ParamIt.m_Type << "\tm_" << ParamIt.m_Name;
+						if (ParamIt.m_ArraySize != 0) {
+							PacketDefineFile << "[" << ParamIt.m_ArraySize << "]";
+						}
+						PacketDefineFile << ";\n";
+					}
+
+					PacketDefineFile << "\npublic:\n";
+					PacketDefineFile << "\t" << It.m_ProtocolName << "() {};\n";
+					PacketDefineFile << "\t" << It.m_ProtocolName << "(";
+
+					for (auto ParamIt = It.m_Structures.cbegin(); ParamIt != It.m_Structures.cend(); ++ParamIt) {
+						PacketDefineFile << "const " << ParamIt->m_Type << (ParamIt->m_ArraySize == 0 ? "& " : "* ") << ParamIt->m_Name;
+						if ((ParamIt + 1) != It.m_Structures.cend()) {
+							PacketDefineFile << ", ";
+						}
+					}
+					PacketDefineFile << ") : ";
+
+					for (auto ParamIt = It.m_Structures.cbegin(); ParamIt != It.m_Structures.cend(); ++ParamIt) {
+						if (ParamIt->m_ArraySize == 0) {
+							PacketDefineFile << "m_" << ParamIt->m_Name << "(" << ParamIt->m_Name << ")";
+							if ((ParamIt + 1) != It.m_Structures.cend()) {
+								PacketDefineFile << ", ";
+							}
+						}
+					}
+
+					PacketDefineFile << " {\n";
+
+					for (auto ParamIt : It.m_Structures) {
+						if (ParamIt.m_ArraySize != 0) {
+							PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n";
+						}
+					}
+
+					PacketDefineFile << "\t};\n\npublic:\n";
+
+					PacketDefineFile << "\t const " << It.m_ProtocolName << "& operator=(const " << It.m_ProtocolName << "& rhs) {\n";
+
+					for (const auto& ParamIt : It.m_Structures) {
+						if (ParamIt.m_ArraySize == 0) {
+							PacketDefineFile << "\t\tm_" << ParamIt.m_Name << "= rhs.m_" << ParamIt.m_Name << ";\n";
+						}
+						else {
+							PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n";
+						}
+					}
+
+					PacketDefineFile << "\n\t\treturn (*this);\n";
+					PacketDefineFile << "\t}\n\n";
+
+					PacketDefineFile << "protected:\n";
+					PacketDefineFile << "\ttemplate<typename Archive>\n";
+					PacketDefineFile << "\tvoid serialize(Archive& ar, unsigned int Version) {\n";
+
+					for (const auto& ParamIt : It.m_Structures) {
+						PacketDefineFile << "\t\tar& m_" << ParamIt.m_Name << ";\n";
+					}
+
+					PacketDefineFile << "\t};\n\n";
+
+					PacketDefineFile << "};\n\n";
+				}
 
 				PacketDefineFile << "struct C" << It.m_ProtocolName << " : public NETWORK::PACKET::CPacket<C" << It.m_ProtocolName << "> {\n";
 				PacketDefineFile << "\tfriend boost::serialization::access;\n";
@@ -151,13 +262,10 @@ int main(int argc, char* argv[]) {
 
 				PacketDefineFile << "\npublic:\n";
 				PacketDefineFile << "\tC" << It.m_ProtocolName << "() : NETWORK::PACKET::CPacket<C" << It.m_ProtocolName << ">(" << It.m_ProtocolType << ") {};\n";
-				PacketDefineFile << "\tC" << It.m_ProtocolName << "(const uint8_t& MessageType, ";
+				PacketDefineFile << "\tC" << It.m_ProtocolName << "(const uint8_t& MessageType";
 
 				for (auto ParamIt = It.m_Parameters.cbegin(); ParamIt != It.m_Parameters.cend(); ++ParamIt) {
-					PacketDefineFile << "const " << ParamIt->m_Type << ((ParamIt->m_ArraySize != 0) ? "* " : "& ") << ParamIt->m_Name;
-					if ((ParamIt + 1) != It.m_Parameters.cend()) {
-						PacketDefineFile << ", ";
-					}
+					PacketDefineFile << ", const " << ParamIt->m_Type << ((ParamIt->m_ArraySize != 0) ? "* " : "& ") << ParamIt->m_Name;
 				}
 
 				PacketDefineFile << ") : NETWORK::PACKET::CPacket<C" << It.m_ProtocolName << ">(" << It.m_ProtocolType << ", MessageType)";
@@ -191,14 +299,14 @@ int main(int argc, char* argv[]) {
 
 				for (const auto& ParamIt : It.m_Parameters) {
 					if (ParamIt.m_ArraySize == 0) {
-						PacketDefineFile << "\t\tm_" << ParamIt.m_Name << "= rhs.m_" << ParamIt.m_Name << ";\n";
+						PacketDefineFile << "\t\tm_" << ParamIt.m_Name << " = rhs.m_" << ParamIt.m_Name << ";\n";
 					}
 					else {
-						PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n\n";
+						PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n";
 					}
 				}
 
-				PacketDefineFile << "\t\treturn (*this);\n";
+				PacketDefineFile << "\n\t\treturn (*this);\n";
 				PacketDefineFile << "\t}\n\n";
 
 				PacketDefineFile << "protected:\n";
