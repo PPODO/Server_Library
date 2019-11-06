@@ -10,7 +10,7 @@ namespace FUNCTIONS {
 
 		class CLog {
 		private:
-			static CRITICALSECTION::DETAIL::CCriticalSection m_Lock;
+			inline static CRITICALSECTION::DETAIL::CCriticalSection m_Lock;
 
 		private:
 			static bool Write(const CHAR* LogData) {
@@ -95,5 +95,6 @@ namespace FUNCTIONS {
 			}
 
 		};
+
 	}
 }
