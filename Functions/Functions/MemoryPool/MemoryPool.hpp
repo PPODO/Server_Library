@@ -76,10 +76,10 @@ namespace FUNCTIONS {
 		template<typename T, size_t POOL_MAX_SIZE = 50>
 		class CMemoryManager  {
 		private:
-			static CRITICALSECTION::DETAIL::CCriticalSection m_Lock;
+			inline static CRITICALSECTION::DETAIL::CCriticalSection m_Lock;
 
 		private:
-			static std::unique_ptr<MEMORYPOOL::CMemoryPool> m_Pool;
+			inline static std::unique_ptr<MEMORYPOOL::CMemoryPool> m_Pool = nullptr;
 
 
 		public:
@@ -111,11 +111,5 @@ namespace FUNCTIONS {
 			}
 
 		};
-
-		template<typename T, size_t POOL_MAX_SIZE>
-		CRITICALSECTION::DETAIL::CCriticalSection CMemoryManager<T, POOL_MAX_SIZE>::m_Lock;
-
-		template<typename T, size_t POOL_MAX_SIZE>
-		std::unique_ptr<MEMORYPOOL::CMemoryPool> CMemoryManager<T, POOL_MAX_SIZE>::m_Pool;
 	}
 }
