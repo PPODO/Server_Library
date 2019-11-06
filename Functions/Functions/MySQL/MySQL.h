@@ -82,6 +82,27 @@ namespace FUNCTIONS {
 					CONDITION(const CONDITION& lvalue) : m_ConditionType(lvalue.m_ConditionType), m_LogicalType(lvalue.m_LogicalType), m_FieldName(lvalue.m_FieldName), m_Values(lvalue.m_Values) {};
 					CONDITION(CONDITION&& rvalue) noexcept : m_ConditionType(rvalue.m_ConditionType), m_LogicalType(rvalue.m_LogicalType), m_FieldName(std::move(rvalue.m_FieldName)), m_Values(std::move(rvalue.m_Values)) {};
 
+				private:
+					std::string GetFieldName() {
+						if (size_t Index; (Index = m_FieldName.find('.')) != std::string::npos) {
+							return std::string('`' + m_FieldName.substr(0, Index) + '`' + m_FieldName.substr(Index, m_FieldName.length()));
+						}
+						else {
+							return std::string('`' + m_FieldName + '`');
+						}
+						return std::string("");
+					}
+
+					std::string MakeValueFromString(const std::string& Value) {
+						if (size_t Index; (Index = Value.find('.')) != std::string::npos) {
+							return std::string('`' + Value.substr(0, Index) + '`' + Value.substr(Index, Value.length()));
+						}
+						else {
+							return std::string('\'' + Value + '\'');
+						}
+						return std::string("");
+					}
+
 				public:
 					// can throw exception
 					std::string GetConditionResult() {
@@ -89,21 +110,21 @@ namespace FUNCTIONS {
 						case ECONDITIONTYPE::ECT_BETAND:
 							if (m_Values.size() >= 2) {
 								auto It = m_Values.cbegin();
-								return std::string('`' + m_FieldName + "` BETWEEN '" + *It + "' AND '" + *(It + 1) + "'");
+								return std::string(GetFieldName() + MakeValueFromString(*It) + " AND " + MakeValueFromString(*(It + 1)));
 							}
 							throw FUNCTIONS::EXCEPTION::vector_range("the size is less than 2.");
 						case ECONDITIONTYPE::ECT_IN:
 							if (m_Values.size() >= 2) {
 								auto It = m_Values.cbegin();
-								return std::string('`' + m_FieldName + "` IN ('" + *It + "', '" + *(It + 1) + "')");
+								return std::string(GetFieldName() + " IN (" + MakeValueFromString(*It) + ", " + MakeValueFromString(*(It + 1)) + ")");
 							}
 							throw FUNCTIONS::EXCEPTION::vector_range("the size is less than 2.");
 						case ECONDITIONTYPE::ECT_LIKE:
-							return std::string('`' + m_FieldName + "` LIKE '" + m_Values.front() + "'");
+							return std::string(GetFieldName() + " LIKE " + MakeValueFromString(m_Values.front()));
 						case ECONDITIONTYPE::ECT_NOTNULL:
-							return std::string('`' + m_FieldName + "` NOT IS NULL");
+							return std::string(GetFieldName() + " NOT IS NULL");
 						case ECONDITIONTYPE::ECT_NULL:
-							return std::string('`' + m_FieldName + "` IS NULL");
+							return std::string(GetFieldName() + " IS NULL");
 						}
 						return std::string("");
 					}
@@ -200,7 +221,10 @@ namespace FUNCTIONS {
 				std::string ConditionResult;
 				for (auto FieldIt = Data.m_FieldNames.cbegin(); FieldIt != Data.m_FieldNames.cend(); ++FieldIt) {
 					// Insert와 Select를 동시에 사용 가능하도록 만듦.
-					if (FieldIt->find('\'') == std::string::npos) {
+					if (size_t Index = 0; (Index = FieldIt->find('.')) != std::string::npos) {
+						FieldResult.append('`' + FieldIt->substr(0, Index) + '`' + FieldIt->substr(Index, FieldIt->length()));
+					}
+					else if (FieldIt->find('\'') == std::string::npos) {
 						FieldResult.append('`' + *FieldIt + '`');
 					}
 					else {
@@ -227,7 +251,7 @@ namespace FUNCTIONS {
 					return std::string();
 				}
 
-				return std::string("select " + FieldResult + " from " + TableName + ' ' + ConditionResult);
+				return std::string("SELECT " + FieldResult + " FROM " + TableName + ' ' + ConditionResult);
 			}
 
 			static std::string UpdateData(const std::string& TableName, const DETAIL::UPATEDATA& Data) {
