@@ -1,5 +1,5 @@
 #pragma once
-#include <Functions/Functions/Log/Log.h>
+#include <Functions/Functions/Log/Log.hpp>
 #include <Functions/Functions/CircularQueue/CircularQueue.hpp>
 #include <Functions/Functions/MemoryPool/MemoryPool.hpp>
 #include <boost/iostreams/stream.hpp>
