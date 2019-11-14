@@ -1,5 +1,5 @@
-#include "EventSelect.h"
-#include <Functions/Functions/Exception/Exception.h>
+#include "EventSelect.hpp"
+#include <Functions/Functions/Exception/Exception.hpp>
 #include <iostream>
 
 using namespace FUNCTIONS::LOG;
@@ -25,11 +25,15 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BA
 		CLog::WriteLog(L"%S", Exception.what());
 	}
 
+	if (m_TCPIPSocket) {
+		m_TCPIPSocket->Connect(m_ServerAddress);
+	}
+
 	if (!InitializeEvent()) {
 		return false;
 	}
 	
-	return m_TCPIPSocket ? m_TCPIPSocket->Connect(ServerAddress) : true;
+	return true;
 }
 
 void NETWORKMODEL::EVENTSELECT::CEventSelect::Run() {
@@ -67,6 +71,35 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::Destroy() {
 		WSACloseEvent(m_hUDPSelectEvent);
 	}
 
+}
+
+bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
+	if (!(m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL))) {
+		CLog::WriteLog(L"");
+		return false;
+	}
+
+	if (HANDLE hTCPEventSelect = WSACreateEvent()) {
+		if (!hTCPEventSelect) {
+			CLog::WriteLog(L"");
+			return false;
+		}
+		m_hTCPSelectEvent = hTCPEventSelect;
+		WSAEventSelect(m_TCPIPSocket->GetSocket(), m_hTCPSelectEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
+		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP, this, m_hTCPSelectEvent));
+	}
+
+	if (HANDLE hUDPEventSelect = WSACreateEvent()) {
+		if (!hUDPEventSelect) {
+			CLog::WriteLog(L"");
+			return false;
+		}
+		m_hUDPSelectEvent = hUDPEventSelect;
+		WSAEventSelect(m_UDPIPSocket->GetSocket(), m_hUDPSelectEvent, FD_READ | FD_WRITE);
+		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP, this, m_hUDPSelectEvent));
+	}
+
+	return true;
 }
 
 void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP(const HANDLE& SelectEventHandle) {
@@ -121,35 +154,6 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP(const H
 			break;
 		}
 	}
-}
-
-bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
-	if (!(m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL))) {
-		CLog::WriteLog(L"");
-		return false;
-	}
-
-	if (HANDLE hTCPEventSelect = WSACreateEvent()) {
-		if (hTCPEventSelect) {
-			CLog::WriteLog(L"");
-			return false;
-		}
-		m_hTCPSelectEvent = hTCPEventSelect;
-		WSAEventSelect(m_TCPIPSocket->GetSocket(), m_hTCPSelectEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
-		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP, this, m_hTCPSelectEvent));
-	}
-
-	if (HANDLE hUDPEventSelect = WSACreateEvent()) {
-		if (!hUDPEventSelect) {
-			CLog::WriteLog(L"");
-			return false;
-		}
-		m_hUDPSelectEvent = hUDPEventSelect;
-		WSAEventSelect(m_UDPIPSocket->GetSocket(), m_hUDPSelectEvent, FD_READ | FD_WRITE);
-		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP, this, m_hUDPSelectEvent));
-	}
-
-	return true;
 }
 
 bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const UDPSocket, const FUNCTIONS::SOCKADDR::CSocketAddress& RemoteAddress, char* const ReceviedBuffer, uint16_t& ReceivedBytes, int16_t& UpdatedPacketNumber) {
