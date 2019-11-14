@@ -1,5 +1,5 @@
 #include "IOCP.hpp"
-#include <Functions/Functions/Log/Log.h>
+#include <Functions/Functions/Log/Log.hpp>
 #include <MSWSock.h>
 #pragma comment(lib, "mswsock.lib")
 
@@ -115,7 +115,7 @@ void NETWORKMODEL::IOCP::CIOCP::WorkerThread() {
 		}
 
 		if (OverlappedEx) {
-			if (!Succeed || (Succeed && RecvBytes <= 0)) {
+			if (!Succeed || RecvBytes <= 0) {
 				switch (OverlappedEx->m_IOType) {
 				case EIOTYPE::EIT_ACCEPT:
 					OnIOAccept(OverlappedEx);
