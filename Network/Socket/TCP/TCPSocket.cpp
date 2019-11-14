@@ -1,6 +1,6 @@
-#include "TCPSocket.h"
-#include <Functions/Functions/Log/Log.h>
-#include "../../../Functions/Functions/Log/Log.h"
+#include "TCPSocket.hpp"
+#include <Functions/Functions/Log/Log.hpp>
+#include "../../../Functions/Functions/Log/Log.hpp"
 #include <MSWSock.h>
 #pragma comment(lib, "mswsock.lib")
 
@@ -41,6 +41,7 @@ bool CTCPIPSocket::Connect(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAdd
 			CLog::WriteLog(L"Connect : Failed To Connect To Server! - %d", WSAGetLastError());
 			return false;
 		}
+		std::cout << WSAGetLastError() << std::endl;
 	}
 	return true;
 }
