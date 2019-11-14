@@ -1,6 +1,6 @@
-#include "UDPSocket.h"
-#include <Functions/Functions/Log/Log.h>
-#include <Network/Session/ServerSession/ServerSession.h>
+#include "UDPSocket.hpp"
+#include <Functions/Functions/Log/Log.hpp>
+#include <Network/Session/ServerSession/ServerSession.hpp>
 
 using namespace NETWORK::SOCKET::BASESOCKET;
 using namespace NETWORK::SOCKET::UDPIP;
