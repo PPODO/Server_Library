@@ -215,7 +215,11 @@ int main(int argc, char* argv[]) {
 
 					for (auto ParamIt : It.m_Structures) {
 						if (ParamIt.m_ArraySize != 0) {
-							PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n";
+							PacketDefineFile << "\t\tif (" << ParamIt.m_Name << ") {\n";
+							PacketDefineFile << "\t\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\t}\n\t\telse {\n";
+							PacketDefineFile << "\t\t\tZeroMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\t}\n";
 						}
 					}
 
@@ -228,7 +232,11 @@ int main(int argc, char* argv[]) {
 							PacketDefineFile << "\t\tm_" << ParamIt.m_Name << "= rhs.m_" << ParamIt.m_Name << ";\n";
 						}
 						else {
-							PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n";
+							PacketDefineFile << "\t\tif (rhs.m_" << ParamIt.m_Name << ") {\n";
+							PacketDefineFile << "\t\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\t}\n\t\telse {\n";
+							PacketDefineFile << "\t\t\tZeroMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\t}\n";
 						}
 					}
 
@@ -287,7 +295,11 @@ int main(int argc, char* argv[]) {
 					PacketDefineFile << " {\n";
 					for (const auto& ParamIt : It.m_Parameters) {
 						if (ParamIt.m_ArraySize != 0) {
-							PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\tif (" << ParamIt.m_Name << ") {\n";
+							PacketDefineFile << "\t\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\t}\n\t\telse {\n";
+							PacketDefineFile << "\t\t\tZeroMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+							PacketDefineFile << "\t\t}\n";
 						}
 					}
 					PacketDefineFile << "\t}; \n\n";
@@ -302,7 +314,11 @@ int main(int argc, char* argv[]) {
 						PacketDefineFile << "\t\tm_" << ParamIt.m_Name << " = rhs.m_" << ParamIt.m_Name << ";\n";
 					}
 					else {
-						PacketDefineFile << "\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << ");\n";
+						PacketDefineFile << "\t\tif (rhs.m_" << ParamIt.m_Name << ") {\n";
+						PacketDefineFile << "\t\t\tCopyMemory(m_" << ParamIt.m_Name << ", rhs.m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+						PacketDefineFile << "\t\t}\n\t\telse {\n";
+						PacketDefineFile << "\t\t\tZeroMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
+						PacketDefineFile << "\t\t}\n";
 					}
 				}
 
