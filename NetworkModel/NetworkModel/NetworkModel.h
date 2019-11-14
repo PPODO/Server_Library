@@ -17,8 +17,11 @@ namespace NETWORKMODEL {
 			WSADATA m_WinSockData;
 
 		private:
+			NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE m_ProtocolType;
+
+		private:
 			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ProcessorListLock;
-			PACKETPROCESSORLIST m_PacketProcessors;
+			const PACKETPROCESSORLIST& m_PacketProcessors;
 
 		private:
 			FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*> m_PacketQueue;
@@ -31,7 +34,11 @@ namespace NETWORKMODEL {
 			virtual ~CNetworkModel() = 0;
 
 		public:
-			virtual bool Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) = 0;
+			virtual bool Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) = 0 {
+				m_ProtocolType = ProtocolType;
+
+				return true;
+			}
 			virtual void Run() = 0;
 
 		protected:
@@ -51,6 +58,7 @@ namespace NETWORKMODEL {
 				}
 				return nullptr;
 			}
+			inline NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE GetProtocolType() const { return m_ProtocolType; };
 
 		};
 	}
