@@ -5,7 +5,7 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORKMODEL::IOCP::CIOCP::CIOCP(const DETAIL::PACKETPROCESSORLIST& ProcessorList) : DETAIL::CNetworkModel(ProcessorList), m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
+NETWORKMODEL::IOCP::CIOCP::CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList) : NETWORKMODEL::DETAIL::CNetworkModel(ProcessorList), m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
 	m_Command.AddNewAction("shutdown", std::bind(&NETWORKMODEL::IOCP::CIOCP::Destroy, this));
 }
 
@@ -14,6 +14,8 @@ NETWORKMODEL::IOCP::CIOCP::~CIOCP() {
 }
 
 bool NETWORKMODEL::IOCP::CIOCP::Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
+	NETWORKMODEL::DETAIL::CNetworkModel::Initialize(ProtocolType, BindAddress);
+
 	if (!InitializeHandles()) {
 		return false;
 	}
@@ -52,12 +54,16 @@ void NETWORKMODEL::IOCP::CIOCP::Destroy() {
 
 	m_ClientListLock.Lock();
 	for (auto It : m_Clients) {
-		if (It.m_Client.m_Session) {
-			delete It.m_Client.m_Session;
+		if (It && It->m_Session) {
+			delete It->m_Session;
 		}
 	}
 	m_Clients.clear();
 	m_ClientListLock.UnLock();
+
+	if (m_Listener) {
+		delete m_Listener;
+	}
 
 	m_Command.Shutdown();
 }
@@ -67,7 +73,7 @@ bool NETWORKMODEL::IOCP::CIOCP::InitializeSession(const NETWORK::UTIL::BASESOCKE
 	using namespace NETWORK::UTIL::BASESOCKET;
 
 	try {
-		if (m_Listener = std::make_unique<CServerSession>(ProtocolType); !m_Listener->Initialize(BindAddress) || !m_Listener->RegisterIOCompletionPort(m_hIOCP)) {
+		if (m_Listener = new CServerSession(ProtocolType); !m_Listener->Initialize(BindAddress) || !m_Listener->RegisterIOCompletionPort(m_hIOCP)) {
 			return false;
 		}
 
@@ -76,8 +82,8 @@ bool NETWORKMODEL::IOCP::CIOCP::InitializeSession(const NETWORK::UTIL::BASESOCKE
 		}
 		if (ProtocolType & EPROTOCOLTYPE::EPT_TCP) {
 			for (size_t i = 0; i < MAX_CLIENT_COUNT; i++) {
-				if (auto Client = new CServerSession(EPROTOCOLTYPE::EPT_TCP); Client->Initialize(*m_Listener)) {
-					m_Clients.emplace_back(CONNECTION::TCPCONNECTION(Client));
+				if (auto Session = new CServerSession(EPROTOCOLTYPE::EPT_TCP); Session->Initialize(*m_Listener)) {
+					m_Clients.push_back(new DETAIL::CONNECTION(Session));
 					continue;
 				}
 				return false;
@@ -140,7 +146,7 @@ void NETWORKMODEL::IOCP::CIOCP::WorkerThread() {
 	}
 }
 
-void NETWORKMODEL::IOCP::CIOCP::OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx) {
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx) {
 	using namespace FUNCTIONS::SOCKADDR;
 	
 	if (auto Session = AcceptExOverlappedEx->m_Owner; Session) {
@@ -148,20 +154,20 @@ void NETWORKMODEL::IOCP::CIOCP::OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION
 		int LocalLength = 0, RemoteLength = 0;
 		GetAcceptExSockaddrs(AcceptExOverlappedEx->m_SocketMessage, 0, CSocketAddress::GetSize() + 16, CSocketAddress::GetSize() + 16, &LocalAddr, &LocalLength, &RemoteAddr, &RemoteLength);
 		
-		if (auto RemoteAddr_in = reinterpret_cast<sockaddr_in*>(RemoteAddr); RemoteAddr_in) {
-			FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ClientListLock);
-			if (auto It = std::find_if(m_Clients.begin(), m_Clients.end(), [&Session](const CONNECTION& Connection) -> bool { if (Connection.m_Client == Session) { return true; } return false; }); It != m_Clients.cend()) {
-				It->m_Client.m_Address = (*RemoteAddr_in);
-			}
-		}
+		if (auto RemoteAddr_in = reinterpret_cast<sockaddr_in*>(RemoteAddr)) {
+			if (auto Connection = GetConnectionFromList(Session)) {
+				Connection->m_PeerInformation.m_RemoteAddress = FUNCTIONS::SOCKADDR::CSocketAddress(*RemoteAddr_in);
 
-		if (Session->RegisterIOCompletionPort(m_hIOCP) && Session->Receive()) {
-			CLog::WriteLog(L"Accept New Client!");
-			return;
+				if (Session->RegisterIOCompletionPort(m_hIOCP) && Session->Receive()) {
+					CLog::WriteLog(L"Accept New Client!");
+					return Connection;
+				}
+			}
 		}
 		CLog::WriteLog(L"Accept Failed!");
 		Session->SocketRecycle();
 	}
+	return nullptr;
 }
 
 void NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
@@ -203,11 +209,11 @@ void NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSE
 	if (NETWORK::SESSION::SERVERSESSION::CServerSession* Owner = ReceiveFromOverlappedEx->m_Owner; Owner) {
 		if (auto Connection = GetConnectionFromList(ReceiveFromOverlappedEx->m_RemoteAddress)) {
 			ReceiveFromOverlappedEx->m_RemainReceivedBytes += RecvBytes;
-			ReceiveFromOverlappedEx->m_LastReceivedPacketNumber = Connection->m_Peer.m_LastPacketNumber;
+			ReceiveFromOverlappedEx->m_LastReceivedPacketNumber = Connection->m_PeerInformation.m_LastPacketNumber;
 
 			if (NETWORK::UTIL::UDPIP::CheckAck(*ReceiveFromOverlappedEx)) {
 				PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceiveFromOverlappedEx->m_SocketMessage, ReceiveFromOverlappedEx->m_RemainReceivedBytes, ReceiveFromOverlappedEx->m_LastReceivedPacketNumber, Connection);
-				Connection->m_Peer.m_LastPacketNumber = ReceiveFromOverlappedEx->m_LastReceivedPacketNumber;
+				Connection->m_PeerInformation.m_LastPacketNumber = ReceiveFromOverlappedEx->m_LastReceivedPacketNumber;
 			}
 		}
 		if (!Owner->ReceiveFrom()) {

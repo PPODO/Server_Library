@@ -1,45 +1,25 @@
 #pragma once
 #include <NetworkModel/NetworkModel/NetworkModel.h>
+#include <array>
 
 namespace NETWORKMODEL {
 	namespace IOCP {
 		static const size_t MAX_CLIENT_COUNT = 500;
 
-		struct CONNECTION {
-			struct TCPCONNECTION {
+		namespace DETAIL {
+			struct CONNECTION {
 			public:
 				NETWORK::SESSION::SERVERSESSION::CServerSession* m_Session;
-				FUNCTIONS::SOCKADDR::CSocketAddress m_Address;
+				NETWORK::SOCKET::UDPIP::PEERINFO m_PeerInformation;
 
 			public:
-				explicit TCPCONNECTION() : m_Session(nullptr), m_Address() {};
-				explicit TCPCONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) : m_Session(Session), m_Address() {};
-				explicit TCPCONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, const FUNCTIONS::SOCKADDR::CSocketAddress& Address) : m_Session(Session), m_Address(Address) {};
-				TCPCONNECTION(const TCPCONNECTION& lvalue) : m_Session(lvalue.m_Session), m_Address(lvalue.m_Address) {};
-
-			public:
-				bool operator==(const NETWORK::SESSION::SERVERSESSION::CServerSession* Session) const {
-					if (m_Session == Session) { return true; } return false;
-				}
-				bool operator==(const FUNCTIONS::SOCKADDR::CSocketAddress& Address) const {
-					if (m_Address == Address) { return true; } return false;
-				}
+				explicit CONNECTION() : m_Session(nullptr), m_PeerInformation() {};
+				explicit CONNECTION(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, const NETWORK::SOCKET::UDPIP::PEERINFO& PeerInformation = NETWORK::SOCKET::UDPIP::PEERINFO()) : m_Session(Session), m_PeerInformation(PeerInformation) {};
 
 			};
-		public:
-			TCPCONNECTION m_Client;
-			NETWORK::SOCKET::UDPIP::PEERINFO m_Peer;
+		}
 
-		public:
-			explicit CONNECTION() : m_Client(), m_Peer() {};
-			explicit CONNECTION(const TCPCONNECTION& Client) : m_Client(Client), m_Peer() {};
-			explicit CONNECTION(const NETWORK::SOCKET::UDPIP::PEERINFO& Peer) : m_Client(), m_Peer(Peer) {};
-			explicit CONNECTION(const TCPCONNECTION& Client, const NETWORK::SOCKET::UDPIP::PEERINFO& Peer) : m_Client(Client), m_Peer(Peer) {};
-			CONNECTION(const CONNECTION& lvalue) : m_Client(lvalue.m_Client), m_Peer(lvalue.m_Peer) {};
-
-		};
-
-		class CIOCP : private DETAIL::CNetworkModel {
+		class CIOCP : private NETWORKMODEL::DETAIL::CNetworkModel {
 		private:
 			HANDLE m_hIOCP;
 
@@ -48,17 +28,18 @@ namespace NETWORKMODEL {
 			std::vector<std::thread> m_WorkerThread;
 
 		private:
-			std::unique_ptr<NETWORK::SESSION::SERVERSESSION::CServerSession> m_Listener;
+			NETWORK::SESSION::SERVERSESSION::CServerSession* m_Listener;
 
+		private:
 			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ClientListLock;
-			std::vector<CONNECTION> m_Clients;
+			std::vector<DETAIL::CONNECTION*> m_Clients;
 
 		private:
 			FUNCTIONS::COMMAND::CCommand m_Command;
 
 		public:
-			explicit CIOCP(const DETAIL::PACKETPROCESSORLIST& ProcessorList);
-			virtual ~CIOCP() override;
+			explicit CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList);
+			virtual ~CIOCP() override = 0;
 
 		public:
 			virtual bool Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) override;
@@ -66,7 +47,7 @@ namespace NETWORKMODEL {
 
 		protected:
 			virtual void Destroy() override;
-			virtual void OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx);
+			virtual DETAIL::CONNECTION* OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx);
 			virtual void OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 			virtual void OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 			virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
@@ -74,30 +55,44 @@ namespace NETWORKMODEL {
 			virtual void OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
 
 		private:
-			CONNECTION* GetConnectionFromList(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ClientListLock);
-
-				if (auto It = std::find_if(m_Clients.begin(), m_Clients.end(), [&Session](CONNECTION& Connection) { if (Connection.m_Client == Session) { return true; } return false; }); It != m_Clients.cend()) {
-					return &(*It);
+			DETAIL::CONNECTION* GetConnectionFromList(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+				if (Session) {
+					auto Pred = [&Session](DETAIL::CONNECTION* const Connection) {
+						if (Connection->m_Session == Session) {
+							return true;
+						}
+						return false;
+					};
+					if (auto Iterator = std::find_if(m_Clients.begin(), m_Clients.end(), Pred); Iterator != m_Clients.cend()) {
+						return *Iterator;
+					}
 				}
 				return nullptr;
 			}
-			CONNECTION* GetConnectionFromList(FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
-				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ClientListLock);
+			DETAIL::CONNECTION* GetConnectionFromList(FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
+				using namespace NETWORK::UTIL::BASESOCKET;
 
-				if (auto It = std::find_if(m_Clients.begin(), m_Clients.end(), [&PeerAddress](CONNECTION& Connection) { if (Connection.m_Peer == PeerAddress) { return true; } return false; }); It != m_Clients.cend()) {
-					return &(*It);
+				auto Pred = [&PeerAddress](DETAIL::CONNECTION* const Connection) {
+					if (PeerAddress.IsSameAddress(Connection->m_PeerInformation.m_RemoteAddress)) {
+						return true;
+					}
+					return false;
+				};
+				if (auto Iterator = std::find_if(m_Clients.begin(), m_Clients.end(), Pred); Iterator != m_Clients.cend()) {
+					return *Iterator;
 				}
-
-				const auto& Iterator = std::find_if(m_Clients.begin(), m_Clients.end(), [&PeerAddress](const CONNECTION& Connection) -> bool { if (PeerAddress.IsSameAddress(Connection.m_Client.m_Address)) { return true; } return false; });
-				if (Iterator == m_Clients.cend()) {
-					FUNCTIONS::LOG::CLog::WriteLog(L"Add New Peer!");
-					return &(m_Clients.emplace_back(CONNECTION::TCPCONNECTION(), NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0)));
+				else if (GetProtocolType() & EPROTOCOLTYPE::EPT_UDP) {
+					DETAIL::CONNECTION* NewConnection = nullptr;
+					try {
+						NewConnection = new DETAIL::CONNECTION(m_Listener, NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0));
+					}
+					catch (const std::exception& Exception) {
+						FUNCTIONS::LOG::CLog::WriteLog(L"%S", Exception.what());
+						return nullptr;
+					}
+					return m_Clients.emplace_back(NewConnection);
 				}
-				else {
-					Iterator->m_Peer = NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0);
-				}
-				return &(*Iterator);
+				return nullptr;
 			}
 
 		private:
