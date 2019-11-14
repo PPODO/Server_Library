@@ -1,5 +1,5 @@
 #pragma once
-#include <NetworkModel/NetworkModel/NetworkModel.h>
+#include <NetworkModel/NetworkModel/NetworkModel.hpp>
 #include <array>
 
 namespace NETWORKMODEL {
