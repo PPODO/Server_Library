@@ -1,4 +1,4 @@
-#include "NetworkModel.h"
+#include "NetworkModel.hpp"
 
 using namespace FUNCTIONS::LOG;
 
