@@ -25,10 +25,6 @@ namespace NETWORKMODEL {
 			std::unique_ptr<NETWORK::SOCKET::TCPIP::CTCPIPSocket> m_TCPIPSocket;
 			std::unique_ptr<NETWORK::SOCKET::UDPIP::CUDPIPSocket> m_UDPIPSocket;
 
-		private:
-			void EventSelectProcessorForTCP(const HANDLE& SelectEventHandle);
-			void EventSelectProcessorForUDP(const HANDLE& SelectEventHandle);
-
 		public:
 			explicit CEventSelect(const int PacketProcessLoopCount, const DETAIL::PACKETPROCESSORLIST& ProcessorList);
 			virtual ~CEventSelect() override;
@@ -39,6 +35,13 @@ namespace NETWORKMODEL {
 
 		protected:
 			virtual void Destroy() override;
+
+		private:
+			void EventSelectProcessorForTCP(const HANDLE& SelectEventHandle);
+			void EventSelectProcessorForUDP(const HANDLE& SelectEventHandle);
+
+		private:
+			bool InitializeEvent();
 
 		public:
 			inline bool Send(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure) {

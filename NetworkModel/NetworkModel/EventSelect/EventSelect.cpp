@@ -25,34 +25,11 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BA
 		CLog::WriteLog(L"%S", Exception.what());
 	}
 
-	if (!(m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL))) {
-		CLog::WriteLog(L"");
+	if (!InitializeEvent()) {
 		return false;
 	}
-
-	if (HANDLE hTCPEventSelect; m_TCPIPSocket && m_TCPIPSocket->Connect(m_ServerAddress)) {
-		if (!(hTCPEventSelect = WSACreateEvent())) {
-			CLog::WriteLog(L"");
-			return false;
-		}
-		m_hTCPSelectEvent = hTCPEventSelect;
-		WSAEventSelect(m_TCPIPSocket->GetSocket(), m_hTCPSelectEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
-
-		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP, this, m_hTCPSelectEvent));
-	}
-
-	if (HANDLE hUDPEventSelect; m_UDPIPSocket) {
-		if (!(hUDPEventSelect = WSACreateEvent())) {
-			CLog::WriteLog(L"");
-			return false;
-		}
-		m_hUDPSelectEvent = hUDPEventSelect;
-		WSAEventSelect(m_UDPIPSocket->GetSocket(), m_hUDPSelectEvent, FD_READ | FD_WRITE);
-
-		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP, this, m_hUDPSelectEvent));
-	}
-
-	return true;
+	
+	return m_TCPIPSocket ? m_TCPIPSocket->Connect(ServerAddress) : true;
 }
 
 void NETWORKMODEL::EVENTSELECT::CEventSelect::Run() {
@@ -116,12 +93,6 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP(const H
 					PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, ReceivedBuffer, RemainReceivedBytes, LastReceivedPacketNumber, this);
 				}
 			}
-			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
-				// EventSelect에서의 Write는 데이터를 전송하지 않았을 때에도 발생할 수 있기에 따로 처리를 해주지 않는다.
-			}
-			else if (NetworkEvent.lNetworkEvents & FD_CLOSE) {
-				
-			}
 			break;
 		}
 	}
@@ -147,12 +118,38 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP(const H
 					PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceivedBuffer, RemainReceivedBytes, m_NextSendPacketNumber, this);
 				}
 			}
-			else if (NetworkEvent.lNetworkEvents & FD_WRITE) {
-				// EventSelect에서의 Write는 데이터를 전송하지 않았을 때에도 발생할 수 있기에 따로 처리를 해주지 않는다.
-			}
 			break;
 		}
 	}
+}
+
+bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
+	if (!(m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL))) {
+		CLog::WriteLog(L"");
+		return false;
+	}
+
+	if (HANDLE hTCPEventSelect = WSACreateEvent()) {
+		if (hTCPEventSelect) {
+			CLog::WriteLog(L"");
+			return false;
+		}
+		m_hTCPSelectEvent = hTCPEventSelect;
+		WSAEventSelect(m_TCPIPSocket->GetSocket(), m_hTCPSelectEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
+		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP, this, m_hTCPSelectEvent));
+	}
+
+	if (HANDLE hUDPEventSelect = WSACreateEvent()) {
+		if (!hUDPEventSelect) {
+			CLog::WriteLog(L"");
+			return false;
+		}
+		m_hUDPSelectEvent = hUDPEventSelect;
+		WSAEventSelect(m_UDPIPSocket->GetSocket(), m_hUDPSelectEvent, FD_READ | FD_WRITE);
+		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP, this, m_hUDPSelectEvent));
+	}
+
+	return true;
 }
 
 bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const UDPSocket, const FUNCTIONS::SOCKADDR::CSocketAddress& RemoteAddress, char* const ReceviedBuffer, uint16_t& ReceivedBytes, int16_t& UpdatedPacketNumber) {
