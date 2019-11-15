@@ -39,20 +39,22 @@ namespace NETWORKMODEL {
 
 		public:
 			explicit CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList);
-			virtual ~CIOCP() override = 0;
+			virtual ~CIOCP() override;
 
 		public:
 			virtual bool Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) override;
 			virtual void Run() override;
 
 		protected:
-			virtual void Destroy() override;
+			virtual void Destroy() = 0;
 			virtual DETAIL::CONNECTION* OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx);
+			virtual DETAIL::CONNECTION* OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
+			virtual DETAIL::CONNECTION* OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
+			virtual DETAIL::CONNECTION* OnIOReceive(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
+			virtual DETAIL::CONNECTION* OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
+
+		private:
 			virtual void OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
-			virtual void OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
-			virtual void OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
-			virtual void OnIOReceive(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
-			virtual void OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
 
 		private:
 			DETAIL::CONNECTION* GetConnectionFromList(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {

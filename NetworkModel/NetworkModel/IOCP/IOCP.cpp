@@ -6,11 +6,10 @@
 using namespace FUNCTIONS::LOG;
 
 NETWORKMODEL::IOCP::CIOCP::CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList) : NETWORKMODEL::DETAIL::CNetworkModel(ProcessorList), m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
-	m_Command.AddNewAction("shutdown", std::bind(&NETWORKMODEL::IOCP::CIOCP::Destroy, this));
+	m_Command.AddNewAction("shutdown", [this]() { InterlockedExchange16(&m_bIsRunMainThread, FALSE);  });
 }
 
 NETWORKMODEL::IOCP::CIOCP::~CIOCP() {
-	Destroy();
 }
 
 bool NETWORKMODEL::IOCP::CIOCP::Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress) {
@@ -49,8 +48,6 @@ void NETWORKMODEL::IOCP::CIOCP::Destroy() {
 		}
 	}
 	m_WorkerThread.clear();
-
-	InterlockedExchange16(&m_bIsRunMainThread, FALSE);
 
 	m_ClientListLock.Lock();
 	for (auto It : m_Clients) {
@@ -181,43 +178,50 @@ void NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSIO
 	}
 }
 
-void NETWORKMODEL::IOCP::CIOCP::OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-	if (Session && Session->Initialize(*m_Listener)) {
-		CLog::WriteLog(L"Disconnect Client!");
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+	if (auto Connection = GetConnectionFromList(Session)) {
+		if (Session->Initialize(*m_Listener)) {
+			CLog::WriteLog(L"Disconnect Client!");
+
+			return Connection;
+		}
 	}
+	return nullptr;
 }
 
-void NETWORKMODEL::IOCP::CIOCP::OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-	if (Session) {
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+	if (auto Connection = GetConnectionFromList(Session)) {
 		Session->SendCompletion(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP);
+		return Connection;
 	}
+	return nullptr;
 }
 
-void NETWORKMODEL::IOCP::CIOCP::OnIOReceive(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes) {
-	if (auto Session = ReceiveOverlappedEx->m_Owner; Session) {
-		if (auto Connection = GetConnectionFromList(Session)) {
-			ReceiveOverlappedEx->m_RemainReceivedBytes += RecvBytes;
-			PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, ReceiveOverlappedEx->m_SocketMessage, ReceiveOverlappedEx->m_RemainReceivedBytes, ReceiveOverlappedEx->m_LastReceivedPacketNumber, Connection);
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOReceive(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes) {
+	if (auto Connection = GetConnectionFromList(ReceiveOverlappedEx->m_Owner); Connection && Connection->m_Session) {
+		ReceiveOverlappedEx->m_RemainReceivedBytes += RecvBytes;
+		PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, ReceiveOverlappedEx->m_SocketMessage, ReceiveOverlappedEx->m_RemainReceivedBytes, ReceiveOverlappedEx->m_LastReceivedPacketNumber, Connection);
+		if (!Connection->m_Session->Receive()) {
+			Connection->m_Session->SocketRecycle();
 		}
-		if (!Session->Receive()) {
-			Session->SocketRecycle();
-		}
+		return Connection;
 	}
+	return nullptr;
 }
 
-void NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes) {
-	if (NETWORK::SESSION::SERVERSESSION::CServerSession* Owner = ReceiveFromOverlappedEx->m_Owner; Owner) {
-		if (auto Connection = GetConnectionFromList(ReceiveFromOverlappedEx->m_RemoteAddress)) {
-			ReceiveFromOverlappedEx->m_RemainReceivedBytes += RecvBytes;
-			ReceiveFromOverlappedEx->m_LastReceivedPacketNumber = Connection->m_PeerInformation.m_LastPacketNumber;
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes) {
+	if (auto Connection = GetConnectionFromList(ReceiveFromOverlappedEx->m_RemoteAddress); Connection && Connection->m_Session) {
+		ReceiveFromOverlappedEx->m_RemainReceivedBytes += RecvBytes;
+		ReceiveFromOverlappedEx->m_LastReceivedPacketNumber = Connection->m_PeerInformation.m_LastPacketNumber;
 
-			if (NETWORK::UTIL::UDPIP::CheckAck(*ReceiveFromOverlappedEx)) {
-				PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceiveFromOverlappedEx->m_SocketMessage, ReceiveFromOverlappedEx->m_RemainReceivedBytes, ReceiveFromOverlappedEx->m_LastReceivedPacketNumber, Connection);
-				Connection->m_PeerInformation.m_LastPacketNumber = ReceiveFromOverlappedEx->m_LastReceivedPacketNumber;
-			}
+		if (NETWORK::UTIL::UDPIP::CheckAck(*ReceiveFromOverlappedEx)) {
+			PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceiveFromOverlappedEx->m_SocketMessage, ReceiveFromOverlappedEx->m_RemainReceivedBytes, ReceiveFromOverlappedEx->m_LastReceivedPacketNumber, Connection);
+			Connection->m_PeerInformation.m_LastPacketNumber = ReceiveFromOverlappedEx->m_LastReceivedPacketNumber;
 		}
-		if (!Owner->ReceiveFrom()) {
-			Owner->SocketRecycle();
+		if (!Connection->m_Session->ReceiveFrom()) {
+			Connection->m_Session->SocketRecycle();
 		}
+		return Connection;
 	}
+	return nullptr;
 }
