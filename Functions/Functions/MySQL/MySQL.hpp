@@ -1,7 +1,7 @@
 #pragma once
 #pragma comment(lib, "mysqlcppconn.lib")
-#include <Functions/Functions/CriticalSection/CriticalSection.h>
-#include <Functions/Functions/Log/Log.h>
+#include <Functions/Functions/CriticalSection/CriticalSection.hpp>
+#include <Functions/Functions/Log/Log.hpp>
 #include <cppconn/driver.h>
 #include <cppconn/connection.h>
 #include <cppconn/statement.h>
