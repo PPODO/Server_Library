@@ -13,7 +13,7 @@ namespace FUNCTIONS {
 		class CCommand {
 		private:
 			std::thread m_CommandThread;
-			bool m_bIsRunThread;
+			int16_t m_bIsRunThread;
 
 		private:
 			CRITICALSECTION::DETAIL::CCriticalSection m_ActionLocking;
@@ -35,33 +35,37 @@ namespace FUNCTIONS {
 		private:
 			void CommandProcess() {
 
-				while (m_bIsRunThread) {
-					std::string Line; 
+				while (true) {
+					std::string Line;
 					std::getline(std::cin, Line);
 
-					if (std::cin.fail()) {
-						LOG::CLog::WriteLog(L"Command : Input Error! Clear Input Stream!");
-						std::cin.clear();
-						std::cin.ignore(1024);
-					}
+					if (m_bIsRunThread) {
+						if (std::cin.fail()) {
+							LOG::CLog::WriteLog(L"Command : Input Error! Clear Input Stream!");
+							std::cin.clear();
+							std::cin.ignore(1024);
+						}
 
-					size_t SubIndex = 0;
-					if ((SubIndex = Line.find("/cd")) != std::string::npos) {
-						CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
+						size_t SubIndex = 0;
+						if ((SubIndex = Line.find("/cd")) != std::string::npos) {
+							CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
-						std::string Command = Line.substr(4, Line.length() - SubIndex);
+							std::string Command = Line.substr(4, Line.length() - SubIndex);
 
-						std::map<std::string, std::function<void()>>::const_iterator It;
-						if ((It = m_Actions.find(Command)) != m_Actions.cend()) {
-							It->second();
+							std::map<std::string, std::function<void()>>::const_iterator It;
+							if ((It = m_Actions.find(Command)) != m_Actions.cend()) {
+								It->second();
+							}
+							else {
+								LOG::CLog::WriteLog(L"Command : The Command Doesn't Exist!");
+							}
 						}
 						else {
-							LOG::CLog::WriteLog(L"Command : The Command Doesn't Exist!");
+							LOG::CLog::WriteLog(L"Command : Incorrect Command!");
 						}
+						continue;
 					}
-					else {
-						LOG::CLog::WriteLog(L"Command : Incorrect Command!");
-					}
+					break;
 				}
 			}
 
@@ -82,6 +86,12 @@ namespace FUNCTIONS {
 				m_Actions.insert(std::make_pair(Key, std::bind(std::forward<F>(Function), std::forward<A>(Argc)...)));
 			}
 
+			void AddNewAction(const std::string& Key, std::function<void()> Function) {
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
+
+				m_Actions.insert(std::make_pair(Key, Function));
+			}
+
 			void DeleteAction(const std::string& Key) {
 				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ActionLocking);
 
@@ -96,7 +106,8 @@ namespace FUNCTIONS {
 
 		public:
 			void Shutdown() {
-				m_bIsRunThread = false;
+				InterlockedExchange16(&m_bIsRunThread, false);
+				FUNCTIONS::LOG::CLog::WriteLog(L"Press enter to continue...");
 			}
 
 		};
