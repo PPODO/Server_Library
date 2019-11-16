@@ -2,6 +2,8 @@
 #include <vector>
 #include <thread>
 #include <functional>
+#include <type_traits>
+#include <utility>
 #include <Network/Socket/UDP/UDPSocket.hpp>
 #include <Network/Session/ServerSession/ServerSession.hpp>
 #include <Network/Packet/BasePacket.hpp>
@@ -11,6 +13,16 @@
 namespace NETWORKMODEL {
 	namespace DETAIL {
 		typedef std::map<uint8_t, std::function<void(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const)>> PACKETPROCESSORLIST;
+		
+		struct PACKETPROCESSTYPE : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<PACKETPROCESSTYPE, 100> {
+		public:
+			std::unique_ptr<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData> m_Packet;
+			const std::function<void(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const)>& m_Processor;
+
+		public:
+			PACKETPROCESSTYPE(decltype(m_Packet) Packet, const decltype(m_Processor) Processor) : m_Packet(std::move(Packet)), m_Processor(Processor) {};
+
+		};
 
 		class CNetworkModel {
 		private:
@@ -45,16 +57,14 @@ namespace NETWORKMODEL {
 			virtual void Destroy() = 0;
 
 		protected:
-			inline FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const GetPacketDataFromQueue() {
-				if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data; m_PacketQueue.Pop(Data) && Data) {
-					return Data;
-				}
-				return nullptr;
-			}
-			inline std::function<void(FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* const)> GetProcessorFromList(const uint8_t& Key) {
+			inline PACKETPROCESSTYPE* GetPacketDataAndProcessorOrNull() {
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ProcessorListLock);
-				if (auto ProcessorIt = m_PacketProcessors.find(Key); ProcessorIt != m_PacketProcessors.cend()) {
-					return ProcessorIt->second;
+
+				if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data = nullptr; m_PacketQueue.Pop(Data) && Data) {
+					if (auto Iterator = m_PacketProcessors.find(Data->m_PacketStructure.m_PacketInformation.m_PacketType); Iterator != m_PacketProcessors.cend()) {
+						return new PACKETPROCESSTYPE(std::unique_ptr<std::remove_pointer<decltype(Data)>::type>(Data), Iterator->second);
+					}
+					delete Data;
 				}
 				return nullptr;
 			}

@@ -3,13 +3,8 @@
 using namespace FUNCTIONS::LOG;
 
 NETWORKMODEL::DETAIL::CNetworkModel::CNetworkModel(const PACKETPROCESSORLIST& ProcessorList) : m_PacketProcessors(ProcessorList) {
-	try {
-		if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) != 0) {
-			throw FUNCTIONS::EXCEPTION::bad_wsastart();
-		}
-	}
-	catch (std::exception & Exception) {
-		CLog::WriteLog(L"%S", Exception.what());
+	if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) != 0) {
+		assert(false);
 	}
 }
 
@@ -37,8 +32,7 @@ void NETWORKMODEL::DETAIL::CNetworkModel::PacketForwardingLoop(const NETWORK::UT
 				}
 				CopyMemory(PacketStructure.m_PacketData, ReceivedBuffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
 
-				FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* QueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(Owner, PacketStructure);
-				m_PacketQueue.Push(QueueData);
+				m_PacketQueue.Push(new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(Owner, PacketStructure));
 			}
 			MoveMemory(ReceivedBuffer, ReceivedBuffer + TotalBytes, TotalBytes);
 			ReceivedBytes -= TotalBytes;
