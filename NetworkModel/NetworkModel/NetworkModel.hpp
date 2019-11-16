@@ -57,12 +57,12 @@ namespace NETWORKMODEL {
 			virtual void Destroy() = 0;
 
 		protected:
-			inline PACKETPROCESSTYPE* GetPacketDataAndProcessorOrNull() {
+			inline std::unique_ptr<PACKETPROCESSTYPE> GetPacketDataAndProcessorOrNull() {
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ProcessorListLock);
 
 				if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data = nullptr; m_PacketQueue.Pop(Data) && Data) {
 					if (auto Iterator = m_PacketProcessors.find(Data->m_PacketStructure.m_PacketInformation.m_PacketType); Iterator != m_PacketProcessors.cend()) {
-						return new PACKETPROCESSTYPE(std::unique_ptr<std::remove_pointer<decltype(Data)>::type>(Data), Iterator->second);
+						return std::unique_ptr<DETAIL::PACKETPROCESSTYPE>(new DETAIL::PACKETPROCESSTYPE(std::unique_ptr<std::remove_pointer<decltype(Data)>::type>(Data), Iterator->second));
 					}
 					delete Data;
 				}
