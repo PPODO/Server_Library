@@ -1,5 +1,4 @@
 #include "EventSelect.hpp"
-#include <Functions/Functions/Exception/Exception.hpp>
 #include <iostream>
 
 using namespace FUNCTIONS::LOG;
@@ -13,36 +12,25 @@ NETWORKMODEL::EVENTSELECT::CEventSelect::~CEventSelect() {
 
 bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) {
 	m_ServerAddress = ServerAddress;
-	try {
-		if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
-			m_TCPIPSocket = std::make_unique<NETWORK::SOCKET::TCPIP::CTCPIPSocket>();
-		}
-		if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
-			m_UDPIPSocket = std::make_unique<NETWORK::SOCKET::UDPIP::CUDPIPSocket>();
-		}
-	}
-	catch (const std::exception& Exception) {
-		CLog::WriteLog(L"%S", Exception.what());
-	}
 
-	if (m_TCPIPSocket) {
+	if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
+		m_TCPIPSocket = std::make_unique<NETWORK::SOCKET::TCPIP::CTCPIPSocket>();
 		m_TCPIPSocket->Connect(m_ServerAddress);
+	}
+	if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
+		m_UDPIPSocket = std::make_unique<NETWORK::SOCKET::UDPIP::CUDPIPSocket>();
 	}
 
 	if (!InitializeEvent()) {
 		return false;
 	}
-	
 	return true;
 }
 
 void NETWORKMODEL::EVENTSELECT::CEventSelect::Run() {
 	for (int i = 0; i < m_PacketProcessLoopCount; i++) {
-		if (auto PacketData(GetPacketDataFromQueue()); PacketData) {
-			if (auto Processor(GetProcessorFromList(PacketData->m_PacketStructure.m_PacketInformation.m_PacketType)); Processor) {
-				Processor(PacketData);
-			}
-			delete PacketData;
+		if (auto PacketAndProcessor(GetPacketDataAndProcessorOrNull()); PacketAndProcessor && PacketAndProcessor->m_Packet && PacketAndProcessor->m_Processor) {
+			PacketAndProcessor->m_Processor(PacketAndProcessor->m_Packet.get());
 		}
 	}
 }
@@ -75,13 +63,13 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::Destroy() {
 
 bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
 	if (!(m_hStopEvent = CreateEvent(NULL, FALSE, FALSE, NULL))) {
-		CLog::WriteLog(L"");
+		CLog::WriteLog(L"Failed To Initialize Thread Stop Event!");
 		return false;
 	}
 
 	if (HANDLE hTCPEventSelect = WSACreateEvent()) {
 		if (!hTCPEventSelect) {
-			CLog::WriteLog(L"");
+			CLog::WriteLog(L"Failed To Initialize TCP Event Select!");
 			return false;
 		}
 		m_hTCPSelectEvent = hTCPEventSelect;
@@ -91,7 +79,7 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
 
 	if (HANDLE hUDPEventSelect = WSACreateEvent()) {
 		if (!hUDPEventSelect) {
-			CLog::WriteLog(L"");
+			CLog::WriteLog(L"Failed To Initialize UDP Event Select!");
 			return false;
 		}
 		m_hUDPSelectEvent = hUDPEventSelect;
@@ -157,7 +145,7 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP(const H
 }
 
 bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const UDPSocket, const FUNCTIONS::SOCKADDR::CSocketAddress& RemoteAddress, char* const ReceviedBuffer, uint16_t& ReceivedBytes, int16_t& UpdatedPacketNumber) {
-	if (UDPSocket && ReceviedBuffer) {
+	if (ReceviedBuffer) {
 		const int32_t ReadedValue = *reinterpret_cast<const int32_t*>(ReceviedBuffer);
 		const int16_t AckValue = static_cast<int16_t>(ReadedValue);
 		const int16_t PacketNumber = static_cast<int16_t>((ReadedValue >> 16));

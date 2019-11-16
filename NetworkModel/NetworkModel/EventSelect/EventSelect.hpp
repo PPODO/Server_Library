@@ -60,7 +60,7 @@ namespace NETWORKMODEL {
 				if (m_UDPIPSocket) {
 					PacketStructure.m_PacketInformation.m_PacketNumber = m_NextSendPacketNumber;
 					InterlockedIncrement16(&m_NextSendPacketNumber);
-					return m_UDPIPSocket->WriteToQueue(m_ServerAddress, PacketStructure);
+					return m_UDPIPSocket->WriteToReliable(m_ServerAddress, PacketStructure);
 				}
 				return false;
 			}
