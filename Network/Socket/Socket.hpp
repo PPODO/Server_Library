@@ -1,7 +1,5 @@
 #pragma once
 #include <Functions/Functions/SocketAddress/SocketAddress.hpp>
-#include <Functions/Functions/Exception/Exception.hpp>
-#include <Network/Error/ErrorCode.hpp>
 #include <memory>
 
 namespace NETWORK {
@@ -124,27 +122,12 @@ namespace NETWORK {
 
 	namespace UTIL {
 		namespace BASESOCKET {
-			inline ::SOCKET GetSocketValue(const SOCKET::BASESOCKET::CBaseSocket& Socket) {
-				return Socket.m_Socket;
-			}
-
-			inline NETWORK::ERRORCODE::ENETRESULT SetSockOption(const ::SOCKET& Socket, const int32_t& Level, const int32_t& OptionName, void* const OptionVariable, const size_t& OptionLen) {
+			inline bool SetSockOption(const ::SOCKET& Socket, const int32_t& Level, const int32_t& OptionName, void* const OptionVariable, const size_t& OptionLen) {
 				if (setsockopt(Socket, Level, OptionName, reinterpret_cast<char*>(OptionVariable), reinterpret_cast<const int&>(OptionLen)) == SOCKET_ERROR) {
-					return NETWORK::ERRORCODE::ENETRESULT::ENETSOCKTOPFAIL;
+					return false;
 				}
-				return NETWORK::ERRORCODE::ENETRESULT::ENETSUCCESS;
+				return true;
 			}
 		}
-	}
-}
-
-namespace FUNCTIONS {
-	namespace EXCEPTION {
-		struct bad_sockopt : public std::exception {
-		public:
-			 char* const what() {
-				return const_cast<char* const>(std::string("Exception : Failed To Set Socket Option - " + WSAGetLastError()).c_str());
-			}
-		};
 	}
 }
