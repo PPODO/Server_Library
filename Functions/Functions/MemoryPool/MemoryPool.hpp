@@ -105,7 +105,7 @@ namespace FUNCTIONS {
 			static void operator delete(void* const DeletePointer) {
 				CRITICALSECTION::CCriticalSectionGuard Lock(&m_Lock);
 
-				if (DeletePointer && m_Pool) {
+				if (m_Pool) {
 					m_Pool->Delocate(DeletePointer);
 				}
 			}
