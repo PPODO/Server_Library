@@ -5,7 +5,6 @@
  Functions
   * [Circular Queue](https://github.com/PPODO/Server_Library#circular-queue)
   * [Critical Section](https://github.com/PPODO/Server_Library#critical-section)
-  * [Exception](https://github.com/PPODO/Server_Library#exception)
   * [Log](https://github.com/PPODO/Server_Library#log)
   * [Memory Leak](https://github.com/PPODO/Server_Library#memory-leak)
   * [Memory Pool](https://github.com/PPODO/Server_Library#memory-pool)
@@ -83,32 +82,6 @@
 		
           // 소멸자가 호출됨과 동시에 UnLock
      }	 
-	 
-     return 0;
- }
- ```
-
-
-### Exception
-  * 예외들이 정의되어 있습니다.
- ``` c
- #include <iostream>
- #include <Functions/Functions/Exception/Exception.h>
-
- namespace FUNCTIONS::EXCEPTION {
-     struct test_exception : public std::exception {
-     public:
-         test_exception(const char* const Message) : std::exception(Message) {};
-     };
- }
-
- int main() {
-     try {
-         throw FUNCTIONS::EXCEPTION::test_exception("Test!");
-     }
-     catch (const std::exception& What) {
-         std::cout << What.what();
-     } 
 	 
      return 0;
  }
