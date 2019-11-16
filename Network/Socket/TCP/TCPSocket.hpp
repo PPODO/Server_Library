@@ -46,30 +46,6 @@ namespace NETWORK {
 			private:
 				FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData*> m_SendMessageQueue;
 
-			private:
-				inline const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const AddWriteQueue(const char* const SendData, const uint16_t& DataLength) {
-					try {
-						if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* SendQueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData(SendData, DataLength); SendData) {
-							return m_SendMessageQueue.Push(SendQueueData);
-						}
-					}
-					catch (const std::bad_alloc & Exception) {
-						FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
-					}
-					return nullptr;
-				}
-				inline const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const AddWriteQueue(const PACKET::PACKET_STRUCTURE& PacketStructure) {
-					try {
-						if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* SendQueueData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData(PacketStructure); SendQueueData) {
-							return m_SendMessageQueue.Push(SendQueueData);
-						}
-					}
-					catch (const std::bad_alloc & Exception) {
-						FUNCTIONS::LOG::CLog::WriteLog(Exception.what());
-					}
-					return nullptr;
-				}
-
 			public:
 				explicit CTCPIPSocket();
 				virtual ~CTCPIPSocket() override;

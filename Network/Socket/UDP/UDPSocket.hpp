@@ -68,7 +68,7 @@ namespace NETWORK {
 				virtual ~CUDPIPSocket() override;
 
 			public:
-				bool WriteToQueue(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure);
+				bool WriteToReliable(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure);
 				bool WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure);
 				bool WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const char* const SendData, const uint16_t& SendDataLength);
 

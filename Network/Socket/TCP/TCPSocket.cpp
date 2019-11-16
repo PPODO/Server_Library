@@ -14,13 +14,8 @@ CTCPIPSocket::CTCPIPSocket() : CBaseSocket(NETWORK::UTIL::BASESOCKET::EPROTOCOLT
 	OptionVar.l_onoff = true;
 	OptionVar.l_linger = 0;
 
-	try {
-		if (NETWORK::UTIL::BASESOCKET::SetSockOption(GetSocket(), SOL_SOCKET, SO_LINGER, &OptionVar, sizeof(LINGER)) == NETWORK::ERRORCODE::ENETRESULT::ENETSOCKTOPFAIL) {
-			throw FUNCTIONS::EXCEPTION::bad_sockopt();
-		}
-	}
-	catch (FUNCTIONS::EXCEPTION::bad_sockopt & Exception) {
-		CLog::WriteLog(Exception.what());
+	if (!NETWORK::UTIL::BASESOCKET::SetSockOption(GetSocket(), SOL_SOCKET, SO_LINGER, &OptionVar, sizeof(LINGER))) {
+		assert(false);
 	}
 }
 
@@ -41,7 +36,6 @@ bool CTCPIPSocket::Connect(const FUNCTIONS::SOCKADDR::CSocketAddress& ConnectAdd
 			CLog::WriteLog(L"Connect : Failed To Connect To Server! - %d", WSAGetLastError());
 			return false;
 		}
-		std::cout << WSAGetLastError() << std::endl;
 	}
 	return true;
 }
@@ -68,14 +62,14 @@ bool CTCPIPSocket::Accept(const CTCPIPSocket& ListenSocket, NETWORK::UTIL::SESSI
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const char* const SendData, const uint16_t& DataLength, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
-	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(SendData, DataLength)) {
+	if (auto ReturnValue = m_SendMessageQueue.Push(new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData(SendData, DataLength))) {
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
 	return false;
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_STRUCTURE& PacketStructure, UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& SendOverlapped) {
-	if (const FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* const ReturnValue = AddWriteQueue(PacketStructure)) {
+	if (auto ReturnValue = m_SendMessageQueue.Push(new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData(PacketStructure))) {
 		return UTIL::TCPIP::Send(GetSocket(), ReturnValue->m_Buffer, ReturnValue->m_Length, SendOverlapped);
 	}
 	return false;
@@ -97,10 +91,9 @@ bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Write(const NETWORK::PACKET::PACKET_S
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Read(char* const ReadBuffer, uint16_t& ReadedSize) {
-	if (UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped; ReadBuffer) {
-		return UTIL::TCPIP::Receive(GetSocket(), ReadBuffer, ReadedSize, Overlapped);
-	}
-	return false;
+	UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped;
+
+	return UTIL::TCPIP::Receive(GetSocket(), ReadBuffer, ReadedSize, Overlapped);
 }
 
 bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::Read(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& ReceiveOverlapped) {

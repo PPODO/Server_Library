@@ -7,27 +7,25 @@ using namespace NETWORK::SOCKET::UDPIP;
 using namespace FUNCTIONS::LOG;
 
 CUDPIPSocket::CUDPIPSocket() : BASESOCKET::CBaseSocket(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP), m_ReliableThreadHandle(&CUDPIPSocket::ReliableThread, this), m_ThreadRunState(1) {
-	try {
-		m_hWaitForInitializeThreadEvent = CreateEvent(nullptr, false, false, nullptr);
-		if (!m_hWaitForInitializeThreadEvent) {
-			throw "";
-		}
-
-		m_hSendCompleteEvent = CreateEvent(nullptr, false, false, nullptr);
-		if (!m_hSendCompleteEvent) {
-			throw "";
-		}
-
-		m_hNewReliableDataEvent = CreateEvent(nullptr, false, false, nullptr);
-		if (!m_hNewReliableDataEvent) {
-			throw "";
-		}
-
-		WaitForSingleObject(m_hWaitForInitializeThreadEvent, INFINITE);
+	m_hWaitForInitializeThreadEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (!m_hWaitForInitializeThreadEvent) {
+		CLog::WriteLog(L"Failed To Initialize Thread Event!");
+		assert(false);
 	}
-	catch (const std::exception&) {
-		std::abort();
+
+	m_hSendCompleteEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (!m_hSendCompleteEvent) {
+		CLog::WriteLog(L"Failed To Initialize Send Completion Event!");
+		assert(false);
 	}
+
+	m_hNewReliableDataEvent = CreateEvent(nullptr, false, false, nullptr);
+	if (!m_hNewReliableDataEvent) {
+		CLog::WriteLog(L"Failed To Initialize Reliable Event!");
+		assert(false);
+	}
+
+	WaitForSingleObject(m_hWaitForInitializeThreadEvent, INFINITE);
 }
 
 CUDPIPSocket::~CUDPIPSocket() {
@@ -54,16 +52,10 @@ CUDPIPSocket::~CUDPIPSocket() {
 	}
 }
 
-bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteToQueue(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
-	try {
-		if (auto ReliableData = new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::ReliableData(SendPacketStructure, SendAddress); m_ReliableDataQueue.Push(ReliableData)) {
-			return SetEvent(m_hNewReliableDataEvent);
-		}
-	}
-	catch (const std::bad_alloc& Exception) {
-		CLog::WriteLog(Exception.what());
-	}
-	return false;
+bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteToReliable(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
+	m_ReliableDataQueue.Push(new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::ReliableData(SendPacketStructure, SendAddress));
+	
+	return SetEvent(m_hNewReliableDataEvent);
 }
 
 bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteTo(const FUNCTIONS::SOCKADDR::CSocketAddress& SendAddress, const NETWORK::PACKET::PACKET_STRUCTURE& SendPacketStructure) {
@@ -84,13 +76,9 @@ bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::WriteTo(const FUNCTIONS::SOCKADDR::CS
 }
 
 bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReadFrom(char* const ReceivedBuffer, uint16_t& RecvBytes) {
-	if (ReceivedBuffer) {
-		UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped;
-		if (UTIL::UDPIP::ReceiveFrom(GetSocket(), ReceivedBuffer, RecvBytes, Overlapped)) {
-			return true;
-		}
-	}
-	return false;
+	UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped;
+	
+	return UTIL::UDPIP::ReceiveFrom(GetSocket(), ReceivedBuffer, RecvBytes, Overlapped);
 }
 
 bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReadFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& ReceiveOverlapped) {
