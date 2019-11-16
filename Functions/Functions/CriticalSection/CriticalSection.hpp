@@ -37,15 +37,11 @@ namespace FUNCTIONS {
 
 		public:
 			explicit CCriticalSectionGuard(DETAIL::CCriticalSection* const CriticalSection) : m_CriticalSection(CriticalSection) {
-				if (m_CriticalSection) {
-					m_CriticalSection->Lock();
-				}
+				m_CriticalSection->Lock();
 			}
 
 			~CCriticalSectionGuard() {
-				if (m_CriticalSection) {
-					m_CriticalSection->UnLock();
-				}
+				m_CriticalSection->UnLock();
 			}
 
 		};
