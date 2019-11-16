@@ -7,7 +7,7 @@ namespace NETWORKMODEL {
 		static const size_t MAX_CLIENT_COUNT = 500;
 
 		namespace DETAIL {
-			struct CONNECTION {
+			struct CONNECTION : public FUNCTIONS::MEMORYMANAGER::CMemoryManager<CONNECTION, MAX_CLIENT_COUNT> {
 			public:
 				NETWORK::SESSION::SERVERSESSION::CServerSession* m_Session;
 				NETWORK::SOCKET::UDPIP::PEERINFO m_PeerInformation;
@@ -47,6 +47,10 @@ namespace NETWORKMODEL {
 
 		protected:
 			virtual void Destroy() = 0;
+
+			/*
+				Can Return Null
+			*/
 			virtual DETAIL::CONNECTION* OnIOAccept(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const AcceptExOverlappedEx);
 			virtual DETAIL::CONNECTION* OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 			virtual DETAIL::CONNECTION* OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
@@ -57,21 +61,19 @@ namespace NETWORKMODEL {
 			virtual void OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 
 		private:
-			DETAIL::CONNECTION* GetConnectionFromList(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-				if (Session) {
-					auto Pred = [&Session](DETAIL::CONNECTION* const Connection) {
-						if (Connection->m_Session == Session) {
-							return true;
-						}
-						return false;
-					};
-					if (auto Iterator = std::find_if(m_Clients.begin(), m_Clients.end(), Pred); Iterator != m_Clients.cend()) {
-						return *Iterator;
+			DETAIL::CONNECTION* GetConnectionFromListOrNull(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+				auto Pred = [&Session](DETAIL::CONNECTION* const Connection) {
+					if (Connection->m_Session == Session) {
+						return true;
 					}
+					return false;
+				};
+				if (auto Iterator = std::find_if(m_Clients.begin(), m_Clients.end(), Pred); Iterator != m_Clients.cend()) {
+					return *Iterator;
 				}
 				return nullptr;
 			}
-			DETAIL::CONNECTION* GetConnectionFromList(FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
+			DETAIL::CONNECTION* GetConnectionFromListOrNull(FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
 				using namespace NETWORK::UTIL::BASESOCKET;
 
 				auto Pred = [&PeerAddress](DETAIL::CONNECTION* const Connection) {
@@ -84,41 +86,14 @@ namespace NETWORKMODEL {
 					return *Iterator;
 				}
 				else if (GetProtocolType() & EPROTOCOLTYPE::EPT_UDP) {
-					DETAIL::CONNECTION* NewConnection = nullptr;
-					try {
-						NewConnection = new DETAIL::CONNECTION(m_Listener, NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0));
-					}
-					catch (const std::exception& Exception) {
-						FUNCTIONS::LOG::CLog::WriteLog(L"%S", Exception.what());
-						return nullptr;
-					}
-					return m_Clients.emplace_back(NewConnection);
+					return m_Clients.emplace_back(new DETAIL::CONNECTION(m_Listener, NETWORK::SOCKET::UDPIP::PEERINFO(PeerAddress, 0)));
 				}
 				return nullptr;
-			}
-
-		private:
-			bool InitializeSession(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
-			inline bool InitializeHandles() {
-				if (!(m_hIOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0))) {
-					FUNCTIONS::LOG::CLog::WriteLog(L"Initialize IOCP Handle : Failed To Initialization IOCP Handle");
-					return false;
-				}
-				return true;
-			}
-			inline void CreateWorkerThread() {
-				const size_t WorkerThreadCount = std::thread::hardware_concurrency() * 2;
-				for (size_t i = 0; i < WorkerThreadCount; i++) {
-					m_WorkerThread.push_back(std::thread(&NETWORKMODEL::IOCP::CIOCP::WorkerThread, this));
-				}
-
-				FUNCTIONS::LOG::CLog::WriteLog(L"Initialize IOCP Session : Worker Thread Creation Succeeded! - %d", WorkerThreadCount);
 			}
 
 		private:
 			void WorkerThread();
 
 		};
-
 	}
 }
