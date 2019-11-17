@@ -5,8 +5,7 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORKMODEL::IOCP::CIOCP::CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList) : NETWORKMODEL::DETAIL::CNetworkModel(ProcessorList), m_hIOCP(INVALID_HANDLE_VALUE), m_bIsRunMainThread(TRUE) {
-	m_Command.AddNewAction("shutdown", [this]() { InterlockedExchange16(&m_bIsRunMainThread, FALSE);  });
+NETWORKMODEL::IOCP::CIOCP::CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList, const int PacketProcessLoopCount) : NETWORKMODEL::DETAIL::CNetworkModel(PacketProcessLoopCount, ProcessorList), m_hIOCP(INVALID_HANDLE_VALUE) {
 }
 
 NETWORKMODEL::IOCP::CIOCP::~CIOCP() {
@@ -67,11 +66,7 @@ bool NETWORKMODEL::IOCP::CIOCP::Initialize(const NETWORK::UTIL::BASESOCKET::EPRO
 }
 
 void NETWORKMODEL::IOCP::CIOCP::Run() {
-	while (m_bIsRunMainThread) {
-		if (auto PacketAndProcessor(GetPacketDataAndProcessorOrNull()); PacketAndProcessor && PacketAndProcessor->m_Packet && PacketAndProcessor->m_Processor) {
-			PacketAndProcessor->m_Processor(PacketAndProcessor->m_Packet.get());
-		}
-	}
+	NETWORKMODEL::DETAIL::CNetworkModel::Run();
 }
 
 void NETWORKMODEL::IOCP::CIOCP::Destroy() {
@@ -97,8 +92,6 @@ void NETWORKMODEL::IOCP::CIOCP::Destroy() {
 	if (m_Listener) {
 		delete m_Listener;
 	}
-
-	m_Command.Shutdown();
 }
 
 void NETWORKMODEL::IOCP::CIOCP::WorkerThread() {

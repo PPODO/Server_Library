@@ -24,7 +24,6 @@ namespace NETWORKMODEL {
 			HANDLE m_hIOCP;
 
 		private:
-			int16_t m_bIsRunMainThread;
 			std::vector<std::thread> m_WorkerThread;
 
 		private:
@@ -34,11 +33,8 @@ namespace NETWORKMODEL {
 			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ClientListLock;
 			std::vector<DETAIL::CONNECTION*> m_Clients;
 
-		private:
-			FUNCTIONS::COMMAND::CCommand m_Command;
-
 		public:
-			explicit CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList);
+			explicit CIOCP(const NETWORKMODEL::DETAIL::PACKETPROCESSORLIST& ProcessorList, const int PacketProcessLoopCount = 1);
 			virtual ~CIOCP() override;
 
 		public:

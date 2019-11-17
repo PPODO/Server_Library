@@ -5,9 +5,6 @@ namespace NETWORKMODEL {
 	namespace EVENTSELECT {
 		class CEventSelect : private DETAIL::CNetworkModel {
 		private:
-			const int m_PacketProcessLoopCount;
-
-		private:
 			HANDLE m_hTCPSelectEvent;
 			HANDLE m_hUDPSelectEvent;
 			HANDLE m_hStopEvent;
@@ -31,7 +28,7 @@ namespace NETWORKMODEL {
 
 		public:
 			virtual bool Initialize(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const FUNCTIONS::SOCKADDR::CSocketAddress& ServerAddress) override;
-			virtual void Run() override;
+			virtual void Run();
 
 		protected:
 			virtual void Destroy() override;

@@ -3,7 +3,7 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const int PacketProcessLoopCount, const DETAIL::PACKETPROCESSORLIST& ProcessorList) : DETAIL::CNetworkModel(ProcessorList), m_PacketProcessLoopCount(PacketProcessLoopCount), m_hStopEvent(INVALID_HANDLE_VALUE), m_hTCPSelectEvent(INVALID_HANDLE_VALUE), m_hUDPSelectEvent(INVALID_HANDLE_VALUE), m_ThreadRunState(1), m_NextSendPacketNumber(0) {
+NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const int PacketProcessLoopCount, const DETAIL::PACKETPROCESSORLIST& ProcessorList) : DETAIL::CNetworkModel(PacketProcessLoopCount, ProcessorList), m_hStopEvent(INVALID_HANDLE_VALUE), m_hTCPSelectEvent(INVALID_HANDLE_VALUE), m_hUDPSelectEvent(INVALID_HANDLE_VALUE), m_ThreadRunState(1), m_NextSendPacketNumber(0) {
 }
 
 NETWORKMODEL::EVENTSELECT::CEventSelect::~CEventSelect() {
@@ -28,11 +28,7 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BA
 }
 
 void NETWORKMODEL::EVENTSELECT::CEventSelect::Run() {
-	for (int i = 0; i < m_PacketProcessLoopCount; i++) {
-		if (auto PacketAndProcessor(GetPacketDataAndProcessorOrNull()); PacketAndProcessor && PacketAndProcessor->m_Packet && PacketAndProcessor->m_Processor) {
-			PacketAndProcessor->m_Processor(PacketAndProcessor->m_Packet.get());
-		}
-	}
+	NETWORKMODEL::DETAIL::CNetworkModel::Run();
 }
 
 void NETWORKMODEL::EVENTSELECT::CEventSelect::Destroy() {

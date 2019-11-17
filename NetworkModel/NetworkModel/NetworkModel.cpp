@@ -2,7 +2,7 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORKMODEL::DETAIL::CNetworkModel::CNetworkModel(const PACKETPROCESSORLIST& ProcessorList) : m_PacketProcessors(ProcessorList) {
+NETWORKMODEL::DETAIL::CNetworkModel::CNetworkModel(const int PacketProcessLoopCount, const PACKETPROCESSORLIST& ProcessorList) : m_PacketProcessLoopCount(PacketProcessLoopCount), m_PacketProcessors(ProcessorList) {
 	if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) != 0) {
 		assert(false);
 	}
@@ -10,6 +10,19 @@ NETWORKMODEL::DETAIL::CNetworkModel::CNetworkModel(const PACKETPROCESSORLIST& Pr
 
 NETWORKMODEL::DETAIL::CNetworkModel::~CNetworkModel() {
 	WSACleanup();
+}
+
+void NETWORKMODEL::DETAIL::CNetworkModel::Run() {
+	FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ProcessorListLock);
+	
+	for (int i = 0; i < m_PacketProcessLoopCount; i++) {
+		if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data = nullptr; m_PacketQueue.Pop(Data) && Data) {
+			if (auto Iterator = m_PacketProcessors.find(Data->m_PacketStructure.m_PacketInformation.m_PacketType); Iterator != m_PacketProcessors.cend()) {
+				Iterator->second(Data);
+			}
+			delete Data;
+		}
+	}
 }
 
 void NETWORKMODEL::DETAIL::CNetworkModel::PacketForwardingLoop(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, char* const ReceivedBuffer, int16_t& ReceivedBytes, int16_t& LastReceivedPacketNumber, void* const Owner) {
