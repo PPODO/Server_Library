@@ -15,14 +15,23 @@ public:
 
 };
 
+struct STRUCTURE {
+	std::string m_StructureName;
+	std::vector<PARAMETER> m_Structures;
+
+public:
+	STRUCTURE(const std::string& Name) : m_StructureName(Name) {};
+
+};
+
 struct PROTOCOL {
 public:
 	const std::string m_ProtocolType;
 	std::string m_ProtocolName;
-	std::vector<PARAMETER> m_Structures;
 	std::vector<PARAMETER> m_Parameters;
 	std::vector<std::string> m_Headers;
 	std::vector<std::string> m_MessageTypes;
+	std::vector<STRUCTURE> m_Structures;
 
 public:
 	PROTOCOL(const std::string& ProtocolType, const std::string& ProtocolName) : m_ProtocolType(ProtocolType), m_ProtocolName(ProtocolName) {};
@@ -84,6 +93,7 @@ int main(int argc, char* argv[]) {
 						}
 						
 						if (ResultWithoutSpaces.find('(') != std::string::npos) {
+							Protocols.back().m_Structures.push_back(ResultWithoutSpaces.substr(ResultWithoutSpaces.find('(') + 1));
 							bIsStructureTypeOpen = true;
 							continue;
 						}
@@ -120,7 +130,7 @@ int main(int argc, char* argv[]) {
 								std::string Type = ResultWithoutSpaces.substr(0, CenterIndex);
 								std::string Name = ResultWithoutSpaces.substr(CenterIndex + 1, ArraySizeIndex - 5);
 								if (bIsStructureTypeOpen) {
-									Protocols.back().m_Structures.emplace_back(Type, Name, ArraySize);
+									Protocols.back().m_Structures.back().m_Structures.emplace_back(Type, Name, ArraySize);
 								}
 								else {
 									Protocols.back().m_Parameters.emplace_back(Type, Name, ArraySize);
@@ -177,12 +187,12 @@ int main(int argc, char* argv[]) {
 					PacketDefineFile << "};\n\n";
 				}
 
-				if (It.m_Structures.size() != 0) {
-					PacketDefineFile << "struct " << It.m_ProtocolName << " {\n";
+				for (auto Structure : It.m_Structures) {
+					PacketDefineFile << "struct " << Structure.m_StructureName << " {\n";
 					PacketDefineFile << "\tfriend boost::serialization::access;\n";
 					PacketDefineFile << "public:\n";
 
-					for (const auto& ParamIt : It.m_Structures) {
+					for (const auto& ParamIt : Structure.m_Structures) {
 						PacketDefineFile << '\t' << ParamIt.m_Type << "\tm_" << ParamIt.m_Name;
 						if (ParamIt.m_ArraySize != 0) {
 							PacketDefineFile << "[" << ParamIt.m_ArraySize << "]";
@@ -191,21 +201,21 @@ int main(int argc, char* argv[]) {
 					}
 
 					PacketDefineFile << "\npublic:\n";
-					PacketDefineFile << "\t" << It.m_ProtocolName << "() {};\n";
-					PacketDefineFile << "\t" << It.m_ProtocolName << "(";
+					PacketDefineFile << "\t" << Structure.m_StructureName << "() {};\n";
+					PacketDefineFile << "\t" << Structure.m_StructureName << "(";
 
-					for (auto ParamIt = It.m_Structures.cbegin(); ParamIt != It.m_Structures.cend(); ++ParamIt) {
+					for (auto ParamIt = Structure.m_Structures.cbegin(); ParamIt != Structure.m_Structures.cend(); ++ParamIt) {
 						PacketDefineFile << "const " << ParamIt->m_Type << (ParamIt->m_ArraySize == 0 ? "& " : "* ") << ParamIt->m_Name;
-						if ((ParamIt + 1) != It.m_Structures.cend()) {
+						if ((ParamIt + 1) != Structure.m_Structures.cend()) {
 							PacketDefineFile << ", ";
 						}
 					}
 					PacketDefineFile << ") : ";
 
-					for (auto ParamIt = It.m_Structures.cbegin(); ParamIt != It.m_Structures.cend(); ++ParamIt) {
+					for (auto ParamIt = Structure.m_Structures.cbegin(); ParamIt != Structure.m_Structures.cend(); ++ParamIt) {
 						if (ParamIt->m_ArraySize == 0) {
 							PacketDefineFile << "m_" << ParamIt->m_Name << "(" << ParamIt->m_Name << ")";
-							if ((ParamIt + 1) != It.m_Structures.cend()) {
+							if ((ParamIt + 1) != Structure.m_Structures.cend()) {
 								PacketDefineFile << ", ";
 							}
 						}
@@ -213,7 +223,7 @@ int main(int argc, char* argv[]) {
 
 					PacketDefineFile << " {\n";
 
-					for (auto ParamIt : It.m_Structures) {
+					for (auto ParamIt : Structure.m_Structures) {
 						if (ParamIt.m_ArraySize != 0) {
 							PacketDefineFile << "\t\tif (" << ParamIt.m_Name << ") {\n";
 							PacketDefineFile << "\t\t\tCopyMemory(m_" << ParamIt.m_Name << ", " << ParamIt.m_Name << ", " << ParamIt.m_ArraySize << " * sizeof(" << ParamIt.m_Type << "));\n";
@@ -225,9 +235,9 @@ int main(int argc, char* argv[]) {
 
 					PacketDefineFile << "\t};\n\npublic:\n";
 
-					PacketDefineFile << "\t const " << It.m_ProtocolName << "& operator=(const " << It.m_ProtocolName << "& rhs) {\n";
+					PacketDefineFile << "\t const " << Structure.m_StructureName << "& operator=(const " << Structure.m_StructureName << "& rhs) {\n";
 
-					for (const auto& ParamIt : It.m_Structures) {
+					for (const auto& ParamIt : Structure.m_Structures) {
 						if (ParamIt.m_ArraySize == 0) {
 							PacketDefineFile << "\t\tm_" << ParamIt.m_Name << "= rhs.m_" << ParamIt.m_Name << ";\n";
 						}
@@ -247,7 +257,7 @@ int main(int argc, char* argv[]) {
 					PacketDefineFile << "\ttemplate<typename Archive>\n";
 					PacketDefineFile << "\tvoid serialize(Archive& ar, unsigned int Version) {\n";
 
-					for (const auto& ParamIt : It.m_Structures) {
+					for (const auto& ParamIt : Structure.m_Structures) {
 						PacketDefineFile << "\t\tar& m_" << ParamIt.m_Name << ";\n";
 					}
 
