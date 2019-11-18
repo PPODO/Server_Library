@@ -131,7 +131,7 @@ void NETWORKMODEL::IOCP::CIOCP::WorkerThread() {
 				OnIOReceive(OverlappedEx, reinterpret_cast<const uint16_t&>(RecvBytes));
 				break;
 			case EIOTYPE::EIT_WRITE:
-				OnIOWrite(OverlappedEx->m_Owner);
+				OnIOWrite(OverlappedEx->m_Owner, reinterpret_cast<const uint16_t&>(RecvBytes));
 				break;
 			case EIOTYPE::EIT_READFROM:
 				OnIOReceiveFrom(OverlappedEx, reinterpret_cast<const uint16_t&>(RecvBytes));
@@ -175,6 +175,7 @@ void NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSIO
 }
 
 NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+	// TO DO : Connection Remove From Client List
 	if (auto Connection = GetConnectionFromListOrNull(Session)) {
 		if (Session->Initialize(*m_Listener)) {
 			CLog::WriteLog(L"Disconnect Client!");
@@ -184,8 +185,8 @@ NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIODisconnec
 	return nullptr;
 }
 
-NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-	Session->SendCompletion(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP);
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, const uint16_t& SendBytes) {
+	Session->SendCompletion(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP, SendBytes);
 	return GetConnectionFromListOrNull(Session);
 }
 
@@ -204,7 +205,6 @@ NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOReceive(N
 
 NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes) {
 	if (auto Connection = GetConnectionFromListOrNull(ReceiveFromOverlappedEx->m_RemoteAddress)) {
-
 		ReceiveFromOverlappedEx->m_RemainReceivedBytes += RecvBytes;
 		ReceiveFromOverlappedEx->m_LastReceivedPacketNumber = Connection->m_PeerInformation.m_LastPacketNumber;
 
@@ -212,8 +212,9 @@ NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOReceiveFr
 			PacketForwardingLoop(NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, ReceiveFromOverlappedEx->m_SocketMessage, ReceiveFromOverlappedEx->m_RemainReceivedBytes, ReceiveFromOverlappedEx->m_LastReceivedPacketNumber, Connection);
 			Connection->m_PeerInformation.m_LastPacketNumber = ReceiveFromOverlappedEx->m_LastReceivedPacketNumber;
 		}
-		if (!Connection->m_Session->ReceiveFrom()) {
-			Connection->m_Session->SocketRecycle();
+
+		if (!ReceiveFromOverlappedEx->m_Owner->ReceiveFrom()) {
+			ReceiveFromOverlappedEx->m_Owner->ReceiveFrom();
 		}
 		return Connection;
 	}
