@@ -111,7 +111,7 @@ namespace NETWORK {
 				bool Bind(const FUNCTIONS::SOCKADDR::CSocketAddress& BindAddress);
 
 			public:
-				virtual bool SendCompletion() = 0;
+				virtual bool SendCompletion(const uint16_t& SendBytes) = 0;
 
 			public:
 				inline ::SOCKET GetSocket() const { return m_Socket; }

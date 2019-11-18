@@ -69,7 +69,7 @@ namespace NETWORK {
 				bool SocketRecycling(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& DisconnectOverlapped);
 
 			public:
-				virtual bool SendCompletion() final override;
+				virtual bool SendCompletion(const uint16_t& SendBytes) final override;
 
 			};
 		}

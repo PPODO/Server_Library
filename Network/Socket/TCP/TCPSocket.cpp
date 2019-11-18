@@ -112,12 +112,23 @@ bool CTCPIPSocket::SocketRecycling(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL
 	return true;
 }
 
-bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::SendCompletion() {
-	if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* Data = nullptr; m_SendMessageQueue.Pop(Data)) {
-		delete Data;
-		return true;
+bool NETWORK::SOCKET::TCPIP::CTCPIPSocket::SendCompletion(const uint16_t& SendBytes) {
+	auto RemainByte = SendBytes;
+
+	while (RemainByte > 0) {
+		if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CWSASendData* Data = nullptr; m_SendMessageQueue.Pop(Data)) {
+			if (RemainByte < Data->m_Length) {
+				if (UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX Overlapped; !NETWORK::UTIL::TCPIP::Send(GetSocket(), Data->m_Buffer + RemainByte, Data->m_Length - RemainByte, Overlapped)) {
+					return false;
+				}
+			}
+			RemainByte -= Data->m_Length;
+			delete Data;
+			continue;
+		}
+		return false;
 	}
-	return false;
+	return true;
 }
 
 // UTIL
