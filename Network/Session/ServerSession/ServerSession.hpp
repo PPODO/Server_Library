@@ -86,12 +86,12 @@ namespace NETWORK {
 				}
 
 			public:
-				inline bool SendCompletion(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType) {
+				inline bool SendCompletion(const UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, const uint16_t& SendBytes) {
 					if (ProtocolType == UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
-						return m_TCPSocket->SendCompletion();
+						return m_TCPSocket->SendCompletion(SendBytes);
 					}
 					else if (ProtocolType == UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
-						return m_UDPSocket->SendCompletion();
+						return m_UDPSocket->SendCompletion(SendBytes);
 					}
 					return false;
 				}

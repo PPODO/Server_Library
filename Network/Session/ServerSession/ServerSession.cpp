@@ -74,7 +74,7 @@ bool NETWORK::UTIL::UDPIP::CheckAck(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLA
 		if (AckValue == 9999) {
 			Overlapped.m_LastReceivedPacketNumber = PacketNumber;
 			Overlapped.m_RemainReceivedBytes -= sizeof(ReadedValue);
-			return Owner->SendCompletion(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP);
+			return Owner->SendCompletion(UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP, 0);
 		}
 		else if (AckValue == 0) {
 			int16_t AckNumber = 9999;
