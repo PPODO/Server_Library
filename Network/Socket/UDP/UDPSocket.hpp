@@ -77,7 +77,7 @@ namespace NETWORK {
 				bool ReadFrom(UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX& ReceiveOverlapped);
 
 			public:
-				virtual bool SendCompletion() final override;
+				virtual bool SendCompletion(const uint16_t& SendBytes) final override;
 
 			};
 		}

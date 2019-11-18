@@ -86,7 +86,7 @@ bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::ReadFrom(UTIL::SESSION::SERVERSESSION
 	return UTIL::UDPIP::ReceiveFrom(GetSocket(), GetReceiveBufferPtr(), RecvBytes, ReceiveOverlapped);
 }
 
-bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::SendCompletion() {
+bool NETWORK::SOCKET::UDPIP::CUDPIPSocket::SendCompletion(const uint16_t& SendBytes) {
 	return SetEvent(m_hSendCompleteEvent);
 }
 
