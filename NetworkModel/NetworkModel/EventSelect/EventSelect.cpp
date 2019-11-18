@@ -14,8 +14,10 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BA
 	m_ServerAddress = ServerAddress;
 
 	if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
-		m_TCPIPSocket = std::make_unique<NETWORK::SOCKET::TCPIP::CTCPIPSocket>();
-		m_TCPIPSocket->Connect(m_ServerAddress);
+		if (bool OptionVar = true; m_TCPIPSocket = std::make_unique<NETWORK::SOCKET::TCPIP::CTCPIPSocket>()) {
+			NETWORK::UTIL::BASESOCKET::SetSockOption(m_TCPIPSocket->GetSocket(), IPPROTO_TCP, TCP_NODELAY, &OptionVar, sizeof(OptionVar));
+			m_TCPIPSocket->Connect(m_ServerAddress);
+		}
 	}
 	if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
 		m_UDPIPSocket = std::make_unique<NETWORK::SOCKET::UDPIP::CUDPIPSocket>();
@@ -150,7 +152,7 @@ bool NETWORK::UTIL::UDPIP::CheckAck(NETWORK::SOCKET::UDPIP::CUDPIPSocket* const 
 		if (AckValue == 9999) {
 			InterlockedExchange16(&UpdatedPacketNumber, PacketNumber);
 			ReceivedBytes -= sizeof(ReadedValue);
-			return UDPSocket->SendCompletion();
+			return UDPSocket->SendCompletion(0);
 		}
 		else if (AckValue == 0) {
 			int16_t AckNumber = 9999;
