@@ -16,7 +16,7 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::Initialize(const NETWORK::UTIL::BA
 	if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_TCP) {
 		if (bool OptionVar = true; m_TCPIPSocket = std::make_unique<NETWORK::SOCKET::TCPIP::CTCPIPSocket>()) {
 			NETWORK::UTIL::BASESOCKET::SetSockOption(m_TCPIPSocket->GetSocket(), IPPROTO_TCP, TCP_NODELAY, &OptionVar, sizeof(OptionVar));
-			m_TCPIPSocket->Connect(m_ServerAddress);
+			if (!m_TCPIPSocket->Connect(m_ServerAddress)) { return false; }
 		}
 	}
 	if (ProtocolType & NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE::EPT_UDP) {
