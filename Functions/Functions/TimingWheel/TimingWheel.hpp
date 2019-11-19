@@ -32,7 +32,6 @@ namespace FUNCTIONS {
 			TimingWheel의 기본적인 동작 과정은 슬롯 시간 간격(타이머 실행 주기)마다 배열을 순회하면서, 해당 배열에 담긴 타이머를 처리하는 방식
 		*/
 
-		template<size_t TIMESLOTCOUNT = 12>
 		class CTimingWheel : private UNCOPYABLE::CUncopyable {
 		private:
 			int16_t m_TimingWheelThreadRunState{ 1 };
@@ -41,10 +40,11 @@ namespace FUNCTIONS {
 		private:
 			// Millisecond, 해당 시간 간격마다 배열을 돌아 타이머를 처리함.
 			const size_t m_SlotInterval;
+			const size_t m_TimeSlot;
 
 		private:
 			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_SlotArrayLock;
-			std::array<std::list<std::pair<HANDLE, DETAIL::TimerInformation>>, TIMESLOTCOUNT> m_SlotArray;
+			std::vector<std::list<std::pair<HANDLE, DETAIL::TimerInformation>>> m_SlotArray;
 
 		private:
 			// 현재 처리되어야 하는 인덱스의 위치
@@ -53,7 +53,8 @@ namespace FUNCTIONS {
 			size_t m_CurrentRotationCount{ 0 };
 
 		public:
-			explicit CTimingWheel(size_t SlotInterval) : m_SlotInterval(SlotInterval) {
+			explicit CTimingWheel(size_t SlotInterval, size_t TimeSlot = 12) : m_SlotInterval(SlotInterval), m_TimeSlot(TimeSlot) {
+				m_SlotArray.resize(m_TimeSlot);
 				m_ThreadHandle = std::thread(&CTimingWheel::Update, this);
 			};
 			~CTimingWheel() {
@@ -87,8 +88,8 @@ namespace FUNCTIONS {
 								if (Timer->second.m_bIsLoop) {
 									// 새로운 인덱스 위치, 순회 횟수를 구해줌.
 									auto TotalIndexValue((Index + (Timer->second.m_IntervalTime / m_SlotInterval)));
-									auto NewIndex(TotalIndexValue % TIMESLOTCOUNT);
-									Timer->second.m_RotataionCount += (TotalIndexValue / TIMESLOTCOUNT);
+									auto NewIndex(TotalIndexValue % m_TimeSlot);
+									Timer->second.m_RotataionCount += (TotalIndexValue / m_TimeSlot);
 									m_SlotArray[NewIndex].emplace_back(Timer->first, Timer->second);
 								}
 								Timer = m_SlotArray[Index].erase(Timer);
@@ -99,10 +100,10 @@ namespace FUNCTIONS {
 						}
 
 						// 현재 배열을 몇 번 순회했는지에 대한 값을 구해옴.
-						if ((m_CurrentIndex / TIMESLOTCOUNT) >= 1) {
+						if ((m_CurrentIndex / m_TimeSlot) >= 1) {
 							InterlockedIncrement(&m_CurrentRotationCount);
 						}
-						InterlockedExchange(&m_CurrentIndex, m_CurrentIndex % TIMESLOTCOUNT);
+						InterlockedExchange(&m_CurrentIndex, m_CurrentIndex % m_TimeSlot);
 						LastUpdatedTime = CurrentTime;
 					}
 				}
@@ -118,10 +119,10 @@ namespace FUNCTIONS {
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
 				// (현재 인덱스 + (타이머가 실행 될 시간(Millisecond) / 타이머 업데이트 간격)) % 슬롯 최대 크기 -> 타이머가 저장될 인덱스 위치
 				auto TotalIndexValue(m_CurrentIndex + (TimerInformation.m_IntervalTime / m_SlotInterval));
-				auto SlotIndex(TotalIndexValue % TIMESLOTCOUNT);
+				auto SlotIndex(TotalIndexValue % m_TimeSlot);
 				
 				if (SlotIndex < m_SlotArray.size()) {
-					TimerInformation.m_RotataionCount = (TotalIndexValue / TIMESLOTCOUNT) + m_CurrentRotationCount;
+					TimerInformation.m_RotataionCount = (TotalIndexValue / m_TimeSlot) + m_CurrentRotationCount;
 					return m_SlotArray[SlotIndex].emplace_back(CreateEvent(nullptr, false, false, nullptr), TimerInformation).first;
 				}
 				return INVALID_HANDLE_VALUE;
@@ -129,24 +130,38 @@ namespace FUNCTIONS {
 			HANDLE AddNewTimer(DETAIL::TimerInformation&& TimerInformation) {
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
 				auto TotalIndexValue(m_CurrentIndex + (TimerInformation.m_IntervalTime / m_SlotInterval));
-				auto SlotIndex(TotalIndexValue % TIMESLOTCOUNT);
+				auto SlotIndex(TotalIndexValue % m_TimeSlot);
 
 				if (SlotIndex < m_SlotArray.size()) {
-					TimerInformation.m_RotataionCount = (TotalIndexValue / TIMESLOTCOUNT) + m_CurrentRotationCount;
+					TimerInformation.m_RotataionCount = (TotalIndexValue / m_TimeSlot) + m_CurrentRotationCount;
 					return m_SlotArray[SlotIndex].emplace_back(CreateEvent(nullptr, false, false, nullptr), TimerInformation).first;
 				}
 				return INVALID_HANDLE_VALUE;
 			}
-			bool RemoveTimer(const HANDLE& Handle) {
+			bool RemoveTimer(HANDLE& Handle) {
 				if (Handle == INVALID_HANDLE_VALUE) {
 					return false;
 				}
 
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
-				bool bIsFind = false;
+
 				for (auto& const Slot : m_SlotArray) {
-					Slot.remove_if([&Handle, &bIsFind](const auto& Value) { if (Value.first == Handle) { bIsFind = true; return true; } return false; });
-					if (bIsFind) {
+					Slot.remove_if([&Handle](const auto& Value) { if (Value.first == Handle) { CloseHandle(Handle); Handle = INVALID_HANDLE_VALUE; return true; } return false; });
+					if (Handle == INVALID_HANDLE_VALUE) {
+						return true;
+					}
+				}
+				return false;
+			}
+			bool IsRegistered(const HANDLE& Handle) {
+				if (Handle == INVALID_HANDLE_VALUE) {
+					return false;
+				}
+
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
+
+				for (auto& const Slot : m_SlotArray) {
+					if (auto Timer(std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; })); Timer != Slot.cend()) {
 						return true;
 					}
 				}
@@ -154,26 +169,26 @@ namespace FUNCTIONS {
 			}
 			void PauseTimer(const HANDLE& Handle) {
 				if (Handle == INVALID_HANDLE_VALUE) {
-					return false;
+					return;
 				}
 
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
-				for (auto& const Slot : m_SlotArray) {
-					if (auto& const Timer = std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; }); Timer != Slot.cend()) {
-						Timer.m_bIsPause = true;
+				for (auto& Slot : m_SlotArray) {
+					if (auto Timer = std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; }); Timer != Slot.cend()) {
+						Timer->second.m_bIsPause = true;
 						break;
 					}
 				}
 			}
 			void UnPauseTimer(const HANDLE& Handle) {
 				if (Handle == INVALID_HANDLE_VALUE) {
-					return false;
+					return;
 				}
 
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
 				for (auto& const Slot : m_SlotArray) {
-					if (auto& const Timer = std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; }); Timer != Slot.cend()) {
-						Timer.m_bIsPause = false;
+					if (auto Timer = std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; }); Timer != Slot.cend()) {
+						Timer->second.m_bIsPause = false;
 						break;
 					}
 				}
@@ -185,8 +200,8 @@ namespace FUNCTIONS {
 
 				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SlotArrayLock);
 				for (auto& const Slot : m_SlotArray) {
-					if (auto& const Timer = std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; }); Timer != Slot.cend()) {
-						return Timer.m_bIsPause;
+					if (auto Timer = std::find_if(Slot.begin(), Slot.end(), [&Handle](const auto& Value) { if (Value.first == Handle) { return true; } return false; }); Timer != Slot.cend()) {
+						return Timer->second.m_bIsPause;
 					}
 				}
 				return false;
