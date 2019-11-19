@@ -45,6 +45,7 @@ Network/Release/
 Network/x64/
 
 #file
+*.ini
 *.sln
 x64/Debug/*.pdb
 x64/Debug/*.exe
