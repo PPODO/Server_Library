@@ -61,6 +61,9 @@ int main(int argc, char* argv[]) {
 
 				// 프로토콜은 열거형이기에 컴마로 구분
 				if (ResultWithoutSpaces.find(',') != std::string::npos) {
+					if (ResultWithoutSpaces.find(";") != std::string::npos) {
+						break;
+					}
 					// 프로토콜의 시작을 알리는 경우가 아닐 때만
 					if (ResultWithoutSpaces.find("VERSION") == std::string::npos) {
 						size_t StartPosition = ResultWithoutSpaces.find('_') + 1;
