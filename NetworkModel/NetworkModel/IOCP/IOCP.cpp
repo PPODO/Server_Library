@@ -151,7 +151,7 @@ NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOAccept(NE
 		
 		if (auto RemoteAddr_in = reinterpret_cast<sockaddr_in*>(RemoteAddr)) {
 			if (auto Connection = GetConnectionFromListOrNull(Session)) {
-				Connection->m_PeerInformation.m_RemoteAddress = FUNCTIONS::SOCKADDR::CSocketAddress(*RemoteAddr_in);
+				Connection->m_PeerInformation = NETWORK::SOCKET::UDPIP::PEERINFO(FUNCTIONS::SOCKADDR::CSocketAddress(*RemoteAddr_in), 0);
 
 				if (Session->RegisterIOCompletionPort(m_hIOCP) && Session->Receive()) {
 					CLog::WriteLog(L"Accept New Client!");
@@ -175,7 +175,6 @@ void NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSIO
 }
 
 NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-	// TO DO : Connection Remove From Client List
 	if (auto Connection = GetConnectionFromListOrNull(Session)) {
 		if (Session->Initialize(*m_Listener)) {
 			CLog::WriteLog(L"Disconnect Client!");
