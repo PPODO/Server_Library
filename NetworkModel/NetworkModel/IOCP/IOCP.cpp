@@ -151,7 +151,7 @@ NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOAccept(NE
 		
 		if (auto RemoteAddr_in = reinterpret_cast<sockaddr_in*>(RemoteAddr)) {
 			if (auto Connection = GetConnectionFromListOrNull(Session)) {
-				Connection->m_PeerInformation = NETWORK::SOCKET::UDPIP::PEERINFO(FUNCTIONS::SOCKADDR::CSocketAddress(*RemoteAddr_in), 0);
+				Connection->m_PeerInformation = NETWORK::SOCKET::UDPIP::PEERINFO(FUNCTIONS::SOCKADDR::CSocketAddress(inet_ntoa(RemoteAddr_in->sin_addr), 0), 0);
 
 				if (Session->RegisterIOCompletionPort(m_hIOCP) && Session->Receive()) {
 					CLog::WriteLog(L"Accept New Client!");

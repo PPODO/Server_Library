@@ -71,7 +71,7 @@ namespace NETWORKMODEL {
 			}
 			DETAIL::CONNECTION* GetConnectionFromListOrNull(FUNCTIONS::SOCKADDR::CSocketAddress& PeerAddress) {
 				using namespace NETWORK::UTIL::BASESOCKET;
-
+				
 				auto Pred = [&PeerAddress](DETAIL::CONNECTION* const Connection) {
 					if (PeerAddress.IsSameAddress(Connection->m_PeerInformation.m_RemoteAddress)) {
 						return true;
