@@ -52,9 +52,7 @@ namespace NETWORKMODEL {
 			virtual DETAIL::CONNECTION* OnIOWrite(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session, const uint16_t& SendBytes);
 			virtual DETAIL::CONNECTION* OnIOReceive(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveOverlappedEx, const uint16_t& RecvBytes);
 			virtual DETAIL::CONNECTION* OnIOReceiveFrom(NETWORK::UTIL::SESSION::SERVERSESSION::DETAIL::OVERLAPPED_EX* const ReceiveFromOverlappedEx, const uint16_t& RecvBytes);
-
-		private:
-			virtual void OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
+			virtual DETAIL::CONNECTION* OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session);
 
 		private:
 			DETAIL::CONNECTION* GetConnectionFromListOrNull(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {

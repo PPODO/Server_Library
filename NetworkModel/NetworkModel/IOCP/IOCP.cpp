@@ -165,13 +165,17 @@ NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOAccept(NE
 	return nullptr;
 }
 
-void NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
-	if (Session->SocketRecycle()) {
-		CLog::WriteLog(L"Try Disconnect Client!");
+NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIOTryDisconnect(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
+	if (auto Connection = GetConnectionFromListOrNull(Session)) {
+		if (Session->SocketRecycle()) {
+			CLog::WriteLog(L"Try Disconnect Client!");
+		}
+		else {
+			OnIODisconnected(Session);
+		}
+		return Connection;
 	}
-	else {
-		OnIODisconnected(Session);
-	}
+	return nullptr;
 }
 
 NETWORKMODEL::IOCP::DETAIL::CONNECTION* NETWORKMODEL::IOCP::CIOCP::OnIODisconnected(NETWORK::SESSION::SERVERSESSION::CServerSession* const Session) {
