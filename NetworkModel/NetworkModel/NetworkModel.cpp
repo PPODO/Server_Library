@@ -1,10 +1,20 @@
 #include "NetworkModel.hpp"
+#include <type_traits>
 
 using namespace FUNCTIONS::LOG;
 
 NETWORKMODEL::DETAIL::CNetworkModel::CNetworkModel(const int PacketProcessLoopCount, const PACKETPROCESSORLIST& ProcessorList) : m_PacketProcessLoopCount(PacketProcessLoopCount), m_PacketProcessors(ProcessorList) {
 	if (WSAStartup(WINSOCK_VERSION, &m_WinSockData) != 0) {
 		assert(false);
+	}
+
+	try {
+		m_ProcessQueue = std::make_unique<decltype(m_ProcessQueue)::element_type>();
+		m_PacketStorage = std::make_unique<decltype(m_PacketStorage)::element_type>();
+	}
+	catch (const std::exception& Exception) {
+		CLog::WriteLog(Exception.what());
+		std::abort();
 	}
 }
 
@@ -13,14 +23,19 @@ NETWORKMODEL::DETAIL::CNetworkModel::~CNetworkModel() {
 }
 
 void NETWORKMODEL::DETAIL::CNetworkModel::Run() {
-	FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_ProcessorListLock);
-	
 	for (int i = 0; i < m_PacketProcessLoopCount; i++) {
-		if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data = nullptr; m_PacketQueue.Pop(Data) && Data) {
+		if (FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData* Data = nullptr; m_ProcessQueue->Pop(Data) && Data) {
 			if (auto Iterator = m_PacketProcessors.find(Data->m_PacketStructure.m_PacketInformation.m_PacketType); Iterator != m_PacketProcessors.cend()) {
 				Iterator->second(Data);
 			}
 			delete Data;
+		}
+		else if (m_ProcessQueue->IsEmpty() && !m_PacketStorage->IsEmpty()) {
+			FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SyncForQueueExchange);
+
+			m_ProcessQueue.swap(m_PacketStorage);
+			m_ProcessQueue->ExchangeSyncState(false);
+			m_PacketStorage->ExchangeSyncState(true);
 		}
 	}
 }
@@ -45,7 +60,8 @@ void NETWORKMODEL::DETAIL::CNetworkModel::PacketForwardingLoop(const NETWORK::UT
 				}
 				CopyMemory(PacketStructure.m_PacketData, ReceivedBuffer + PacketStructure.m_PacketInformation.GetSize(), PacketStructure.m_PacketInformation.m_PacketSize);
 
-				m_PacketQueue.Push(new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(Owner, PacketStructure));
+				FUNCTIONS::CRITICALSECTION::CCriticalSectionGuard Lock(&m_SyncForQueueExchange);
+				m_PacketStorage->Push(new FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData(Owner, PacketStructure));
 			}
 			MoveMemory(ReceivedBuffer, ReceivedBuffer + TotalBytes, TotalBytes);
 			ReceivedBytes -= TotalBytes;

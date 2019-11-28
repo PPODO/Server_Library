@@ -23,11 +23,12 @@ namespace NETWORKMODEL {
 			const int m_PacketProcessLoopCount;
 
 		private:
-			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_ProcessorListLock;
 			const PACKETPROCESSORLIST& m_PacketProcessors;
 
 		private:
-			FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*> m_PacketQueue;
+			FUNCTIONS::CRITICALSECTION::DETAIL::CCriticalSection m_SyncForQueueExchange;
+			std::unique_ptr<FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*>> m_ProcessQueue;
+			std::unique_ptr<FUNCTIONS::CIRCULARQUEUE::CCircularQueue<FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::CPacketQueueData*>> m_PacketStorage;
 
 		protected:
 			void PacketForwardingLoop(const NETWORK::UTIL::BASESOCKET::EPROTOCOLTYPE& ProtocolType, char* const ReceivedBuffer, int16_t& ReceivedBytes, int16_t& LastReceivedPacketNumber, void* const Owner = nullptr);
