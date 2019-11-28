@@ -21,7 +21,8 @@ namespace FUNCTIONS {
 		template<typename DATATYPE>
 		class CCircularQueue {
 		private:
-			CRITICALSECTION::DETAIL::CCriticalSection m_ListLock;
+			int16_t m_bIsSyncOn;
+			CRITICALSECTION::DETAIL::CCriticalSection m_SyncForQueue;
 
 		private:
 			DATATYPE m_Queue[MAX_QUEUE_LENGTH];
@@ -29,7 +30,7 @@ namespace FUNCTIONS {
 
 		public:
 			explicit CCircularQueue() : m_Head(0), m_Tail(0) { ZeroMemory(m_Queue, MAX_QUEUE_LENGTH); };
-			explicit CCircularQueue(const CCircularQueue& rhs) : m_ListLock(rhs.m_ListLock), m_Head(rhs.m_Head), m_Tail(rhs.m_Tail) {
+			explicit CCircularQueue(const CCircularQueue& rhs) : m_SyncForQueue(rhs.m_SyncForQueue), m_Head(rhs.m_Head), m_Tail(rhs.m_Tail) {
 				CopyMemory(m_Queue, rhs.m_Queue, MAX_QUEUE_LENGTH);
 			}
 
@@ -37,7 +38,8 @@ namespace FUNCTIONS {
 
 		public:
 			const DATATYPE& Push(const DATATYPE& InData) {
-				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
+				if (m_bIsSyncOn)
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_SyncForQueue);
 
 				size_t TempTail = (m_Tail + 1) % MAX_QUEUE_LENGTH;
 				if (TempTail == m_Tail) {
@@ -54,7 +56,8 @@ namespace FUNCTIONS {
 					return false;
 				}
 
-				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
+				if (m_bIsSyncOn)
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_SyncForQueue);
 
 				size_t TempHead = (m_Head + 1) % MAX_QUEUE_LENGTH;
 				if (TempHead == m_Head) {
@@ -71,7 +74,8 @@ namespace FUNCTIONS {
 					return false;
 				}
 
-				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
+				if (m_bIsSyncOn)
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_SyncForQueue);
 
 				size_t TempHead = (m_Head + 1) % MAX_QUEUE_LENGTH;
 				if (TempHead == m_Head) {
@@ -84,7 +88,8 @@ namespace FUNCTIONS {
 			}
 
 			bool IsEmpty() {
-				CRITICALSECTION::CCriticalSectionGuard Lock(&m_ListLock);
+				if (m_bIsSyncOn)
+				CRITICALSECTION::CCriticalSectionGuard Lock(&m_SyncForQueue);
 
 				if (m_Head == m_Tail) {
 					return true;
@@ -92,6 +97,9 @@ namespace FUNCTIONS {
 				return false;
 			}
 
+			void ExchangeSyncState(bool NewState) {
+				InterlockedExchange16(&m_bIsSyncOn, NewState);
+			}
 		};
 	}
 }
