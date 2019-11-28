@@ -4,9 +4,9 @@
 namespace NETWORKMODEL {
 	namespace EVENTSELECT {
 		class CEventSelect : private DETAIL::CNetworkModel {
+			enum PROTOTYPE { EPT_TCP, EPT_UDP };
 		private:
-			HANDLE m_hTCPSelectEvent;
-			HANDLE m_hUDPSelectEvent;
+			HANDLE m_hSelectEvent[2];
 			HANDLE m_hStopEvent;
 
 		private:

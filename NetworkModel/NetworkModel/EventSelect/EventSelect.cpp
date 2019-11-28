@@ -3,7 +3,8 @@
 
 using namespace FUNCTIONS::LOG;
 
-NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const int PacketProcessLoopCount, const DETAIL::PACKETPROCESSORLIST& ProcessorList) : DETAIL::CNetworkModel(PacketProcessLoopCount, ProcessorList), m_hStopEvent(INVALID_HANDLE_VALUE), m_hTCPSelectEvent(INVALID_HANDLE_VALUE), m_hUDPSelectEvent(INVALID_HANDLE_VALUE), m_ThreadRunState(1), m_NextSendPacketNumber(0) {
+NETWORKMODEL::EVENTSELECT::CEventSelect::CEventSelect(const int PacketProcessLoopCount, const DETAIL::PACKETPROCESSORLIST& ProcessorList) : DETAIL::CNetworkModel(PacketProcessLoopCount, ProcessorList), m_hStopEvent(INVALID_HANDLE_VALUE), m_ThreadRunState(1), m_NextSendPacketNumber(0) {
+	ZeroMemory(&m_hSelectEvent, sizeof(HANDLE) * 2);
 }
 
 NETWORKMODEL::EVENTSELECT::CEventSelect::~CEventSelect() {
@@ -50,13 +51,11 @@ void NETWORKMODEL::EVENTSELECT::CEventSelect::Destroy() {
 		CloseHandle(m_hStopEvent);
 	}
 
-	if (m_hTCPSelectEvent) {
-		WSACloseEvent(m_hTCPSelectEvent);
+	for (int i = 0; i < 2; i++) {
+		if (m_hSelectEvent[i]) {
+			WSACloseEvent(m_hSelectEvent[i]);
+		}
 	}
-	if (m_hUDPSelectEvent) {
-		WSACloseEvent(m_hUDPSelectEvent);
-	}
-
 }
 
 bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
@@ -70,9 +69,9 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
 			CLog::WriteLog(L"Failed To Initialize TCP Event Select!");
 			return false;
 		}
-		m_hTCPSelectEvent = hTCPEventSelect;
-		WSAEventSelect(m_TCPIPSocket->GetSocket(), m_hTCPSelectEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
-		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP, this, m_hTCPSelectEvent));
+		m_hSelectEvent[PROTOTYPE::EPT_TCP] = hTCPEventSelect;
+		WSAEventSelect(m_TCPIPSocket->GetSocket(), m_hSelectEvent[PROTOTYPE::EPT_TCP], FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
+		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForTCP, this, m_hSelectEvent[PROTOTYPE::EPT_TCP]));
 	}
 
 	if (HANDLE hUDPEventSelect = WSACreateEvent()) {
@@ -80,9 +79,9 @@ bool NETWORKMODEL::EVENTSELECT::CEventSelect::InitializeEvent() {
 			CLog::WriteLog(L"Failed To Initialize UDP Event Select!");
 			return false;
 		}
-		m_hUDPSelectEvent = hUDPEventSelect;
-		WSAEventSelect(m_UDPIPSocket->GetSocket(), m_hUDPSelectEvent, FD_READ | FD_WRITE);
-		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP, this, m_hUDPSelectEvent));
+		m_hSelectEvent[PROTOTYPE::EPT_UDP] = hUDPEventSelect;
+		WSAEventSelect(m_UDPIPSocket->GetSocket(), m_hSelectEvent[PROTOTYPE::EPT_UDP], FD_READ | FD_WRITE);
+		m_EventSelectThread.emplace_back(std::thread(&NETWORKMODEL::EVENTSELECT::CEventSelect::EventSelectProcessorForUDP, this, m_hSelectEvent[PROTOTYPE::EPT_UDP]));
 	}
 
 	return true;
