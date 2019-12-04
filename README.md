@@ -65,7 +65,7 @@
 
 ### Critical Section
   * 기존의 CRITICAL_SECTION을 조금 더 사용하기 쉽게 래핑한 클래스입니다.
-  * CCriticalSectionGuard를 사용하면 데드락을 예방할 수 있습니다.
+  * CCriticalSectionGuard를 사용하면 Lock, UnLock함수를 호출할 필요가 없습니다.
  ``` c
  #include <iostream>
  #include <Functions/Functions/CriticalSection/CriticalSection.h>
