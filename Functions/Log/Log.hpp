@@ -6,6 +6,15 @@
 
 namespace SERVER {
 	namespace FUNCTIONS {
+		namespace UTIL {
+			static std::wstring MBToUni(const std::string& mbString) {
+				std::wstring uniString;
+				uniString.assign(mbString.begin(), mbString.end());
+
+				return uniString;
+			}
+		}
+
 		namespace LOG {
 			static const size_t MAX_BUFFER_LENGTH = 1024;
 			static const size_t MAX_DATETIME_LENGTH = 32;
