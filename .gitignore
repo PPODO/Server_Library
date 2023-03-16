@@ -57,10 +57,8 @@ NetworkModel/*.vcxproj.user
 Functions/*.vcxproj
 Functions/*.vcxproj.filters
 Functions/*.vcxproj.user
-Functions/pch.cpp
-Functions/pch.h
-Functions/framework.h
-Functions/Functions.cpp
+Functions/*.cpp
+Functions/*.h
 Network/*.vcxproj
 Network/*.vcxproj.filters
 Network/*.vcxproj.user
