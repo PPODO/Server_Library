@@ -5,6 +5,15 @@
 namespace SERVER {
 	namespace FUNCTIONS {
 		namespace CIRCULARQUEUE {
+			namespace QUEUEDATA {
+				template<typename T, size_t ALLOC_BLOCK_SIZE = 50>
+				struct BaseData : FUNCTIONS::MEMORYMANAGER::MemoryManager<T, ALLOC_BLOCK_SIZE> {
+				public:
+					BaseData() {};
+
+				};
+			}
+
 			static const size_t MAX_QUEUE_LENGTH = 400;
 
 			template<typename DATATYPE>

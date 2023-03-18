@@ -1,11 +1,11 @@
 #pragma once
-#include "TCPSocket.hpp"
+#include "../User.hpp"
 #include <memory>
 
 namespace SERVER {
 	namespace NETWORK {
-		namespace SESSION {
-			namespace SERVERSESSION {
+		namespace USER_SESSION {
+			namespace USER_SERVER {
 				enum class EIOTYPE : uint8_t {
 					EIT_NONE,
 					EIT_DISCONNECT,
@@ -40,10 +40,7 @@ namespace SERVER {
 				};
 
 
-				class ServerSession {
-				private:
-					std::unique_ptr<SOCKET::TCPIP::TCPIPSocket> m_pTCPSocket;
-
+				class User_Server : public USER_SESSION::User {
 				private:
 					OVERLAPPED_EX m_acceptOverlapped;
 					OVERLAPPED_EX m_disconnectOverlapped;
@@ -52,9 +49,11 @@ namespace SERVER {
 					OVERLAPPED_EX m_sendOverlapped;
 
 				public:
-					ServerSession(const UTIL::SOCKET::EPROTOCOLTYPE protocolType);
-					ServerSession(const ServerSession& rhs);
-					virtual ~ServerSession();
+					virtual bool Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress);
+					bool Initialize(const User_Server& client);
+
+					bool RegisterIOCompletionPort(const HANDLE& hIOCP);
+
 
 				};
 			}
