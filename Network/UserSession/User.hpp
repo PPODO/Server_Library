@@ -5,7 +5,7 @@
 
 using namespace SERVER::NETWORK::PROTOCOL::TCP;
 using namespace SERVER::NETWORK::PROTOCOL::UDP;
-using namespace SERVER::NETWORK::PROTOCOL::UTIL::SOCKET;
+using namespace SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET;
 
 namespace SERVER {
 	namespace NETWORK {
@@ -17,18 +17,20 @@ namespace SERVER {
 
 				EPROTOCOLTYPE m_protocolType;
 
-			public:
+			protected:
 				User(const EPROTOCOLTYPE protocolType);
+
+			public:
 				virtual ~User();
 
 			public:
 				virtual bool Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress);
 
-				bool Receive();
-				bool ReceiveFrom();
+				bool Receive(char* const sReceiveBuffer, uint16_t& iReceiveBytes);
+				bool ReceiveFrom(char* const sReceiveBuffer, uint16_t& iReceiveBytes);
 
-				bool Send();
-				bool SendTo();
+				bool Send(char* const sSendData, const uint16_t iDataLength);
+				bool SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength);
 
 			};
 		}

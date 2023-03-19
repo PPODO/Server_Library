@@ -15,11 +15,11 @@ namespace SERVER {
 			namespace TCP {
 				struct WSASendData : FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::BaseData<WSASendData> {
 				public:
-					char m_sBuffer[PROTOCOL::SOCKET::MAX_RECEIVE_BUFFER_SIZE];
+					char m_sBuffer[PROTOCOL::BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE];
 					uint16_t m_iDataLength;
 
 				public:
-					WSASendData() : m_iDataLength(0) { ZeroMemory(m_sBuffer, sizeof(char) * PROTOCOL::SOCKET::MAX_RECEIVE_BUFFER_SIZE); };
+					WSASendData() : m_iDataLength(0) { ZeroMemory(m_sBuffer, sizeof(char) * PROTOCOL::BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE); };
 					
 					WSASendData(const char* const sBuffer, const uint16_t iDataLength) : m_iDataLength(iDataLength) {
 						CopyMemory(m_sBuffer, sBuffer, iDataLength);
@@ -27,7 +27,7 @@ namespace SERVER {
 
 				};
 
-				class TCPIPSocket : public SOCKET::BaseSocket {
+				class TCPIPSocket : public BSD_SOCKET::BaseSocket {
 				private:
 					FUNCTIONS::CIRCULARQUEUE::CircularQueue<WSASendData*> m_sendMessageQueue;
 

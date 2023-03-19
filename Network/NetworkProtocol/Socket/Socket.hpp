@@ -7,7 +7,7 @@ namespace SERVER {
 	namespace NETWORK {
 		namespace PROTOCOL {
 			namespace UTIL {
-				namespace SOCKET {
+				namespace BSD_SOCKET {
 					enum class EPROTOCOLTYPE {
 						EPT_TCP,
 						EPT_UDP,
@@ -28,19 +28,19 @@ namespace SERVER {
 						return hNewSocket;
 					}
 
-					static bool GetIOErrorResult(int& iWSAErrorResult, const std::vector<int>& iErrorCode) {
-						iWSAErrorResult = WSAGetLastError();
+					static int GetWSAErrorResult(const std::vector<int>& iErrorCode) {
+						int iWSAErrorResult = WSAGetLastError();
 
 						for (auto& iterator : iErrorCode)
-							if (iWSAErrorResult == iterator) return false;
+							if (iWSAErrorResult == iterator) return 0;
 
-						return true;
+						return iWSAErrorResult;
 					}
 				}
 
 			}
 
-			namespace SOCKET {
+			namespace BSD_SOCKET {
 				static const size_t MAX_RECEIVE_BUFFER_SIZE = 1024;
 
 				class BaseSocket {
@@ -53,13 +53,13 @@ namespace SERVER {
 					inline char* const GetReceiveBuffer() { return m_sReceiveMessageBuffer; }
 
 				public:
-					BaseSocket(const UTIL::SOCKET::EPROTOCOLTYPE protocolType);
+					BaseSocket(const UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType);
 					virtual ~BaseSocket();
 
 				public:
 					bool Bind(const FUNCTIONS::SOCKETADDRESS::SocketAddress& bindAddres);
 
-					virtual bool SendCompletion(const uint16_t iSendBytes) = 0;
+					//virtual bool SendCompletion(const uint16_t iSendBytes) = 0;
 
 					inline ::SOCKET GetSocket() const { return m_hSocket; }
 

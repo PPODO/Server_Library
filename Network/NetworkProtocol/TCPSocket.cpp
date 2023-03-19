@@ -7,7 +7,7 @@
 using namespace SERVER::NETWORK::PROTOCOL::TCP;
 using namespace SERVER::FUNCTIONS::LOG;
 
-TCPIPSocket::TCPIPSocket() : BaseSocket(UTIL::SOCKET::EPROTOCOLTYPE::EPT_TCP) {
+TCPIPSocket::TCPIPSocket() : BaseSocket(UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_TCP) {
 
 }
 
@@ -36,12 +36,12 @@ bool TCPIPSocket::Accept(const TCPIPSocket& listenSocket, USER_SESSION::USER_SER
 		return false;
 
 	acceptOverlapped.m_wsaBuffer.buf = GetReceiveBuffer();
-	acceptOverlapped.m_wsaBuffer.len = SOCKET::MAX_RECEIVE_BUFFER_SIZE;
+	acceptOverlapped.m_wsaBuffer.len = BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE;
 
 	DWORD iAddrLen = FUNCTIONS::SOCKETADDRESS::SocketAddress::GetSize() + 16;
 	if (!AcceptEx(listenSocket.GetSocket(), GetSocket(), GetReceiveBuffer(), 0, iAddrLen, iAddrLen, nullptr, &acceptOverlapped.m_wsaOverlapped)) {
-		int iWSALastErrorCode = 0;
-		if (!UTIL::SOCKET::GetIOErrorResult(iWSALastErrorCode, { WSA_IO_PENDING, WSAEWOULDBLOCK })) {
+		int iWSALastErrorCode = UTIL::BSD_SOCKET::GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
+		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"Accept : Failed To Accept! - %d", iWSALastErrorCode);
 			return false;
 		}
@@ -90,8 +90,8 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::TCP::Send(const::SOCKET& hSocket, char* co
 	wsaBuffer.len = iSendBufferSize;
 
 	if (WSASend(hSocket, &wsaBuffer, 1, &iSendBytes, 0, &sendOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
-		int iWSALastErrorCode = 0;
-		if (!UTIL::SOCKET::GetIOErrorResult(iWSALastErrorCode, { WSA_IO_PENDING, WSAEWOULDBLOCK })) {
+		int iWSALastErrorCode = UTIL::BSD_SOCKET::GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
+		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"WSA Send : Failed to WSASend! - %d", iWSALastErrorCode);
 			return false;
 		}
@@ -103,12 +103,12 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::TCP::Receive(const::SOCKET& hSocket, char*
 	DWORD iReceiveBytes = 0, iFlag = 0;
 	
 	receiveOverlapped.m_wsaBuffer.buf = sReceiveBuffer + receiveOverlapped.m_iRemainReceiveBytes;
-	receiveOverlapped.m_wsaBuffer.len = NETWORK::PROTOCOL::SOCKET::MAX_RECEIVE_BUFFER_SIZE;
+	receiveOverlapped.m_wsaBuffer.len = NETWORK::PROTOCOL::BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE;
 	receiveOverlapped.m_sSocketMessage = receiveOverlapped.m_wsaBuffer.buf - receiveOverlapped.m_iRemainReceiveBytes;
 
 	if (WSARecv(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iReceiveBytes, &iFlag, &receiveOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
-		int iWSALastErrorCode = 0;
-		if (!UTIL::SOCKET::GetIOErrorResult(iWSALastErrorCode, { WSA_IO_PENDING, WSAEWOULDBLOCK })) {
+		int iWSALastErrorCode = UTIL::BSD_SOCKET::GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
+		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"WSA Recv : Failed To WSARecv! - %d", WSAGetLastError());
 			return false;
 		}

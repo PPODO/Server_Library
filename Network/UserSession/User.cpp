@@ -4,8 +4,8 @@
 using namespace SERVER::NETWORK::USER_SESSION;
 using namespace SERVER::FUNCTIONS::LOG;
 
-User::User(const NETWORK::PROTOCOL::UTIL::SOCKET::EPROTOCOLTYPE protocolType) : m_protocolType(protocolType) {
-	using namespace SERVER::NETWORK::PROTOCOL::UTIL::SOCKET;
+User::User(const NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) : m_protocolType(protocolType) {
+	using namespace SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET;
 
 	try {
 		m_pTCPSocekt = std::make_unique<TCPIPSocket>();
@@ -27,4 +27,28 @@ bool User::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
 		return false;
 
 	return true;
+}
+
+bool User::Receive(char* const sReceiveBuffer, uint16_t& iReceiveBytes) {
+	if (m_pTCPSocekt)
+		return m_pTCPSocekt->Read(sReceiveBuffer, iReceiveBytes);
+	return false;
+}
+
+bool User::ReceiveFrom(char* const sReceiveBuffer, uint16_t& iReceiveBytes) {
+	if (m_pUDPSocket)
+		return m_pUDPSocket->ReadFrom(sReceiveBuffer, iReceiveBytes);
+	return false;
+}
+
+bool User::Send(char* const sSendData, const uint16_t iDataLength) {
+	if (m_pTCPSocekt)
+		return m_pTCPSocekt->Write(sSendData, iDataLength);
+	return false;
+}
+
+bool User::SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength) {
+	if (m_pUDPSocket)
+		m_pUDPSocket->WriteTo(sendAddress, sSendData, iDataLength);
+	return false;
 }

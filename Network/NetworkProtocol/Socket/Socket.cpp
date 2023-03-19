@@ -1,14 +1,13 @@
-#include "pch.h"
 #include "Socket.hpp"
-#include "../Functions/Log/Log.hpp"
+#include "../../../Functions/Log/Log.hpp"
 #include <MSWSock.h>
 #pragma comment(lib, "mswsock.lib")
 
-using namespace SERVER::NETWORK::SOCKET;
+using namespace SERVER::NETWORK::PROTOCOL::BSD_SOCKET;
 using namespace SERVER::FUNCTIONS::LOG;
 
-BaseSocket::BaseSocket(const UTIL::SOCKET::EPROTOCOLTYPE protocolType) {
-    m_hSocket = UTIL::SOCKET::CreateSocketByProtocolType(protocolType);
+BaseSocket::BaseSocket(const UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) {
+    m_hSocket = UTIL::BSD_SOCKET::CreateSocketByProtocolType(protocolType);
 
     ZeroMemory(m_sReceiveMessageBuffer, MAX_RECEIVE_BUFFER_SIZE);
 }

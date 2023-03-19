@@ -54,6 +54,13 @@ namespace SERVER {
 
 					bool RegisterIOCompletionPort(const HANDLE& hIOCP);
 
+				public:
+					bool Receive();
+					bool ReceiveFrom();
+
+					bool Send(char* const sSendData, const uint16_t iDataLength);
+					bool SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength);
+
 
 				};
 			}

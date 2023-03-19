@@ -16,7 +16,7 @@ bool User_Server::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress)
 }
 
 bool User_Server::Initialize(const User_Server& client) {
-	return !m_pTCPSocekt->Accept(*client.m_pTCPSocekt);
+	return !m_pTCPSocekt->Accept(*client.m_pTCPSocekt, m_acceptOverlapped);
 }
 
 bool User_Server::RegisterIOCompletionPort(const HANDLE& hIOCP) {
@@ -26,4 +26,20 @@ bool User_Server::RegisterIOCompletionPort(const HANDLE& hIOCP) {
 			return false;
 
 	return true;
+}
+
+bool User_Server::Receive() {
+	return m_pTCPSocekt->Read(m_receiveOverlapped);
+}
+
+bool User_Server::ReceiveFrom() {
+	return true;
+}
+
+bool User_Server::Send(char* const sSendData, const uint16_t iDataLength) {
+	return m_pTCPSocekt->Write(sSendData, iDataLength, m_sendOverlapped);
+}
+
+bool User_Server::SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength) {
+	return false;
 }

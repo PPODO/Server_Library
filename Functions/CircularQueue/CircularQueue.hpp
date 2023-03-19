@@ -26,7 +26,7 @@ namespace SERVER {
 				size_t m_iHead, m_iTail;
 
 			public:
-				CircularQueue() : m_iHead(0), m_iTail(0) { ZeroMemory(m_queueList, sizeof(DATATYPE) * MAX_QUEUE_LENGTH) }
+				CircularQueue() : m_iHead(0), m_iTail(0) { ZeroMemory(m_queueList, sizeof(DATATYPE) * MAX_QUEUE_LENGTH); }
 				CircularQueue(const CircularQueue& rhs) : m_lock(rhs.m_lock), m_iHead(rhs.m_iHead), m_iTail(rhs.m_iTail) {
 					CopyMemory(m_queueList, rhs.m_queueList, MAX_QUEUE_LENGTH);
 				}

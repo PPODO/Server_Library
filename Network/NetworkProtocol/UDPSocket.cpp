@@ -1,11 +1,11 @@
 #include "UDPSocket.hpp"
-#include "../Session/Server/ServerSession.hpp"
+#include "../UserSession/Server/User_Server.hpp"
 
 using namespace SERVER::NETWORK::PROTOCOL::UDP;
 using namespace SERVER::NETWORK::PROTOCOL::UTIL::UDP;
-using namespace SERVER::NETWORK::PROTOCOL::UTIL::SOCKET;
+using namespace SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET;
 
-UDPIPSocket::UDPIPSocket() : BaseSocket(UTIL::SOCKET::EPROTOCOLTYPE::EPT_UDP) {
+UDPIPSocket::UDPIPSocket() : BaseSocket(UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_UDP) {
 }
 
 UDPIPSocket::~UDPIPSocket() {
@@ -23,7 +23,7 @@ bool UDPIPSocket::ReadFrom(char* const sReceiveBuffer, uint16_t& iRecvBytes) {
 /* UTIL */
 
 bool SendTo(const::SOCKET hSocket, const SocketAddress& sendAddress, const char* const sSendBuffer, const uint16_t iDataLength) {
-	SERVER::NETWORK::SESSION::SERVERSESSION::OVERLAPPED_EX sendToOverlapped;
+	/*SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX sendToOverlapped;
 	DWORD iSendBytes;
 	WSABUF wsaBuffer;
 	wsaBuffer.buf = const_cast<char* const>(sSendBuffer);
@@ -35,11 +35,11 @@ bool SendTo(const::SOCKET hSocket, const SocketAddress& sendAddress, const char*
 			// log
 			return false;
 		}
-	}
+	}*/
 	return true;
 }
 
-bool ReceiveFrom(const::SOCKET hSocket, char* const sReceiveBuffer, uint16_t& iReceiveBytes, SERVER::NETWORK::SESSION::SERVERSESSION::OVERLAPPED_EX& receiveOverlapped) {
+bool ReceiveFrom(const::SOCKET hSocket, char* const sReceiveBuffer, uint16_t& iReceiveBytes, SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped) {
 
 	return false;
 }

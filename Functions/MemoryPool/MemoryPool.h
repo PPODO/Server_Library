@@ -67,7 +67,7 @@ namespace SERVER {
 				static CRITICALSECTION::CriticalSection m_lock;
 
 			private:
-				std::unique_ptr<MEMORYPOOL::MemoryPool> m_memoryPool;
+				static std::unique_ptr<MEMORYPOOL::MemoryPool> m_memoryPool;
 
 			public:
 				static void* operator new(std::size_t iAllocSize) {
