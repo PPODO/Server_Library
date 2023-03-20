@@ -25,15 +25,18 @@ namespace SERVER {
 				DATATYPE m_queueList[MAX_QUEUE_LENGTH];
 				size_t m_iHead, m_iTail;
 
+				bool m_bIsEnableCriticalSection;
+
 			public:
-				CircularQueue() : m_iHead(0), m_iTail(0) { ZeroMemory(m_queueList, sizeof(DATATYPE) * MAX_QUEUE_LENGTH); }
-				CircularQueue(const CircularQueue& rhs) : m_lock(rhs.m_lock), m_iHead(rhs.m_iHead), m_iTail(rhs.m_iTail) {
+				CircularQueue() : m_iHead(0), m_iTail(0), m_bIsEnableCriticalSection(true) { ZeroMemory(m_queueList, sizeof(DATATYPE) * MAX_QUEUE_LENGTH); }
+				CircularQueue(const CircularQueue& rhs) : m_lock(rhs.m_lock), m_iHead(rhs.m_iHead), m_iTail(rhs.m_iTail), m_bIsEnableCriticalSection(rhs.m_bIsEnableCriticalSection) {
 					CopyMemory(m_queueList, rhs.m_queueList, MAX_QUEUE_LENGTH);
 				}
 
 			public:
 				const DATATYPE& Push(const DATATYPE& inData) {
-					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+					if (m_bIsEnableCriticalSection)
+						CRITICALSECTION::CriticalSectionGuard lock(m_lock);
 
 					size_t iDataInsertedIndex = (m_iTail + 1) % MAX_QUEUE_LENGTH;
 					m_queueList[iDataInsertedIndex] = inData;
@@ -46,7 +49,8 @@ namespace SERVER {
 					if (IsEmpty())
 						return false;
 
-					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+					if (m_bIsEnableCriticalSection)
+						CRITICALSECTION::CriticalSectionGuard lock(m_lock);
 
 					size_t iDataPopIndex = (m_iHead + 1) % MAX_QUEUE_LENGTH;
 					outData = m_queueList[iDataPopIndex];
@@ -58,6 +62,13 @@ namespace SERVER {
 
 				bool IsEmpty() {
 					return m_iHead == m_iTail;
+				}
+
+				void EnableCriticalSection(bool newValue) {
+					if (m_bIsEnableCriticalSection)
+						CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+
+					m_bIsEnableCriticalSection = newValue;
 				}
 
 			};
