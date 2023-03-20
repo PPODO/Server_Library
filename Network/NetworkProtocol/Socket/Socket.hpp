@@ -9,10 +9,14 @@ namespace SERVER {
 			namespace UTIL {
 				namespace BSD_SOCKET {
 					enum class EPROTOCOLTYPE {
-						EPT_TCP,
-						EPT_UDP,
-						EPT_BOTH
+						EPT_TCP = (1 << 0),
+						EPT_UDP = (1 << 1),
+						EPT_BOTH = (EPT_TCP | EPT_UDP)
 					};
+
+					bool operator&(const EPROTOCOLTYPE lhs, const EPROTOCOLTYPE rhs) {
+						return (static_cast<int>(lhs) & static_cast<int>(rhs));
+					}
 
 					static ::SOCKET CreateSocketByProtocolType(const EPROTOCOLTYPE protocolType) {
 						::SOCKET hNewSocket = INVALID_SOCKET;

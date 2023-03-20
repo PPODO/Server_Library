@@ -3,11 +3,6 @@
 using namespace SERVER::NETWORK::USER_SESSION::USER_SERVER;
 
 User_Server::User_Server(NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) : User(protocolType) {
-	ZeroMemory(&m_acceptOverlapped, sizeof(OVERLAPPED_EX));
-	ZeroMemory(&m_disconnectOverlapped, sizeof(OVERLAPPED_EX));
-	ZeroMemory(&m_receiveOverlapped, sizeof(OVERLAPPED_EX));
-	ZeroMemory(&m_receiveFromOverlapped, sizeof(OVERLAPPED_EX));
-	ZeroMemory(&m_sendOverlapped, sizeof(OVERLAPPED_EX));
 }
 
 bool User_Server::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
