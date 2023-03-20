@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../Functions/SocketAddress/SocketAddress.hpp"
+#include <Functions/SocketAddress/SocketAddress.hpp>
 #include <memory>
 #include <vector>
 

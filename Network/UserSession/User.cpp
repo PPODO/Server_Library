@@ -1,5 +1,4 @@
 #include "User.hpp"
-#include "../../Functions/Log/Log.hpp"
 
 using namespace SERVER::NETWORK::USER_SESSION;
 using namespace SERVER::FUNCTIONS::LOG;
@@ -21,9 +20,9 @@ User::~User() {
 }
 
 bool User::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
-	if (!m_pTCPSocekt && !m_pTCPSocekt->Bind(toAddress))
+	if (!m_pTCPSocekt || !m_pTCPSocekt->Bind(toAddress))
 		return false;
-	if (!m_pUDPSocket && !m_pUDPSocket->Bind(toAddress))
+	if (!m_pUDPSocket || !m_pUDPSocket->Bind(toAddress))
 		return false;
 
 	return true;

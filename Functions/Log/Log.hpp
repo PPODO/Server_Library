@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "../CriticalSection/CriticalSection.hpp"
+#include <Functions/CriticalSection/CriticalSection.hpp>
 
 namespace SERVER {
 	namespace FUNCTIONS {
@@ -62,9 +62,11 @@ namespace SERVER {
 					vswprintf_s(sString, sLog, argcList);
 					va_end(argcList);
 
-					return Write(sLog);
+					return Write(sString);
 				}
 			};
 		}
 	}
 }
+
+__declspec(selectany) SERVER::FUNCTIONS::CRITICALSECTION::CriticalSection SERVER::FUNCTIONS::LOG::Log::m_lock(0);

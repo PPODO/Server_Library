@@ -8,7 +8,11 @@ using namespace SERVER::NETWORK::PROTOCOL::TCP;
 using namespace SERVER::FUNCTIONS::LOG;
 
 TCPIPSocket::TCPIPSocket() : BaseSocket(UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_TCP) {
+	LINGER option;
+	option.l_onoff = true;
+	option.l_linger = 0;
 
+	setsockopt(GetSocket(), SOL_SOCKET, SO_LINGER, reinterpret_cast<char*>(&option), sizeof(LINGER));
 }
 
 TCPIPSocket::~TCPIPSocket() {

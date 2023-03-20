@@ -1,5 +1,5 @@
 #include "Socket.hpp"
-#include "../../../Functions/Log/Log.hpp"
+#include <Functions/Log/Log.hpp>
 #include <MSWSock.h>
 #pragma comment(lib, "mswsock.lib")
 

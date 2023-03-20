@@ -1,6 +1,6 @@
 #pragma once
-#include "../Log/Log.hpp"
-#include "../CriticalSection/CriticalSection.hpp"
+#include <Functions/CriticalSection/CriticalSection.hpp>
+#include <Functions/Log/Log.hpp>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -99,3 +99,9 @@ namespace SERVER {
 		}
 	}
 }
+
+template<typename T, size_t POOL_MAX_SIZE>
+__declspec(selectany) SERVER::FUNCTIONS::CRITICALSECTION::CriticalSection SERVER::FUNCTIONS::MEMORYMANAGER::MemoryManager<T, POOL_MAX_SIZE>::m_lock;
+
+template<typename T, size_t POOL_MAX_SIZE>
+__declspec(selectany) std::unique_ptr<SERVER::FUNCTIONS::MEMORYMANAGER::MEMORYPOOL::MemoryPool> SERVER::FUNCTIONS::MEMORYMANAGER::MemoryManager<T, POOL_MAX_SIZE>::m_memoryPool;

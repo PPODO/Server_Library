@@ -35,7 +35,12 @@ namespace SERVER {
 					void* m_pOwner;
 
 				public:
-
+					OVERLAPPED_EX() : m_iRemainReceiveBytes(0), m_sSocketMessage(nullptr), 
+									  m_iLastReceivedPacketNumber(0), m_pOwner(nullptr),
+									  m_IOType(EIOTYPE::EIT_NONE) {
+						ZeroMemory(&m_wsaOverlapped, sizeof(WSAOVERLAPPED));
+						ZeroMemory(&m_wsaBuffer, sizeof(WSABUF));
+					}
 
 				};
 
@@ -49,8 +54,11 @@ namespace SERVER {
 					OVERLAPPED_EX m_sendOverlapped;
 
 				public:
+					User_Server(NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType);
+
+				public:
 					virtual bool Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress);
-					bool Initialize(const User_Server& client);
+					bool Initialize(const User_Server& server);
 
 					bool RegisterIOCompletionPort(const HANDLE& hIOCP);
 
