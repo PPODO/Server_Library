@@ -33,7 +33,7 @@ namespace SERVER {
 				virtual ~BaseNetworkModel();
 
 			public:
-				virtual bool Initialize(const EPROTOCOLTYPE protocolType, const FUNCTIONS::SOCKETADDRESS::SocketAddress& serverAddress) = 0 {
+				virtual bool Initialize(const EPROTOCOLTYPE protocolType, FUNCTIONS::SOCKETADDRESS::SocketAddress& bindAddress) = 0 {
 					m_protocolType = protocolType;
 
 					return true;
