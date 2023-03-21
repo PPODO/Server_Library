@@ -106,9 +106,10 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::TCP::Send(const::SOCKET& hSocket, char* co
 bool SERVER::NETWORK::PROTOCOL::UTIL::TCP::Receive(const::SOCKET& hSocket, char* const sReceiveBuffer, uint16_t& iReceiveBufferSize, USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped) {
 	DWORD iReceiveBytes = 0, iFlag = 0;
 	
+	receiveOverlapped.m_pReceiveBuffer = sReceiveBuffer;
+
 	receiveOverlapped.m_wsaBuffer.buf = sReceiveBuffer + receiveOverlapped.m_iRemainReceiveBytes;
 	receiveOverlapped.m_wsaBuffer.len = NETWORK::PROTOCOL::BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE;
-	receiveOverlapped.m_sSocketMessage = receiveOverlapped.m_wsaBuffer.buf - receiveOverlapped.m_iRemainReceiveBytes;
 
 	if (WSARecv(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iReceiveBytes, &iFlag, &receiveOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = UTIL::BSD_SOCKET::GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });

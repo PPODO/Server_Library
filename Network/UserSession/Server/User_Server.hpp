@@ -24,8 +24,8 @@ namespace SERVER {
 					WSABUF m_wsaBuffer;
 					// 남은 바이트 수. 이전의 읽은 데이터를 덮어 씌우지 않게 하기 위함.
 					int16_t m_iRemainReceiveBytes;
-					// 이전의 읽은 메시지 위치 저장 변수
-					char* m_sSocketMessage;
+					// Receive Buffer의 시작 주소
+					char* m_pReceiveBuffer;
 
 					// UDP에서만 사용
 					FUNCTIONS::SOCKETADDRESS::SocketAddress m_remoteAddress;
@@ -35,7 +35,7 @@ namespace SERVER {
 					void* m_pOwner;
 
 				public:
-					OVERLAPPED_EX() : m_iRemainReceiveBytes(0), m_sSocketMessage(nullptr), 
+					OVERLAPPED_EX() : m_iRemainReceiveBytes(0), m_pReceiveBuffer(nullptr),
 									  m_iLastReceivedPacketNumber(0), m_pOwner(nullptr),
 									  m_IOType(EIOTYPE::EIT_NONE) {
 						ZeroMemory(&m_wsaOverlapped, sizeof(WSAOVERLAPPED));

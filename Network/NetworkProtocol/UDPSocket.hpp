@@ -1,5 +1,6 @@
 #pragma once
 #include "Socket/Socket.hpp"
+#include "../Packet/BasePacket.hpp"
 
 using namespace SERVER::FUNCTIONS::SOCKETADDRESS;
 
@@ -28,8 +29,10 @@ namespace SERVER {
 
 				public:
 					bool WriteTo(const SocketAddress& sendAddress, const char* const sSendData, const uint16_t iDataLength);
+					bool WriteTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure);
 
 					bool ReadFrom(char* const sReceiveBuffer, uint16_t& iRecvBytes);
+					bool ReadFrom(NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped);
 					
 
 				};
