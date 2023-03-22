@@ -40,7 +40,7 @@ bool TCPIPSocket::Accept(const TCPIPSocket& listenSocket, USER_SESSION::USER_SER
 		return false;
 
 	acceptOverlapped.m_wsaBuffer.buf = GetReceiveBuffer();
-	acceptOverlapped.m_wsaBuffer.len = BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE;
+	acceptOverlapped.m_wsaBuffer.len = ::MAX_BUFFER_LENGTH;
 
 	DWORD iAddrLen = FUNCTIONS::SOCKETADDRESS::SocketAddress::GetSize() + 16;
 	if (!AcceptEx(listenSocket.GetSocket(), GetSocket(), GetReceiveBuffer(), 0, iAddrLen, iAddrLen, nullptr, &acceptOverlapped.m_wsaOverlapped)) {
@@ -66,6 +66,22 @@ bool TCPIPSocket::Write(const char* const sSendData, const uint16_t iDataLength,
 	return false;
 }
 
+bool TCPIPSocket::Write(const PACKET::PACKET_STRUCT& sendPacketStructure) {
+	USER_SESSION::USER_SERVER::OVERLAPPED_EX sendOverlapped;
+
+	CopyMemory(m_sSendMessageBuffer, reinterpret_cast<const char*>(&sendPacketStructure.m_packetInfo), sizeof(PACKET::PACKET_INFORMATION));
+	CopyMemory(m_sSendMessageBuffer, sendPacketStructure.m_sPacketData, sendPacketStructure.m_packetInfo.m_iPacketDataSize);
+
+	return UTIL::TCP::Send(GetSocket(), m_sSendMessageBuffer, sizeof(PACKET::PACKET_INFORMATION) + sendPacketStructure.m_packetInfo.m_iPacketDataSize, sendOverlapped);
+}
+
+bool TCPIPSocket::Write(const PACKET::PACKET_STRUCT& sendPacketStructure, USER_SESSION::USER_SERVER::OVERLAPPED_EX& sendOverlapped) {
+	if (auto pQueueResult = m_sendMessageQueue.Push(new WSASendData(sendPacketStructure)))
+		return UTIL::TCP::Send(GetSocket(), pQueueResult->m_sBuffer, pQueueResult->m_iDataLength, sendOverlapped);
+
+	return true;
+}
+
 bool TCPIPSocket::Read(char* const sReceiveBuffer, uint16_t& iReceiveBytes) {
 	USER_SESSION::USER_SERVER::OVERLAPPED_EX receiveOverlapped;
 
@@ -83,6 +99,24 @@ bool TCPIPSocket::SocketRecycling(USER_SESSION::USER_SERVER::OVERLAPPED_EX& disc
 		if (WSAGetLastError() != WSA_IO_PENDING)
 			Log::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError()); return false;
 
+	return true;
+}
+
+bool TCPIPSocket::SendCompletion(const uint16_t iSendBytes) {
+	auto iRemainBytes = iSendBytes;
+
+	while (iRemainBytes > 0) {
+		WSASendData* pWSAData = nullptr;
+		if (m_sendMessageQueue.Pop(pWSAData)) {
+			if (iRemainBytes < pWSAData->m_iDataLength) {
+				if (Write(pWSAData->m_sBuffer + iRemainBytes, pWSAData->m_iDataLength - iRemainBytes))
+					return false;
+			}
+			delete pWSAData;
+			continue;
+		}
+		return false;
+	}
 	return true;
 }
 
@@ -109,8 +143,8 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::TCP::Receive(const::SOCKET& hSocket, char*
 	receiveOverlapped.m_pReceiveBuffer = sReceiveBuffer;
 
 	receiveOverlapped.m_wsaBuffer.buf = sReceiveBuffer + receiveOverlapped.m_iRemainReceiveBytes;
-	receiveOverlapped.m_wsaBuffer.len = NETWORK::PROTOCOL::BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE;
-
+	receiveOverlapped.m_wsaBuffer.len = ::MAX_BUFFER_LENGTH;
+	
 	if (WSARecv(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iReceiveBytes, &iFlag, &receiveOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = UTIL::BSD_SOCKET::GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
 		if (iWSALastErrorCode != 0) {

@@ -32,6 +32,12 @@ namespace SERVER {
 				bool Send(char* const sSendData, const uint16_t iDataLength);
 				bool SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength);
 
+				inline bool SendCompletion(const EPROTOCOLTYPE protocolType, const uint16_t iSendBytes) {
+					if (protocolType & EPROTOCOLTYPE::EPT_TCP)
+						m_pTCPSocekt->SendCompletion(iSendBytes);
+					if (protocolType & EPROTOCOLTYPE::EPT_UDP)
+						m_pUDPSocket->SendCompletion(iSendBytes);
+				}
 			};
 		}
 	}

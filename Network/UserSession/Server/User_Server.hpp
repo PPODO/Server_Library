@@ -69,6 +69,9 @@ namespace SERVER {
 					bool Send(char* const sSendData, const uint16_t iDataLength);
 					bool SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength);
 
+					bool Send(const PACKET::PACKET_STRUCT& sendPacketStructure);
+					bool SendTo(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT& sendPacketStructure);
+
 
 				};
 			}

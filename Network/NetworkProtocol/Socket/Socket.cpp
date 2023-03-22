@@ -9,7 +9,8 @@ using namespace SERVER::FUNCTIONS::LOG;
 BaseSocket::BaseSocket(const UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) {
     m_hSocket = UTIL::BSD_SOCKET::CreateSocketByProtocolType(protocolType);
 
-    ZeroMemory(m_sReceiveMessageBuffer, MAX_RECEIVE_BUFFER_SIZE);
+    ZeroMemory(m_sReceiveMessageBuffer, MAX_BUFFER_LENGTH);
+    ZeroMemory(m_sSendMessageBuffer, MAX_BUFFER_LENGTH);
 }
 
 BaseSocket::~BaseSocket() {

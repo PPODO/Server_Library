@@ -12,7 +12,7 @@ bool User_Server::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress)
 		return false;
 	
 	bool bResult = true;
-	if (m_protocolType == EPROTOCOLTYPE::EPT_TCP || m_protocolType == EPROTOCOLTYPE::EPT_BOTH)
+	if (m_protocolType & EPROTOCOLTYPE::EPT_TCP)
 		bResult = m_pTCPSocekt->Listen();
 
 	return bResult;
@@ -36,7 +36,7 @@ bool User_Server::Receive() {
 }
 
 bool User_Server::ReceiveFrom() {
-	return true;
+	return m_pUDPSocket->ReadFrom(m_receiveFromOverlapped);
 }
 
 bool User_Server::Send(char* const sSendData, const uint16_t iDataLength) {
@@ -44,5 +44,14 @@ bool User_Server::Send(char* const sSendData, const uint16_t iDataLength) {
 }
 
 bool User_Server::SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength) {
-	return false;
+	return m_pUDPSocket->WriteTo(sendAddress, sSendData, iDataLength);
+}
+
+bool User_Server::Send(const PACKET::PACKET_STRUCT& sendPacketStructure) {
+	return m_pTCPSocekt->Write(sendPacketStructure, m_sendOverlapped);
+}
+
+bool User_Server::SendTo(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT& sendPacketStructure) {
+	sendPacketStructure.m_packetInfo.m_iPacketNumber = peerInformation.m_iLastPacketNumber;
+	return m_pUDPSocket->WriteToReliable(peerInformation.m_remoteAddress, sendPacketStructure);
 }

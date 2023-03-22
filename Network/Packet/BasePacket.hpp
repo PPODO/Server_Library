@@ -19,22 +19,22 @@
 namespace SERVER {
 	namespace NETWORK {
 		namespace PACKET {
-			class PACKET_INFORMATION {
+			struct PACKET_INFORMATION {
 			public:
 				uint8_t m_iPacketType;
-				uint16_t m_iPacketSize;
+				uint16_t m_iPacketDataSize;
 				uint16_t m_iPacketNumber;
 
 			public:
-				PACKET_INFORMATION() : m_iPacketType(0), m_iPacketSize(0), m_iPacketNumber(0) {};
-				PACKET_INFORMATION(const uint8_t iPacketType, const uint16_t iPacketSize) : m_iPacketType(iPacketType), m_iPacketSize(iPacketSize), m_iPacketNumber(0) {};
+				PACKET_INFORMATION() : m_iPacketType(0), m_iPacketDataSize(0), m_iPacketNumber(0) {};
+				PACKET_INFORMATION(const uint8_t iPacketType, const uint16_t iPacketDataSize) : m_iPacketType(iPacketType), m_iPacketDataSize(iPacketDataSize), m_iPacketNumber(0) {};
 
 			public:
 				static size_t GetStructSize() { return sizeof(PACKET_INFORMATION); }
 			};
 
-			class PACKET_STRUCT {
-				static const size_t BUFFER_LENGTH = SERVER::NETWORK::PROTOCOL::BSD_SOCKET::MAX_RECEIVE_BUFFER_SIZE * 2;
+			struct PACKET_STRUCT {
+				static const size_t BUFFER_LENGTH = SERVER::NETWORK::PROTOCOL::BSD_SOCKET::MAX__BUFFER_SIZE * 2;
 			public:
 				PACKET_INFORMATION m_packetInfo;
 				char m_sPacketData[BUFFER_LENGTH];
@@ -93,7 +93,7 @@ namespace SERVER {
 				}
 
 				void Deserialize(const PACKET_STRUCT& inPacketData, BasePacket& outputPacketResult) {
-					boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> inStream(inPacketData.m_sPacketData, inPacketData.m_packetInfo.m_iPacketSize);
+					boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> inStream(inPacketData.m_sPacketData, inPacketData.m_packetInfo.m_iPacketDataSize);
 					boost::archive::binary_iarchive inArchive(inStream, boost::archive::no_header);
 
 					inArchive >> outputPacketResult;

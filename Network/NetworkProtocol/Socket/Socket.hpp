@@ -45,13 +45,15 @@ namespace SERVER {
 			}
 
 			namespace BSD_SOCKET {
-				static const size_t MAX_RECEIVE_BUFFER_SIZE = 1024;
+				static const size_t MAX_BUFFER_SIZE = 1024;
 
 				class BaseSocket {
-
 				private:
 					::SOCKET m_hSocket;
-					char m_sReceiveMessageBuffer[MAX_RECEIVE_BUFFER_SIZE];
+					char m_sReceiveMessageBuffer[MAX_BUFFER_SIZE];
+
+				protected:
+					char m_sSendMessageBuffer[MAX_BUFFER_SIZE];
 
 				protected:
 					inline char* const GetReceiveBuffer() { return m_sReceiveMessageBuffer; }
@@ -63,7 +65,7 @@ namespace SERVER {
 				public:
 					bool Bind(const FUNCTIONS::SOCKETADDRESS::SocketAddress& bindAddres);
 
-					//virtual bool SendCompletion(const uint16_t iSendBytes) = 0;
+					virtual bool SendCompletion(const uint16_t iSendBytes) = 0;
 
 					inline ::SOCKET GetSocket() const { return m_hSocket; }
 
