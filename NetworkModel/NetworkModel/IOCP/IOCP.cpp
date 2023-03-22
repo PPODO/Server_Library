@@ -10,10 +10,6 @@ IOCP::IOCP(const BASEMODEL::PACKETPROCESSOR& packetProcessorMap, const int iPack
 IOCP::~IOCP() {
 }
 
-void A() {
-
-}
-
 bool IOCP::Initialize(const EPROTOCOLTYPE protocolType, FUNCTIONS::SOCKETADDRESS::SocketAddress& serverAddress) {
     if (!BaseNetworkModel::Initialize(protocolType, serverAddress)) return false;
 
