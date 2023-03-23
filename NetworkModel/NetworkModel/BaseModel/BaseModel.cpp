@@ -61,12 +61,12 @@ void BaseNetworkModel::ReceiveDataProcessing(const EPROTOCOLTYPE protocolType, c
 			iRemainBytes -= PACKET_INFO_STRUCT_SIZE;
 		}
 
-		if (iReceiveBytes >= packetStruct.m_packetInfo.m_iPacketSize) {
-			uint16_t iPacketTotalBytes = PACKET_INFO_STRUCT_SIZE + packetStruct.m_packetInfo.m_iPacketSize;
+		if (iReceiveBytes >= packetStruct.m_packetInfo.m_iPacketDataSize) {
+			uint16_t iPacketTotalBytes = PACKET_INFO_STRUCT_SIZE + packetStruct.m_packetInfo.m_iPacketDataSize;
 			if (packetStruct.m_packetInfo.m_iPacketNumber == iLastReceivePacketNumber) { // for udp, tcp has always 0
 				if (m_protocolType & EPROTOCOLTYPE::EPT_UDP) InterlockedIncrement16(&iLastReceivePacketNumber);
-				iRemainBytes -= packetStruct.m_packetInfo.m_iPacketSize;
-				CopyMemory(packetStruct.m_sPacketData, sReceiveBuffer + PACKET_INFO_STRUCT_SIZE, packetStruct.m_packetInfo.m_iPacketSize);
+				iRemainBytes -= packetStruct.m_packetInfo.m_iPacketDataSize;
+				CopyMemory(packetStruct.m_sPacketData, sReceiveBuffer + PACKET_INFO_STRUCT_SIZE, packetStruct.m_packetInfo.m_iPacketDataSize);
 
 				FUNCTIONS::CRITICALSECTION::CriticalSectionGuard lock(m_packetQueueLock);
 				m_pPacketStorageQueue->Push(new PacketQueueData(pOwner, packetStruct));
