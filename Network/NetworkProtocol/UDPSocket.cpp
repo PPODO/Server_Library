@@ -72,14 +72,14 @@ void ReliableUDP::CacheReliableDataProcessor() {
 	}
 }
 
-UDPIPSocket::UDPIPSocket() : BaseSocket(UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_UDP), m_reliableProcessor(this) {
+UDPIPSocket::UDPIPSocket() : BaseSocket(UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_UDP), m_reliableProcessor(std::make_unique<ReliableUDP>(this)) {
 }
 
 UDPIPSocket::~UDPIPSocket() {
 }
 
 bool UDPIPSocket::WriteToReliable(const SocketAddress& sendAddress, const PACKET_STRUCT& sendPacketStructure) {
-	if (m_reliableProcessor.AddReliableData(sendPacketStructure, sendAddress))
+	if (m_reliableProcessor->AddReliableData(sendPacketStructure, sendAddress))
 		return true;
 	return false;
 }
@@ -95,7 +95,7 @@ bool UDPIPSocket::WriteTo(const SocketAddress& sendAddress, const PACKET_STRUCT&
 }
 
 bool UDPIPSocket::ReadFrom(char* const sReceiveBuffer, uint16_t& iRecvBytes) {
-	OVERLAPPED_EX receiveOverlapped;
+	OVERLAPPED_EX receiveOverlapped(nullptr);
 	return UTIL::UDP::ReceiveFrom(GetSocket(), sReceiveBuffer, iRecvBytes, receiveOverlapped);
 }
 
@@ -105,7 +105,7 @@ bool UDPIPSocket::ReadFrom(OVERLAPPED_EX& receiveOverlapped) {
 }
 
 bool UDPIPSocket::SendCompletion(const uint16_t iSendBytes) {
-	m_reliableProcessor.Notify_SendComplete(iSendBytes);
+	m_reliableProcessor->Notify_SendComplete(iSendBytes);
 	return true;
 }
 
@@ -124,13 +124,13 @@ void UDPIPSocket::SetAckNumberToBuffer(const PACKET_STRUCT& sendPacketStructure)
 /* UTIL */
 
 bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::SendTo(const::SOCKET hSocket, const SocketAddress& sendAddress, const char* const sSendBuffer, const uint16_t iDataLength) {
-	SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX sendToOverlapped;
+	SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX sendToOverlapped(nullptr);
 	DWORD iSendBytes;
 	WSABUF wsaBuffer;
 	wsaBuffer.buf = const_cast<char* const>(sSendBuffer);
 	wsaBuffer.len = iDataLength;
 
-	if (WSASendTo(hSocket, &wsaBuffer, 1, &iSendBytes, 0, &sendAddress, sendAddress.GetSize(), &sendToOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
+	if (WSASendTo(hSocket, &wsaBuffer, 1, &iSendBytes, 0, &sendAddress, sendAddress.GetSize(), sendToOverlapped.m_pWSAOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
 		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"WSA SendTo : Failed to WSASend! - %d", iWSALastErrorCode);
@@ -141,7 +141,7 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::SendTo(const::SOCKET hSocket, const S
 }
 
 bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::ReceiveFrom(const::SOCKET hSocket, char* const sReceiveBuffer, uint16_t& iReceiveBytes, SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped) {
-	DWORD iRecvBytes = 0, iFlag = 0;
+	DWORD iRecvBytes, iFlag = 0;
 	sockaddr* pRemoteAddress = const_cast<sockaddr*>(&receiveOverlapped.m_remoteAddress);
 	INT iAddressSize = SocketAddress::GetSize();
 
@@ -150,14 +150,15 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::ReceiveFrom(const::SOCKET hSocket, ch
 	receiveOverlapped.m_wsaBuffer.buf = sReceiveBuffer + receiveOverlapped.m_iRemainReceiveBytes;
 	receiveOverlapped.m_wsaBuffer.len = ::MAX_BUFFER_LENGTH - receiveOverlapped.m_iRemainReceiveBytes;
 
-	if (WSARecvFrom(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iRecvBytes, &iFlag, pRemoteAddress, &iAddressSize, &receiveOverlapped.m_wsaOverlapped, nullptr)) {
+	if (WSARecvFrom(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iRecvBytes, &iFlag, pRemoteAddress, &iAddressSize, receiveOverlapped.m_pWSAOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
 		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"WSA RecvFrom : Failed to WSASend! - %d", iWSALastErrorCode);
 			return false;
 		}
 	}
-	return false;
+	iReceiveBytes = iRecvBytes;
+	return true;
 }
 
 bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(OVERLAPPED_EX& overlapped) {

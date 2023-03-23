@@ -19,7 +19,7 @@ namespace SERVER {
 				// Only Server Session :)
 				struct OVERLAPPED_EX {
 					// overlapped inst
-					WSAOVERLAPPED m_wsaOverlapped;
+					WSAOVERLAPPED* m_pWSAOverlapped;
 					// 수신 버퍼
 					WSABUF m_wsaBuffer;
 					// 남은 바이트 수. 이전의 읽은 데이터를 덮어 씌우지 않게 하기 위함.
@@ -37,11 +37,23 @@ namespace SERVER {
 				public:
 					OVERLAPPED_EX() : m_iRemainReceiveBytes(0), m_pReceiveBuffer(nullptr),
 									  m_iLastReceivedPacketNumber(0), m_pOwner(nullptr),
-									  m_IOType(EIOTYPE::EIT_NONE) {
-						ZeroMemory(&m_wsaOverlapped, sizeof(WSAOVERLAPPED));
+									  m_IOType(EIOTYPE::EIT_NONE), m_pWSAOverlapped(nullptr) {
+						m_pWSAOverlapped = new WSAOVERLAPPED;
+						ZeroMemory(m_pWSAOverlapped, sizeof(WSAOVERLAPPED));
 						ZeroMemory(&m_wsaBuffer, sizeof(WSABUF));
 					}
 
+					OVERLAPPED_EX(WSAOVERLAPPED* const pOverlapped) :
+						m_iRemainReceiveBytes(0), m_pReceiveBuffer(nullptr),
+						m_iLastReceivedPacketNumber(0), m_pOwner(nullptr), 
+						m_IOType(EIOTYPE::EIT_NONE), m_pWSAOverlapped(nullptr) {
+						ZeroMemory(&m_wsaBuffer, sizeof(WSABUF));
+					}
+
+					~OVERLAPPED_EX() {
+						if (m_pWSAOverlapped)
+							delete m_pWSAOverlapped;
+					}
 				};
 
 

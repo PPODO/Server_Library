@@ -37,6 +37,8 @@ namespace SERVER {
 						m_pTCPSocekt->SendCompletion(iSendBytes);
 					if (protocolType & EPROTOCOLTYPE::EPT_UDP)
 						m_pUDPSocket->SendCompletion(iSendBytes);
+
+					return true;
 				}
 			};
 		}

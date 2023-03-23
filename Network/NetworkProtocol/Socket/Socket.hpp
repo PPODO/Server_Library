@@ -14,7 +14,7 @@ namespace SERVER {
 						EPT_BOTH = (EPT_TCP | EPT_UDP)
 					};
 
-					bool operator&(const EPROTOCOLTYPE lhs, const EPROTOCOLTYPE rhs) {
+					static bool operator&(const EPROTOCOLTYPE lhs, const EPROTOCOLTYPE rhs) {
 						return (static_cast<int>(lhs) & static_cast<int>(rhs));
 					}
 

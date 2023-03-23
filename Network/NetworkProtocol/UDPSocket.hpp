@@ -50,7 +50,7 @@ namespace SERVER {
 
 				class UDPIPSocket : public PROTOCOL::BSD_SOCKET::BaseSocket {
 				private:
-					RELIABLE::ReliableUDP m_reliableProcessor;
+					std::unique_ptr<RELIABLE::ReliableUDP> m_reliableProcessor;
 
 				private:
 					void SetAckNumberToBuffer(const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure);

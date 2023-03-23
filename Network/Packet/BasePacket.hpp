@@ -34,7 +34,7 @@ namespace SERVER {
 			};
 
 			struct PACKET_STRUCT {
-				static const size_t BUFFER_LENGTH = SERVER::NETWORK::PROTOCOL::BSD_SOCKET::MAX__BUFFER_SIZE * 2;
+				static const size_t BUFFER_LENGTH = SERVER::NETWORK::PROTOCOL::BSD_SOCKET::MAX_BUFFER_SIZE * 2;
 			public:
 				PACKET_INFORMATION m_packetInfo;
 				char m_sPacketData[BUFFER_LENGTH];
@@ -81,7 +81,7 @@ namespace SERVER {
 			};
 
 			namespace UTIL {
-				PACKET_STRUCT Serialize(const BasePacket& packet) {
+				static PACKET_STRUCT Serialize(const BasePacket& packet) {
 
 					std::string sTempBuffer;
 					boost::iostreams::stream<boost::iostreams::back_insert_device<std::string>> outStream(sTempBuffer);
@@ -92,7 +92,7 @@ namespace SERVER {
 					return  PACKET_STRUCT(PACKET_INFORMATION(packet.m_iPacketType, sTempBuffer.length()), sTempBuffer);
 				}
 
-				void Deserialize(const PACKET_STRUCT& inPacketData, BasePacket& outputPacketResult) {
+				static void Deserialize(const PACKET_STRUCT& inPacketData, BasePacket& outputPacketResult) {
 					boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> inStream(inPacketData.m_sPacketData, inPacketData.m_packetInfo.m_iPacketDataSize);
 					boost::archive::binary_iarchive inArchive(inStream, boost::archive::no_header);
 
