@@ -6,6 +6,8 @@ namespace SERVER {
 	namespace NETWORK {
 		namespace USER_SESSION {
 			namespace USER_SERVER {
+				class User_Server;
+
 				enum class EIOTYPE : uint8_t {
 					EIT_NONE,
 					EIT_DISCONNECT,
@@ -32,7 +34,7 @@ namespace SERVER {
 					int16_t m_iLastReceivedPacketNumber;
 
 					EIOTYPE m_IOType;
-					void* m_pOwner;
+					User_Server* m_pOwner;
 
 				public:
 					OVERLAPPED_EX() : m_iRemainReceiveBytes(0), m_pReceiveBuffer(nullptr),
@@ -84,6 +86,7 @@ namespace SERVER {
 					bool Send(const PACKET::PACKET_STRUCT& sendPacketStructure);
 					bool SendTo(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT& sendPacketStructure);
 
+					bool SocketRecycle();
 
 				};
 			}

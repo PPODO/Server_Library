@@ -55,3 +55,7 @@ bool User_Server::SendTo(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT&
 	sendPacketStructure.m_packetInfo.m_iPacketNumber = peerInformation.m_iLastPacketNumber;
 	return m_pUDPSocket->WriteToReliable(peerInformation.m_remoteAddress, sendPacketStructure);
 }
+
+bool User_Server::SocketRecycle() {
+	return m_pTCPSocekt->SocketRecycling(m_disconnectOverlapped);
+}
