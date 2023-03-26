@@ -2,8 +2,13 @@
 
 using namespace SERVER::NETWORK::USER_SESSION::USER_SERVER;
 
-User_Server::User_Server(NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) : User(protocolType) {
-}
+User_Server::User_Server(NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) : User(protocolType),
+																							m_acceptOverlapped(EIOTYPE::EIT_ACCEPT, this), 
+																							m_disconnectOverlapped(EIOTYPE::EIT_DISCONNECT, this),
+																							m_receiveOverlapped(EIOTYPE::EIT_READ, this), 
+																							m_receiveFromOverlapped(EIOTYPE::EIT_READFROM, this), 
+																							m_sendOverlapped(EIOTYPE::EIT_WRITE, this)
+{}
 
 bool User_Server::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
 	using namespace SERVER::NETWORK::PROTOCOL::UTIL;
@@ -23,7 +28,7 @@ bool User_Server::Initialize(const User_Server& server) {
 }
 
 bool User_Server::RegisterIOCompletionPort(const HANDLE& hIOCP) {
-	if (!CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pTCPSocekt->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0) &&
+	if (!CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pTCPSocekt->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0) ||
 		!CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pUDPSocket->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0))
 		if (WSAGetLastError() != 87)
 			return false;

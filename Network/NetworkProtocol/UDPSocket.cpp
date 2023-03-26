@@ -95,7 +95,7 @@ bool UDPIPSocket::WriteTo(const SocketAddress& sendAddress, const PACKET_STRUCT&
 }
 
 bool UDPIPSocket::ReadFrom(char* const sReceiveBuffer, uint16_t& iRecvBytes) {
-	OVERLAPPED_EX receiveOverlapped(nullptr);
+	OVERLAPPED_EX receiveOverlapped;
 	return UTIL::UDP::ReceiveFrom(GetSocket(), sReceiveBuffer, iRecvBytes, receiveOverlapped);
 }
 
@@ -124,13 +124,13 @@ void UDPIPSocket::SetAckNumberToBuffer(const PACKET_STRUCT& sendPacketStructure)
 /* UTIL */
 
 bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::SendTo(const::SOCKET hSocket, const SocketAddress& sendAddress, const char* const sSendBuffer, const uint16_t iDataLength) {
-	SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX sendToOverlapped(nullptr);
+	SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX sendToOverlapped;
 	DWORD iSendBytes;
 	WSABUF wsaBuffer;
 	wsaBuffer.buf = const_cast<char* const>(sSendBuffer);
 	wsaBuffer.len = iDataLength;
 
-	if (WSASendTo(hSocket, &wsaBuffer, 1, &iSendBytes, 0, &sendAddress, sendAddress.GetSize(), sendToOverlapped.m_pWSAOverlapped, nullptr) == SOCKET_ERROR) {
+	if (WSASendTo(hSocket, &wsaBuffer, 1, &iSendBytes, 0, &sendAddress, sendAddress.GetSize(), &sendToOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
 		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"WSA SendTo : Failed to WSASend! - %d", iWSALastErrorCode);
@@ -150,7 +150,7 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::ReceiveFrom(const::SOCKET hSocket, ch
 	receiveOverlapped.m_wsaBuffer.buf = sReceiveBuffer + receiveOverlapped.m_iRemainReceiveBytes;
 	receiveOverlapped.m_wsaBuffer.len = ::MAX_BUFFER_LENGTH - receiveOverlapped.m_iRemainReceiveBytes;
 
-	if (WSARecvFrom(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iRecvBytes, &iFlag, pRemoteAddress, &iAddressSize, receiveOverlapped.m_pWSAOverlapped, nullptr) == SOCKET_ERROR) {
+	if (WSARecvFrom(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iRecvBytes, &iFlag, pRemoteAddress, &iAddressSize, &receiveOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
 		if (iWSALastErrorCode != 0) {
 			Log::WriteLog(L"WSA RecvFrom : Failed to WSASend! - %d", iWSALastErrorCode);
