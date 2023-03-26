@@ -1,11 +1,13 @@
 #include <iostream>
-#include <Network/UserSession/Server/User_Server.hpp>
-#include <Network/NetworkProtocol/UDPSocket.hpp>
-#include <Network/NetworkProtocol/TCPSocket.hpp>
+#include <NetworkModel/NetworkModel/IOCP/IOCP.hpp>
 #include <thread>
 
+void pk(SERVER::NETWORK::PACKET::PacketQueueData* const pPacketData) {
+
+}
+
 int main() {
-	WSADATA wsaData;
+/*	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 
 	// udp test
@@ -77,6 +79,43 @@ int main() {
 
 		t1.join();
 	}
-	WSACleanup();
+	WSACleanup();*/
+
+	{
+		using namespace SERVER::NETWORKMODEL::IOCP;
+
+		SERVER::NETWORKMODEL::BASEMODEL::PACKETPROCESSOR processor;
+		processor.insert(std::make_pair<uint8_t, void(SERVER::NETWORK::PACKET::PacketQueueData*)>(1, pk));
+
+		SERVER::FUNCTIONS::SOCKETADDRESS::SocketAddress address(1335);
+
+		IOCP iocp(processor, 1);
+
+		iocp.Initialize(SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_TCP, address);
+
+
+		std::thread t1([&address]() {
+			SERVER::NETWORK::PROTOCOL::TCP::TCPIPSocket tcpip;
+
+			tcpip.Connect(address);
+
+			char messageBuffer[1024];
+			while (true) {
+				std::cin >> messageBuffer;
+
+				if (!tcpip.Write(messageBuffer, strlen(messageBuffer))) {
+					std::cout << "send failed\n";
+				}
+			}
+		});
+
+		while (true) {
+			iocp.Run();
+		}
+
+		t1.join();
+		iocp.Destroy();
+	}
+
 	return 0;
 }
