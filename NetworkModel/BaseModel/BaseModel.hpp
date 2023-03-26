@@ -9,7 +9,7 @@ using namespace SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET;
 namespace SERVER {
 	namespace NETWORKMODEL {
 		namespace BASEMODEL {
-			typedef std::map<uint8_t, std::function<void(NETWORK::PACKET::PacketQueueData* const)>> PACKETPROCESSOR;
+			typedef std::unordered_map<uint8_t, std::function<void(NETWORK::PACKET::PacketQueueData* const)>> PACKETPROCESSOR;
 
 			class BaseNetworkModel {
 				typedef FUNCTIONS::CIRCULARQUEUE::CircularQueue<NETWORK::PACKET::PacketQueueData*> PACKETQUEUE;

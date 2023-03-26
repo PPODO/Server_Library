@@ -23,7 +23,7 @@ bool IOCP::Initialize(const EPROTOCOLTYPE protocolType, FUNCTIONS::SOCKETADDRESS
         using namespace SERVER::NETWORK::USER_SESSION::USER_SERVER;
 
         m_pServer = std::make_unique<User_Server>(protocolType);
-        if (!m_pServer->Initialize(serverAddress) && 
+        if (!m_pServer->Initialize(serverAddress) || 
             !m_pServer->RegisterIOCompletionPort(m_hIOCP)) return false;
 
         if ((protocolType & EPROTOCOLTYPE::EPT_UDP) && !m_pServer->ReceiveFrom()) return false;
@@ -97,20 +97,20 @@ void IOCP::IOCPWorkerThread() {
                     OnIOTryDisconnect(pOverlappedEx->m_pOwner);
                     break;
                 }
+                continue;
             }
-            continue;
-        }
 
-        switch (pOverlappedEx->m_IOType) {
-        case EIOTYPE::EIT_READ:
-            OnIOReceive(pOverlappedEx, iRecvBytes);
-            break;
-        case EIOTYPE::EIT_WRITE:
-            OnIOWrite(pOverlappedEx->m_pOwner, iRecvBytes);
-            break;
-        case EIOTYPE::EIT_READFROM:
-            OnIOReceiveFrom(pOverlappedEx, iRecvBytes);
-            break;
+            switch (pOverlappedEx->m_IOType) {
+            case EIOTYPE::EIT_READ:
+                OnIOReceive(pOverlappedEx, iRecvBytes);
+                break;
+            case EIOTYPE::EIT_WRITE:
+                OnIOWrite(pOverlappedEx->m_pOwner, iRecvBytes);
+                break;
+            case EIOTYPE::EIT_READFROM:
+                OnIOReceiveFrom(pOverlappedEx, iRecvBytes);
+                break;
+            }
         }
     }
 }
@@ -157,7 +157,7 @@ CONNECTION* IOCP::OnIOAccept(OVERLAPPED_EX* const pAcceptOverlapped) {
                 pConnection->m_peerInformation = PeerInfo(SocketAddress(*pRemoteAddr_in), 0);
                 if (pUser->RegisterIOCompletionPort(m_hIOCP) && pUser->Receive()) {
                     Log::WriteLog(L"Accept New Client!");
-                    return nullptr;
+                    return pConnection;
                 }
             }
         }
