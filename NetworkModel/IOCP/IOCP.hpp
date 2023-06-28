@@ -1,5 +1,5 @@
 #pragma once
-#include <NetworkModel/NetworkModel/BaseModel/BaseModel.hpp>
+#include <NetworkModel/BaseModel/BaseModel.hpp>
 #include <vector>
 #include <thread>
 

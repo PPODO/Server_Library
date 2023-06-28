@@ -38,7 +38,6 @@ namespace SERVER {
 
 					return true;
 				}
-
 				virtual void Run();
 
 				void ReceiveDataProcessing(const EPROTOCOLTYPE protocolType, char* const sReceiveBuffer, uint16_t iReceiveBytes, int16_t& iLastReceivePacketNumber, void* const pOwner);
