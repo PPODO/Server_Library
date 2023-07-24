@@ -70,6 +70,22 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_81_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_81_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_81_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_81_0;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -82,7 +98,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -101,7 +117,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -116,7 +132,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,7 +151,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
