@@ -7,7 +7,6 @@
 using namespace SERVER::FUNCTIONS::MYSQL;
 
 int main() {
-	CMySQLPool mysql("tcp://localhost:3306", "root", "a2233212.", 16);
 	{
 		CMySQLPool::CSQLRealConnection pConnection = mysql.GetConnection("testdb");
 
@@ -16,7 +15,9 @@ int main() {
 			/*test_jon.ExecuteQueryForInsert(pConnection, "dbtest_jon");*/
 
 			std::vector<CDBTEST_JON> listOfOutput;
-			test_jon.ExecuteQueryForSelect(pConnection, "dbtest_jon", listOfOutput, {}, { SQL::CColumnLabelValuePair("user_name", "Winter"), SQL::CColumnLabelValuePair("id", "5") }, { "OR" });
+			test_jon.ExecuteQueryForSelect(pConnection, "dbtest_jon", listOfOutput, {SQL::CQueryWhereConditional("user_name", "Winter", SQL::CQueryWhereConditional::ELogicalOperator::AND),
+																						  SQL::CQueryWhereConditional("id", "501") });
+ 			test_jon.ExecuteQueryForDelete(pConnection, "dbtest_jon", SQL::CQueryWhereConditional("id", "100"));
 
 			for (auto It : listOfOutput) {
 				std::cout << It.m_ID.m_sColumnLabel << '\t' << It.m_ID.m_rawData << '\t';
