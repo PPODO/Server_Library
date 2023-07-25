@@ -17,7 +17,35 @@ namespace SERVER {
 	namespace FUNCTIONS {
 		namespace MYSQL {
 			namespace SQL {
-				typedef std::pair<std::string, std::string> CColumnLabelValuePair;
+				struct CQueryWhereConditional {
+					enum class ELogicalOperator { NONE, AND, OR, XOR, NOT };
+
+					std::string m_sColumnLabel;
+					std::string m_sData;
+
+					const ELogicalOperator m_logicalOperator;
+
+				public:
+					CQueryWhereConditional() : m_sColumnLabel(), m_sData(), m_logicalOperator(ELogicalOperator::NONE) {};
+					CQueryWhereConditional(const std::string& sColumnLabel, const std::string& sData, const ELogicalOperator logicalOperator = ELogicalOperator::NONE) : m_sColumnLabel(sColumnLabel), m_sData(sData), m_logicalOperator(logicalOperator) {};
+
+				public:
+					std::string LogicalOperatorToString() const {
+						switch (m_logicalOperator) {
+						case ELogicalOperator::NONE:
+							return "";
+						case ELogicalOperator::AND:
+							return "AND";
+						case ELogicalOperator::OR:
+							return "OR";
+						case ELogicalOperator::XOR:
+							return "XOR";
+						case ELogicalOperator::NOT:
+							return "NOT";
+						}
+					}
+
+				};
 
 				template<typename T>
 				struct CSQL_ROW {
@@ -39,12 +67,10 @@ namespace SERVER {
 						return sQuery;
 					}
 
-					std::string MakeQueryForSelect(const std::string& sTableName, const std::vector<std::string>& listOfField = {}, const CColumnLabelValuePair& condition = CColumnLabelValuePair()) {
-						MakeQueryForSelect(sTableName, listOfField, { condition }, {});
-					}
-
-					std::string MakeQueryForSelect(const std::string& sTableName, const std::vector<std::string>& listOfField = {}, const std::vector<CColumnLabelValuePair>& listOfCondition = {}, const std::vector<std::string>& listOfConditionOperator = {}) {
+					std::string MakeQueryForSelect(const std::string& sTableName, const std::vector<std::string>& listOfField = {}, const std::vector<CQueryWhereConditional>& listOfConditional = {}) {
 						std::string sQuery;
+						size_t iConditionalListSize = listOfConditional.size();
+
 						sQuery.append("SELECT ");
 						if (listOfField.size() <= 0) sQuery.append("*");
 						else {
@@ -56,14 +82,29 @@ namespace SERVER {
 						
 						sQuery.append(" FROM `" + sTableName + "`");
 						
-						if (listOfCondition.size() > 0) {
+						if (iConditionalListSize > 0) {
 							sQuery.append(" WHERE ");
-						}
 
-						if (listOfCondition.size() > 0) {
-							for (size_t i = 0; i < listOfCondition.size(); i++) {
-								sQuery.append("`" + listOfCondition[i].first + "` = \"" + listOfCondition[i].second + "\"");
-								if ((i + 1) != listOfCondition.size()) sQuery.append(listOfConditionOperator[i]);
+							for (size_t i = 0; i < iConditionalListSize; i++) {
+								sQuery.append("`" + listOfConditional[i].m_sColumnLabel + "` = \"" + listOfConditional[i].m_sData + "\"");
+								if ((i + 1) != iConditionalListSize) sQuery.append(listOfConditional[i].LogicalOperatorToString());
+							}
+						}
+						return sQuery;
+					}
+
+					std::string MakeQueryForDelete(const std::string& sTableName, const std::vector<CQueryWhereConditional>& listOfConditional = {}) {
+						std::string sQuery;
+						size_t iConditionalListSize = listOfConditional.size();
+
+						sQuery.append("DELETE FROM `" + sTableName + "`");
+
+						if (iConditionalListSize > 0) {
+							sQuery.append(" WHERE ");
+
+							for (size_t i = 0; i < iConditionalListSize; i++) {
+								sQuery.append("`" + listOfConditional[i].m_sColumnLabel + "` = \"" + listOfConditional[i].m_sData + "\"");
+								if ((i + 1) != iConditionalListSize) sQuery.append(listOfConditional[i].LogicalOperatorToString());
 							}
 						}
 						return sQuery;
