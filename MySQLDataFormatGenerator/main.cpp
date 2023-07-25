@@ -213,7 +213,7 @@ int main() {
 		fileStream << "protected:\n";
 
 		fileStream << "\tvirtual bool PreparedTableVariables(sql::PreparedStatement* pPreparedStatement) override {\n";
-		fileStream << "\t\tif(pPreparedStatement) {\n\n";
+		fileStream << "\t\tif (pPreparedStatement) {\n\n";
 
 		for (size_t i = 1; i <= pTableMetaData->getColumnCount(); i++) {
 			sql::SQLString sColumnLabel = pTableMetaData->getColumnLabel(i);
@@ -223,6 +223,8 @@ int main() {
 		fileStream << "\t\t}\n\t\treturn false;\n";
 		fileStream << "\t}\n\n";
 
+
+		fileStream << "public:\n";
 
 		fileStream << "\tbool ExecuteQueryForInsert(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName) {\n";
 		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForInsert(sTableName, \"";
@@ -238,35 +240,27 @@ int main() {
 		fileStream << "\t\treturn PreparedTableVariables(pStatement);\n";
 		fileStream << "\t}\n\n";
 
-		fileStream << "public:\n";
-		fileStream << "\tbool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField = {}, const SERVER::FUNCTIONS::MYSQL::SQL::CColumnLabelValuePair& condition = SERVER::FUNCTIONS::MYSQL::SQL::CColumnLabelValuePair()) {\n";
-		fileStream << "\t\tExecuteQueryForSelect(sqlRealConnection, sTableName, listOfOutput, listOfField, { condition }, {});";
+
+		fileStream << "\tbool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField = {}, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {\n";
+		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, sTableName, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
 		fileStream << "\t}\n\n";
 
-		fileStream << "\tbool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField = {}, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CColumnLabelValuePair>& listOfCondition = {}, const std::vector<std::string>& listOfConditionOperator = {}) {\n";
-		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(sTableName, listOfField, listOfCondition, listOfConditionOperator));\n";
-		fileStream << "\t\tif(pStatement) {\n";
+
+		fileStream << "\tbool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField = {}, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {\n";
+		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(sTableName, listOfField, listOfConditional));\n";
+		fileStream << "\t\tif (pStatement) {\n";
 		fileStream << "\t\t\tauto pResultSet = pStatement->executeQuery();\n";
 		fileStream << "\t\t\tlistOfOutput.reserve(pResultSet->rowsCount());\n\n";
 
-		fileStream << "\t\t\twhile(pResultSet->next()) {\n";
+		fileStream << "\t\t\twhile (pResultSet->next()) {\n";
 		fileStream << "\t\t\t\tC" << sTableName << " rowData;\n";
 
-		fileStream << "\t\t\t\tif(listOfField.size() > 0) {\n";
-		fileStream << "\t\t\t\t\tfor(const auto& sFieldName : listOfField) {\n";
+		fileStream << "\t\t\t\tfor (const auto& sFieldName : listOfField) {\n";
 		for (size_t i = 1; i <= pTableMetaData->getColumnCount(); i++) {
 			sql::SQLString sColumnLabel = pTableMetaData->getColumnLabel(i);
-			fileStream << "\t\t\t\t\t\tif(rowData.m_" << sColumnLabel << ".m_sColumnLabel == sFieldName) {\n";
-			fileStream << "\t\t\t\t\t\t\trowData.m_" << sColumnLabel << ".m_rawData = pResultSet->" << GetGetterNameByColumnType(pTableMetaData->getColumnType(i)) << "(sFieldName);\n";
-			fileStream << "\t\t\t\t\t\t\tcontinue;\n\t\t\t\t\t\t}\n";
-		}
-		fileStream << "\t\t\t\t\t}\n";
-
-		fileStream << "\t\t\t\t}\n";
-		fileStream << "\t\t\t\telse {\n";
-		for (size_t i = 1; i <= pTableMetaData->getColumnCount(); i++) {
-			sql::SQLString sColumnLabel = pTableMetaData->getColumnLabel(i);
-			fileStream << "\t\t\t\t\trowData.m_" << sColumnLabel << ".m_rawData = pResultSet->" << GetGetterNameByColumnType(pTableMetaData->getColumnType(i)) << "(\"" << sColumnLabel << "\"); \n";
+			fileStream << "\t\t\t\t\tif (rowData.m_" << sColumnLabel << ".m_sColumnLabel == sFieldName) {\n";
+			fileStream << "\t\t\t\t\t\trowData.m_" << sColumnLabel << ".m_rawData = pResultSet->" << GetGetterNameByColumnType(pTableMetaData->getColumnType(i)) << "(sFieldName);\n";
+			fileStream << "\t\t\t\t\t\tcontinue;\n\t\t\t\t\t}\n";
 		}
 		fileStream << "\t\t\t\t}\n";
 
@@ -275,6 +269,42 @@ int main() {
 		fileStream << "\t\t\t}\n";
 		fileStream << "\t\t\treturn true;\n\t\t}\n";
 		fileStream << "\t\treturn false;\n\t}\n\n";
+
+
+		fileStream << "\tbool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<" << 'C' << sTableName << ">& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {\n";
+		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, sTableName, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
+		fileStream << "\t}\n\n";
+
+		fileStream << "\tbool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {\n";
+		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(sTableName, {}, listOfConditional));\n";
+		fileStream << "\t\tif (pStatement) {\n";
+		fileStream << "\t\t\tauto pResultSet = pStatement->executeQuery();\n";
+		fileStream << "\t\t\tlistOfOutput.reserve(pResultSet->rowsCount());\n\n";
+
+		fileStream << "\t\t\twhile (pResultSet->next()) {\n";
+		fileStream << "\t\t\t\tC" << sTableName << " rowData;\n";
+
+		for (size_t i = 1; i <= pTableMetaData->getColumnCount(); i++) {
+			sql::SQLString sColumnLabel = pTableMetaData->getColumnLabel(i);
+			fileStream << "\t\t\t\trowData.m_" << sColumnLabel << ".m_rawData = pResultSet->" << GetGetterNameByColumnType(pTableMetaData->getColumnType(i)) << "(\"" << sColumnLabel << "\"); \n";
+		}
+
+		fileStream << "\t\t\t\tlistOfOutput.push_back(rowData);\n";
+
+		fileStream << "\t\t\t}\n";
+		fileStream << "\t\t\treturn true;\n\t\t}\n";
+		fileStream << "\t\treturn false;\n\t}\n\n";
+
+
+		fileStream << "\tbool ExecuteQueryForDelete(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {\n";
+		fileStream << "\t\treturn ExecuteQueryForDelete(sqlRealConnection, sTableName, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
+		fileStream << "\t}\n\n";
+
+		fileStream << "\tbool ExecuteQueryForDelete(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {\n";
+		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForDelete(sTableName, listOfConditional));\n";
+		fileStream << "\t\tif (pStatement && pStatement->executeQuery()) return true;\n";
+		fileStream << "\t\treturn false;\n";
+		fileStream << "\t}\n\n";
 
 		fileStream << "};";
 
