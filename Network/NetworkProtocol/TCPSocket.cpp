@@ -69,7 +69,7 @@ bool TCPIPSocket::Write(const PACKET::PACKET_STRUCT& sendPacketStructure) {
 	USER_SESSION::USER_SERVER::OVERLAPPED_EX sendOverlapped;
 
 	CopyMemory(m_sSendMessageBuffer, reinterpret_cast<const char*>(&sendPacketStructure.m_packetInfo), sizeof(PACKET::PACKET_INFORMATION));
-	CopyMemory(m_sSendMessageBuffer, sendPacketStructure.m_sPacketData, sendPacketStructure.m_packetInfo.m_iPacketDataSize);
+	CopyMemory(m_sSendMessageBuffer + sizeof(PACKET::PACKET_INFORMATION), sendPacketStructure.m_sPacketData, sendPacketStructure.m_packetInfo.m_iPacketDataSize);
 
 	return UTIL::TCP::Send(GetSocket(), m_sSendMessageBuffer, sizeof(PACKET::PACKET_INFORMATION) + sendPacketStructure.m_packetInfo.m_iPacketDataSize, sendOverlapped);
 }
@@ -93,10 +93,11 @@ bool TCPIPSocket::Read(USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapp
 }
 
 bool TCPIPSocket::SocketRecycling(USER_SESSION::USER_SERVER::OVERLAPPED_EX& disconnectOverlapped) {
-	shutdown(GetSocket(), SD_BOTH);
-	if (TransmitFile(GetSocket(), NULL, 0, 0, &disconnectOverlapped.m_wsaOverlapped, NULL, TF_DISCONNECT | TF_REUSE_SOCKET))
-		if (WSAGetLastError() != WSA_IO_PENDING)
-			Log::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError()); return false;
+	if (!TransmitFile(GetSocket(), NULL, 0, 0, &disconnectOverlapped.m_wsaOverlapped, NULL, TF_DISCONNECT | TF_REUSE_SOCKET))
+		if (WSAGetLastError() != WSA_IO_PENDING) {
+			Log::WriteLog(L"Socket Recycling Work Failure! - %d", WSAGetLastError()); 
+			return false;
+		}
 
 	return true;
 }

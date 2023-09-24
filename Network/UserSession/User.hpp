@@ -24,7 +24,8 @@ namespace SERVER {
 				virtual ~User();
 
 			public:
-				virtual bool Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress);
+				bool Bind(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress);
+				bool Connect(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress);
 
 				bool Receive(char* const sReceiveBuffer, uint16_t& iReceiveBytes);
 				bool ReceiveFrom(char* const sReceiveBuffer, uint16_t& iReceiveBytes);
@@ -40,6 +41,8 @@ namespace SERVER {
 
 					return true;
 				}
+
+
 			};
 		}
 	}

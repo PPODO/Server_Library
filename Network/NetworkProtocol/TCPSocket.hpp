@@ -1,7 +1,7 @@
 #pragma once
 #include "Socket/Socket.hpp"
 #include "../Packet/BasePacket.hpp"
-#include <Functions/CircularQueue/CircularQueue.hpp>
+#include "../../Functions/CircularQueue/CircularQueue.hpp"
 #include <memory>
 
 namespace SERVER {

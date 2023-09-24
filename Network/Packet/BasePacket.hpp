@@ -1,9 +1,9 @@
 #pragma once
-#include <Functions/Log/Log.hpp>
-#include <Functions/CircularQueue/CircularQueue.hpp>
-#include <Functions/MemoryPool/MemoryPool.h>
+#include "../../Functions/Log/Log.hpp"
+#include "../../Functions/CircularQueue/CircularQueue.hpp"
+#include "../../Functions/MemoryPool/MemoryPool.h"
 
-#include <Network/NetworkProtocol/Socket/Socket.hpp>
+#include "../NetworkProtocol/Socket/Socket.hpp"
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
@@ -40,13 +40,14 @@ namespace SERVER {
 				char m_sPacketData[BUFFER_LENGTH];
 
 			public:
-				PACKET_STRUCT() : m_packetInfo(), m_sPacketData("\0") {};
+				PACKET_STRUCT() : m_packetInfo(), m_sPacketData() { ZeroMemory(m_sPacketData, BUFFER_LENGTH); };
 				PACKET_STRUCT(const PACKET_INFORMATION& packetInfo, const std::string& sPacketData) : m_packetInfo(packetInfo) {
-					strcpy_s(m_sPacketData, BUFFER_LENGTH, sPacketData.c_str());
+					ZeroMemory(m_sPacketData, BUFFER_LENGTH);
+					CopyMemory(m_sPacketData, sPacketData.c_str(), sPacketData.length());
 				};
 			};
 
-			class BasePacket {
+			struct BasePacket {
 				friend boost::serialization::access;
 			public:
 				const uint8_t m_iPacketType;
@@ -60,16 +61,16 @@ namespace SERVER {
 
 			public:
 				BasePacket(const uint8_t iPacketType, const uint8_t iMessageType) : m_iPacketType(iPacketType), m_iMessageType(iMessageType) {};
-				virtual ~BasePacket() = 0;
+				virtual ~BasePacket() = 0 {}
 			};
 
 			template<typename T>
-			class Packet : public BasePacket, public FUNCTIONS::MEMORYMANAGER::MemoryManager<T> {
+			struct Packet : public BasePacket, public FUNCTIONS::MEMORYMANAGER::MemoryManager<T> {
 			public:
 				Packet(const uint8_t iPacketType, const uint8_t iMessageType) : BasePacket(iPacketType, iMessageType) {};
 			};
 
-			class PacketQueueData : public FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::BaseData<PacketQueueData, 500> {
+			struct PacketQueueData : public FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::BaseData<PacketQueueData, 500> {
 			public:
 				void* m_pOwner;
 				PACKET_STRUCT m_packetData;
@@ -81,18 +82,22 @@ namespace SERVER {
 			};
 
 			namespace UTIL {
-				static PACKET_STRUCT Serialize(const BasePacket& packet) {
+				template<typename T>
+				PACKET_STRUCT Serialize(const T& packet) {
 
 					std::string sTempBuffer;
-					boost::iostreams::stream<boost::iostreams::back_insert_device<std::string>> outStream(sTempBuffer);
-					boost::archive::binary_oarchive outArchive(outStream, boost::archive::no_header);
+					{
+						boost::iostreams::stream<boost::iostreams::back_insert_device<std::string>> outStream(sTempBuffer);
+						boost::archive::binary_oarchive outArchive(outStream, boost::archive::no_header);
 
-					outArchive << packet;
+						outArchive << packet;
+					}
 
-					return  PACKET_STRUCT(PACKET_INFORMATION(packet.m_iPacketType, sTempBuffer.length()), sTempBuffer);
+					return PACKET_STRUCT(PACKET_INFORMATION(packet.m_iPacketType, sTempBuffer.length()), sTempBuffer);
 				}
 
-				static void Deserialize(const PACKET_STRUCT& inPacketData, BasePacket& outputPacketResult) {
+				template<typename T>
+				void Deserialize(const PACKET_STRUCT& inPacketData, T& outputPacketResult) {
 					boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> inStream(inPacketData.m_sPacketData, inPacketData.m_packetInfo.m_iPacketDataSize);
 					boost::archive::binary_iarchive inArchive(inStream, boost::archive::no_header);
 

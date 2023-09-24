@@ -3,12 +3,14 @@
 using namespace SERVER::NETWORK::USER_SESSION;
 using namespace SERVER::FUNCTIONS::LOG;
 
-User::User(const NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType) : m_protocolType(protocolType) {
+User::User(const EPROTOCOLTYPE protocolType) : m_protocolType(protocolType) {
 	using namespace SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET;
 
 	try {
-		m_pTCPSocekt = std::make_unique<TCPIPSocket>();
-		m_pUDPSocket = std::make_unique<UDPIPSocket>();
+		if(m_protocolType & EPROTOCOLTYPE::EPT_TCP)
+			m_pTCPSocekt = std::make_unique<TCPIPSocket>();
+		if(m_protocolType & EPROTOCOLTYPE::EPT_UDP)
+			m_pUDPSocket = std::make_unique<UDPIPSocket>();
 	}
 	catch (std::bad_alloc& exception) {
 		Log::WriteLog(FUNCTIONS::UTIL::MBToUni(exception.what()).c_str());
@@ -19,10 +21,17 @@ User::User(const NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE protocolType
 User::~User() {
 }
 
-bool User::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
-	if (!m_pTCPSocekt || !m_pTCPSocekt->Bind(toAddress))
-		return false;
-	if (!m_pUDPSocket || !m_pUDPSocket->Bind(toAddress))
+bool User::Bind(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
+	if (m_pTCPSocekt)
+		if(!m_pTCPSocekt->Bind(toAddress)) return false;
+	if (m_pUDPSocket)
+		if(!m_pUDPSocket->Bind(toAddress)) return false;
+
+	return true;
+}
+
+bool User::Connect(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
+	if (!m_pTCPSocekt || !m_pTCPSocekt->Connect(toAddress))
 		return false;
 
 	return true;

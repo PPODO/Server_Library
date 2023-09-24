@@ -25,7 +25,7 @@ namespace SERVER {
 					// 수신 버퍼
 					WSABUF m_wsaBuffer;
 					// 남은 바이트 수. 이전의 읽은 데이터를 덮어 씌우지 않게 하기 위함.
-					int16_t m_iRemainReceiveBytes;
+					uint16_t m_iRemainReceiveBytes;
 					// Receive Buffer의 시작 주소
 					char* m_pReceiveBuffer;
 

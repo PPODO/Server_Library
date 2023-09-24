@@ -17,12 +17,17 @@ namespace SERVER {
 		}
 
 		namespace PROTOCOL {
+			namespace UDP {
+				class UDPIPSocket;
+			}
+
 			namespace UTIL {
 				namespace UDP {
 					bool SendTo(const ::SOCKET hSocket, const SocketAddress& sendAddress, const char* const sSendBuffer, const uint16_t iDataLength);
 					bool ReceiveFrom(const ::SOCKET hSocket, char* const sReceiveBuffer, uint16_t& iReceiveBytes, SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped);
 
 					bool CheckAck(USER_SESSION::USER_SERVER::OVERLAPPED_EX& overlapped);
+					bool CheckAck(NETWORK::PROTOCOL::UDP::UDPIPSocket* const pUdpSocket, const FUNCTIONS::SOCKETADDRESS::SocketAddress& remoteAddress, char* const sReceviedBuffer, uint16_t& iReceivedBytes, int16_t iUpdatedPacketNumber);
 				}
 			}
 

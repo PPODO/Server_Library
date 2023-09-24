@@ -153,7 +153,7 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::ReceiveFrom(const::SOCKET hSocket, ch
 	if (WSARecvFrom(hSocket, &receiveOverlapped.m_wsaBuffer, 1, &iRecvBytes, &iFlag, pRemoteAddress, &iAddressSize, &receiveOverlapped.m_wsaOverlapped, nullptr) == SOCKET_ERROR) {
 		int iWSALastErrorCode = GetWSAErrorResult({ WSA_IO_PENDING, WSAEWOULDBLOCK });
 		if (iWSALastErrorCode != 0) {
-			Log::WriteLog(L"WSA RecvFrom : Failed to WSASend! - %d", iWSALastErrorCode);
+			Log::WriteLog(L"WSA RecvFrom : Failed to RecvFrom! - %d", iWSALastErrorCode);
 			return false;
 		}
 	}
@@ -183,6 +183,32 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(OVERLAPPED_EX& overlapped) {
 			MoveMemory(overlapped.m_pReceiveBuffer, overlapped.m_pReceiveBuffer + sizeof(int32_t), overlapped.m_iRemainReceiveBytes);
 
 			return pOwner->SendTo(overlapped.m_remoteAddress, reinterpret_cast<char* const>(&iSendPacektInfoHeader), sizeof(int32_t));
+		}
+	}
+	return false;
+}
+
+bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(NETWORK::PROTOCOL::UDP::UDPIPSocket* const pUdpSocket, const FUNCTIONS::SOCKETADDRESS::SocketAddress& remoteAddress, char* const sReceviedBuffer, uint16_t& iReceivedBytes, int16_t iUpdatedPacketNumber) {
+	if (pUdpSocket && sReceviedBuffer) {
+		const int32_t iPacketInfoHeader = *reinterpret_cast<int32_t*>(sReceviedBuffer);
+		const int16_t iAckNumber = static_cast<int16_t>(iPacketInfoHeader);
+		const int16_t iPacketNumber = static_cast<int16_t>(iPacketInfoHeader >> 16);
+
+		if (iAckNumber == 9999) {
+			if (iUpdatedPacketNumber <= iPacketNumber - 1)
+				InterlockedExchange16(&iUpdatedPacketNumber, iPacketNumber);
+			iReceivedBytes -= sizeof(int32_t);
+
+			return pUdpSocket->SendCompletion(iPacketNumber - 1);
+		}
+		else if (iAckNumber == 0) {
+			int16_t iSendAckNumber = 9999;
+			int16_t iSendPacketNumber = iPacketNumber + 1;
+			int32_t iSendPacektInfoHeader = (iSendPacketNumber << 16) | iSendAckNumber;
+			iReceivedBytes -= sizeof(int32_t);
+			MoveMemory(sReceviedBuffer, sReceviedBuffer + sizeof(int32_t), iReceivedBytes);
+
+			return pUdpSocket->WriteTo(remoteAddress, reinterpret_cast<char* const>(&iSendPacektInfoHeader), sizeof(int32_t));
 		}
 	}
 	return false;

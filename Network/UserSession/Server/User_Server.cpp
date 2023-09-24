@@ -13,7 +13,7 @@ User_Server::User_Server(NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE prot
 bool User_Server::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress) {
 	using namespace SERVER::NETWORK::PROTOCOL::UTIL;
 
-	if (!User::Initialize(toAddress))
+	if (!User::Bind(toAddress))
 		return false;
 	
 	bool bResult = true;
@@ -28,10 +28,15 @@ bool User_Server::Initialize(const User_Server& server) {
 }
 
 bool User_Server::RegisterIOCompletionPort(const HANDLE& hIOCP) {
-	if (!CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pTCPSocekt->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0) ||
-		!CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pUDPSocket->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0))
+	if (m_pTCPSocekt && !CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pTCPSocekt->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0)) {
 		if (WSAGetLastError() != 87)
 			return false;
+	}
+
+	if (m_pUDPSocket && !CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pUDPSocket->GetSocket()), hIOCP, reinterpret_cast<ULONG_PTR>(this), 0)) {
+		if (WSAGetLastError() != 87)
+			return false;
+	}
 
 	return true;
 }
