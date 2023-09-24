@@ -47,6 +47,8 @@ Network/x64/
 #file
 *.ini
 *.sln
+Server_test/*.*
+client_test/*.*
 x64/Debug/*.pdb
 x64/Debug/*.exe
 x64/Release/*.pdb
