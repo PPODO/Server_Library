@@ -1,6 +1,6 @@
 #pragma once
-#include <Network/UserSession/Server/User_Server.hpp>
-#include <Network/Packet/BasePacket.hpp>
+#include "../../Network/UserSession/Server/User_Server.hpp"
+#include "../../Network/Packet/BasePacket.hpp"
 #include <map>
 #include <functional>
 
@@ -40,7 +40,7 @@ namespace SERVER {
 				}
 				virtual void Run();
 
-				void ReceiveDataProcessing(const EPROTOCOLTYPE protocolType, char* const sReceiveBuffer, uint16_t iReceiveBytes, int16_t& iLastReceivePacketNumber, void* const pOwner);
+				void ReceiveDataProcessing(const EPROTOCOLTYPE protocolType, char* const sReceiveBuffer, uint16_t& iReceiveBytes, int16_t& iLastReceivePacketNumber, void* const pOwner);
 
 			public:
 				inline EPROTOCOLTYPE GetProtocolType() const { return m_protocolType; }
