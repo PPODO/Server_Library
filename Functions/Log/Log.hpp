@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <Functions/CriticalSection/CriticalSection.hpp>
+#include "../CriticalSection/CriticalSection.hpp"
 
 namespace SERVER {
 	namespace FUNCTIONS {
@@ -18,10 +18,13 @@ namespace SERVER {
 		namespace LOG {
 			static const size_t MAX_BUFFER_LENGTH = 1024;
 			static const size_t MAX_DATETIME_LENGTH = 32;
+			static const size_t MAX_DIRECTORY_LENGTH = 50;
 
 			class Log {
 			private:
 				static CRITICALSECTION::CriticalSection m_lock;
+				static TCHAR m_sCurrentFileName[MAX_PATH];
+				static size_t m_iCurrentDirectoryLength;
 
 			private:
 				static bool Write(const std::wstring& logData) {
@@ -29,15 +32,15 @@ namespace SERVER {
 					GetLocalTime(&systemTime);
 
 					TCHAR sCurrentDate[MAX_DATETIME_LENGTH] = { TEXT("\0") };
-					TCHAR sCurrentFileName[MAX_PATH] = { TEXT("\0") };
 					TCHAR sDebugLog[MAX_BUFFER_LENGTH] = { TEXT("\0") };
 
 					swprintf_s(sCurrentDate, MAX_DATETIME_LENGTH,
 							  TEXT("%d-%d-%d %d:%d:%d"), systemTime.wYear, systemTime.wMonth, systemTime.wDay, 
 	  						   systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
-					swprintf_s(sCurrentFileName, MAX_PATH, TEXT("LOG_M_%d-%d-%d %d.log"), systemTime.wYear, systemTime.wMonth, systemTime.wDay, systemTime.wHour);
 
-					std::wfstream fileStream(sCurrentFileName, std::ios::app);
+					swprintf_s(m_sCurrentFileName + m_iCurrentDirectoryLength, MAX_PATH, TEXT("LOG_M_%d-%d-%d %d.log"), systemTime.wYear, systemTime.wMonth, systemTime.wDay, systemTime.wHour);
+
+					std::wfstream fileStream(m_sCurrentFileName, std::ios::app);
 					if (!fileStream.is_open()) return false;
 
 					swprintf_s(sDebugLog, MAX_BUFFER_LENGTH, TEXT("[%s] %s\n"), sCurrentDate, logData.c_str());
@@ -64,9 +67,16 @@ namespace SERVER {
 
 					return Write(sString);
 				}
+
+				static void SetLogFileDirectory(LPCTSTR sDirectory) {
+					m_iCurrentDirectoryLength = wcslen(sDirectory);
+					wcsncpy_s(m_sCurrentFileName, sDirectory, MAX_DIRECTORY_LENGTH);
+				}
 			};
 		}
 	}
 }
 
 __declspec(selectany) SERVER::FUNCTIONS::CRITICALSECTION::CriticalSection SERVER::FUNCTIONS::LOG::Log::m_lock(0);
+__declspec(selectany) TCHAR SERVER::FUNCTIONS::LOG::Log::m_sCurrentFileName[MAX_PATH];
+__declspec(selectany) size_t SERVER::FUNCTIONS::LOG::Log::m_iCurrentDirectoryLength;

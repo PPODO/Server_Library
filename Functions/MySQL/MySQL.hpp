@@ -8,9 +8,9 @@
 #include <string>
 #include <memory>
 #include <vector>
-#include "Functions/CriticalSection/CriticalSection.hpp"
-#include "Functions/Uncopyable/Uncopyable.hpp"
-#include "Functions/Log/Log.hpp"
+#include "../CriticalSection/CriticalSection.hpp"
+#include "../Uncopyable/Uncopyable.hpp"
+#include "../Log/Log.hpp"
 #include <type_traits>
 
 namespace SERVER {
