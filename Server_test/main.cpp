@@ -36,6 +36,7 @@ int main() {
 }
 */
 
+#define _USER_PACKET_PROCESSOR_TYPE_
 #include <iostream>
 #include <NetworkModel/IOCP/IOCP.hpp>
 #include <Network/Packet/BasePacket.hpp>
@@ -45,7 +46,10 @@ using namespace SERVER::NETWORK::PACKET;
 static const uint16_t QUATERNION_ELEMENT_BUFFER_LENGTH = 6;
 
 enum class EPacketType : uint8_t {
-	E_Tracking = 1
+	E_Tracking = 1,
+	E_Calibration = 2,
+	E_Initialization = 3,
+	E_SensorInitialization = 4
 };
 
 enum class EBoneType : uint8_t {
@@ -57,7 +61,9 @@ enum class EBoneType : uint8_t {
 	E_Left_Arm = 6,
 	E_Pelvis = 7,
 	E_Right_Leg = 8,
-	E_Left_Leg = 9
+	E_Left_Leg = 9,
+	E_Right_Finger = 10,
+	E_Left_Finger = 11,
 };
 
 enum class EBonePointType : uint8_t {
@@ -67,82 +73,83 @@ enum class EBonePointType : uint8_t {
 	E_Point = 4
 };
 
-struct Quaternion {
+enum class EFingerPointType : uint8_t {
+	E_Thumb = 1,
+	E_Index = 2,
+	E_Middle = 3,
+	E_Ring = 4,
+	E_Pinky = 5,
+};
+
+struct HandTrackingSensor_Data {
 public:
-	float w;
-	float x;
-	float y;
-	float z;
+	uint8_t m_iFingerPointType;
+	uint16_t m_iFingerAngle;
 
 public:
-	Quaternion() : w(0), x(0), y(0), z(0) {};
 
 };
 
-struct TrackingSensor_Data {
+class MyIOCP : public SERVER::NETWORKMODEL::IOCP::IOCP {
 public:
-	uint8_t m_iBoneType;
-	uint8_t m_iBonePointType;
+	MyIOCP(SERVER::NETWORKMODEL::BASEMODEL::PACKETPROCESSOR& packetProcessorMap, const size_t iWorkerThreadCount = 0) : IOCP(packetProcessorMap, iWorkerThreadCount) {
+		packetProcessorMap.insert(std::make_pair(1, std::bind(&MyIOCP::PacketQWE, this, std::placeholders::_1)));
+	}
 
-	Quaternion m_quaternion;
+	virtual ~MyIOCP() override {
+
+	}
 
 public:
-	TrackingSensor_Data() : m_iBoneType((uint8_t)0), m_iBonePointType((uint8_t)0), m_quaternion() {};
-	TrackingSensor_Data(EBoneType boneType, EBonePointType bonePointType) : m_iBoneType((uint8_t)boneType), m_iBonePointType((uint8_t)bonePointType), m_quaternion() {};
+	void PacketQWE(SERVER::NETWORK::PACKET::PacketQueueData* pData) {
+		if (pData) {
+			for (int i = 0; i < 5; i++) {
+				HandTrackingSensor_Data data = *reinterpret_cast<HandTrackingSensor_Data*>(pData->m_packetData.m_sPacketData);
 
-	/*uint16_t ConvertToString(char* sBuffer) {
-		uint16_t iDataSize = sizeof(uint16_t);
+				std::cout << data.m_iFingerPointType << ":" << data.m_iFingerAngle << '\t';
 
-		memcpy(sBuffer + iDataSize, &m_iBoneType, sizeof(uint8_t));
-		memcpy(sBuffer + iDataSize + sizeof(uint8_t), &m_iBonePointType, sizeof(uint8_t));
-		iDataSize += sizeof(uint8_t) * 2;
-
-		dtostrf(m_quaternion.w, 2, 4, sBuffer + iDataSize + (QUATERNION_ELEMENT_BUFFER_LENGTH * 0));
-		dtostrf(m_quaternion.x, 2, 4, sBuffer + iDataSize + (QUATERNION_ELEMENT_BUFFER_LENGTH * 1));
-		dtostrf(m_quaternion.y, 2, 4, sBuffer + iDataSize + (QUATERNION_ELEMENT_BUFFER_LENGTH * 2));
-		dtostrf(m_quaternion.z, 2, 4, sBuffer + iDataSize + (QUATERNION_ELEMENT_BUFFER_LENGTH * 3));
-		iDataSize += QUATERNION_ELEMENT_BUFFER_LENGTH * 4;
-
-		memcpy(sBuffer, &iDataSize, sizeof(uint16_t));
-
-		return iDataSize;
-	}*/
-
-};
-
-void PacketProcessor(PacketQueueData* const Data) {
-	TrackingSensor_Data SensorData[3];
-	if (Data) {
-		for (int i = 0; i < 3; i++) {
-			uint16_t iSensorDataSize = *reinterpret_cast<uint16_t*>(Data->m_packetData.m_sPacketData);
-			SensorData[i].m_iBoneType = *reinterpret_cast<uint8_t*>(Data->m_packetData.m_sPacketData + sizeof(uint16_t));
-			SensorData[i].m_iBonePointType = *reinterpret_cast<uint8_t*>(Data->m_packetData.m_sPacketData + sizeof(uint16_t) + sizeof(uint8_t));
-
-			SensorData[i].m_quaternion.w = std::stof(Data->m_packetData.m_sPacketData + sizeof(uint16_t) + sizeof(uint16_t) + (QUATERNION_ELEMENT_BUFFER_LENGTH * 0));
-			SensorData[i].m_quaternion.x = std::stof(Data->m_packetData.m_sPacketData + sizeof(uint16_t) + sizeof(uint16_t) + (QUATERNION_ELEMENT_BUFFER_LENGTH * 1));
-			SensorData[i].m_quaternion.y = std::stof(Data->m_packetData.m_sPacketData + sizeof(uint16_t) + sizeof(uint16_t) + (QUATERNION_ELEMENT_BUFFER_LENGTH * 2));
-			SensorData[i].m_quaternion.z = std::stof(Data->m_packetData.m_sPacketData + sizeof(uint16_t) + sizeof(uint16_t) + (QUATERNION_ELEMENT_BUFFER_LENGTH * 3));
-
-			std::cout << (uint16_t)SensorData[i].m_iBonePointType << ' ' << (uint16_t)SensorData[i].m_iBonePointType << '\t';
-			std::cout << SensorData[i].m_quaternion.w << ' ' << SensorData[i].m_quaternion.x << ' ' << SensorData[i].m_quaternion.y << ' ' << SensorData[i].m_quaternion.z << std::endl;
-
-			MoveMemory(Data->m_packetData.m_sPacketData, Data->m_packetData.m_sPacketData + iSensorDataSize, Data->m_packetData.m_packetInfo.m_iPacketDataSize - iSensorDataSize);
+				MoveMemory(pData->m_packetData.m_sPacketData, pData->m_packetData.m_sPacketData + sizeof(HandTrackingSensor_Data), pData->m_packetData.m_packetInfo.m_iPacketDataSize - (sizeof(HandTrackingSensor_Data) * (i + 1)));
+			}
+			std::cout << std::endl;
 		}
 	}
-}
+
+	SERVER::NETWORKMODEL::IOCP::CONNECTION* m_pCommandESPConnection;
+
+};
+
+#include <Functions/MySQL/MySQL.hpp>
+#include "../MySQLDataFormatGenerator/test_table.h"
+#include "../MySQLDataFormatGenerator/dbtest_jon.h"
 
 int main() {
-	SERVER::NETWORKMODEL::BASEMODEL::PACKETPROCESSOR list;
-	list.insert(std::make_pair(1, PacketProcessor));
+	/*SERVER::NETWORKMODEL::BASEMODEL::PACKETPROCESSOR list;
 
-	SERVER::FUNCTIONS::SOCKETADDRESS::SocketAddress bindAddress("172.30.1.89", 3550);
-	SERVER::NETWORKMODEL::IOCP::IOCP iocp(list);
-	iocp.Initialize(SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_UDP, bindAddress);
+	SERVER::FUNCTIONS::SOCKETADDRESS::SocketAddress bindAddress("172.30.1.21", 3550);
+	MyIOCP iocp(list);
+	iocp.Initialize(SERVER::NETWORK::PROTOCOL::UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_BOTH, bindAddress);
 	iocp.EnableAckCheck(false);
 
 	while (true)
 		iocp.Run();
 
-	iocp.Destroy();
+	iocp.Destroy();*/
+
+	SERVER::FUNCTIONS::MYSQL::CMySQLPool pool("tcp://localhost:3306", "root", "a2233212.", 2);
+
+	{
+		auto connection = pool.GetConnection("testdb");
+		CTEST_TABLE table(12355);
+
+		table.ExecuteQueryForInsert(connection.get());
+	}
+
+	{
+		auto connection = pool.GetConnection("testdb");
+		CDBTEST_JON table(63, "FUICK");
+
+		table.ExecuteQueryForInsert(connection.get());
+	}
+
 	return 0;
 }
