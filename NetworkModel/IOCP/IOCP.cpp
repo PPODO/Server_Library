@@ -158,7 +158,7 @@ CONNECTION* IOCP::OnIOAccept(OVERLAPPED_EX* const pAcceptOverlapped) {
         if (auto pRemoteAddr_in = reinterpret_cast<sockaddr_in*>(pRemoteAddr)) {
             if (auto pConnection = GetConnectionFromList(pUser)) {
                 pConnection->m_peerInformation = PeerInfo(SocketAddress(*pRemoteAddr_in), 0);
-                if (pUser->RegisterIOCompletionPort(m_hIOCP) && pUser->Receive()) {
+                 if (pUser->RegisterIOCompletionPort(m_hIOCP) && pUser->Receive()) {
                     Log::WriteLog(L"Accept New Client!");
                     return pConnection;
                 }

@@ -58,7 +58,7 @@ void BaseNetworkModel::ReceiveDataProcessing(const EPROTOCOLTYPE protocolType, c
 		if (iReceiveBytes > PACKET_INFO_STRUCT_SIZE) {
 			packetStruct.m_packetInfo = *reinterpret_cast<PACKET_INFORMATION*>(sReceiveBuffer);
 
-			if (iReceiveBytes >= packetStruct.m_packetInfo.m_iPacketDataSize) {
+			if ((iReceiveBytes - PACKET_INFO_STRUCT_SIZE) >= packetStruct.m_packetInfo.m_iPacketDataSize) {
 				uint16_t iPacketTotalBytes = PACKET_INFO_STRUCT_SIZE + packetStruct.m_packetInfo.m_iPacketDataSize;
 				if (packetStruct.m_packetInfo.m_iPacketNumber == iLastReceivePacketNumber) { // for udp, tcp has always 0
 					if (protocolType & EPROTOCOLTYPE::EPT_UDP)
