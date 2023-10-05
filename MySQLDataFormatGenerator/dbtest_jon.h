@@ -3,13 +3,16 @@
 #include <vector>
 #include <string>
 
+static const std::string dbtest_jon_TABLE_NAME = "dbtest_jon";
+
 struct CDBTEST_JON : public SERVER::FUNCTIONS::MYSQL::SQL::CBaseTable {
+	static const size_t NUM_OF_COLUMN = 2;
 public:
 	SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<int32_t> m_ID; 
 	SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<std::string> m_user_name; 
 
 public:
-	CDBTEST_JON() : m_ID(SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<int32_t>("ID", int32_t())), m_user_name(SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<std::string>("user_name", std::string())){};
+	CDBTEST_JON() : m_ID(SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<int32_t>("ID", int32_t())), m_user_name(SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<std::string>("user_name", std::string())) {};
 	CDBTEST_JON(int32_t ID, std::string user_name) : m_ID(SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<int32_t>("ID", ID)), m_user_name(SERVER::FUNCTIONS::MYSQL::SQL::CSQL_ROW<std::string>("user_name", user_name)) {};
 
 protected:
@@ -26,17 +29,17 @@ protected:
 	}
 
 public:
-	bool ExecuteQueryForInsert(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName) {
-		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForInsert(sTableName, "`ID`, `user_name`"));
+	bool ExecuteQueryForInsert(sql::Connection* sqlRealConnection) {
+		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForInsert(dbtest_jon_TABLE_NAME, "`ID`, `user_name`", NUM_OF_COLUMN));
 		return PreparedTableVariables(pStatement);
 	}
 
-	bool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<std::string>&listOfField = {}, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {
-		return ExecuteQueryForSelect(sqlRealConnection, sTableName, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
+	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<std::string>&listOfField = {}, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {
+		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}
 
-	bool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<std::string>&listOfField = {}, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
-		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(sTableName, listOfField, listOfConditional));
+	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<std::string>&listOfField = {}, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
+		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(dbtest_jon_TABLE_NAME, listOfField, listOfConditional)); 
 		if (pStatement) {
 			auto pResultSet = pStatement->executeQuery();
 			listOfOutput.reserve(pResultSet->rowsCount());
@@ -60,12 +63,12 @@ public:
 		return false;
 	}
 
-	bool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<CDBTEST_JON>& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {
-		return ExecuteQueryForSelect(sqlRealConnection, sTableName, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
+	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CDBTEST_JON>& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {
+		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}
 
-	bool ExecuteQueryForSelect(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
-		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(sTableName, {}, listOfConditional));
+	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
+		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(dbtest_jon_TABLE_NAME, {}, listOfConditional)); 
 		if (pStatement) {
 			auto pResultSet = pStatement->executeQuery();
 			listOfOutput.reserve(pResultSet->rowsCount());
@@ -81,12 +84,12 @@ public:
 		return false;
 	}
 
-	bool ExecuteQueryForDelete(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
-		return ExecuteQueryForDelete(sqlRealConnection, sTableName, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
+	bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
+		return ExecuteQueryForDelete(sqlRealConnection, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}
 
-	bool ExecuteQueryForDelete(SERVER::FUNCTIONS::MYSQL::CMySQLPool::CSQLRealConnection& sqlRealConnection, const std::string& sTableName, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
-		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForDelete(sTableName, listOfConditional));
+	bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
+		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForDelete(dbtest_jon_TABLE_NAME, listOfConditional)); 
 		if (pStatement && pStatement->executeQuery()) return true;
 		return false;
 	}
