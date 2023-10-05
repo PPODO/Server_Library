@@ -59,11 +59,17 @@ namespace SERVER {
 
 				struct CBaseTable {
 				protected:
-					std::string MakeQueryForInsert(const std::string& sTableName, const std::string& sColumnLabels) {
+					std::string MakeQueryForInsert(const std::string& sTableName, const std::string& sColumnLabels, const size_t iNumOFColumn) {
 						std::string sQuery;
 						sQuery.append("INSERT INTO `" + sTableName + "` ");
 						sQuery.append("(" + sColumnLabels + ")");
-						sQuery.append(" VALUES (?, ?)");
+						sQuery.append(" VALUES (");
+						for (size_t i = 0; i < iNumOFColumn; i++) {
+							sQuery.append("?");
+							if ((i + 1) < iNumOFColumn)
+								sQuery.append(",");
+						}
+						sQuery.append(")");
 						return sQuery;
 					}
 
@@ -153,7 +159,7 @@ namespace SERVER {
 					CSQLConnectionGC(CMySQLPool* pOwner, uint16_t iListIndex) : m_pOwner(pOwner), m_iConnectionListIndex(iListIndex) {};
 
 					void operator()(sql::Connection* pConnection) {
-						if (pConnection && m_pOwner)
+						if (pConnection && m_pOwner) 
 							m_pOwner->m_sqlConnectionList[m_iConnectionListIndex].m_currentConnectionState = ECONNECTIONSTATE::E_ABLE;
 					}
 				};
@@ -180,13 +186,13 @@ namespace SERVER {
 					try {
 						m_pSQLDriver = get_driver_instance();
 
-						m_sqlConnectionList.reserve(iMaxConnectionCount / 2);
+						m_sqlConnectionList.reserve(iMaxConnectionCount);
 
 						for (uint16_t i = 0; i < m_iAllocatedConnectionCount; i++)
 							m_sqlConnectionList.push_back(CSQLConnection(m_pSQLDriver->connect(sHostName, sUserName, sPassword)));
 					}
 					catch (sql::SQLException& exception) {
-						FUNCTIONS::LOG::Log::WriteLog(L"SQL Error - %s : %d", exception.what(), exception.getErrorCode());
+						FUNCTIONS::LOG::Log::WriteLog(L"SQL Error - %d", exception.getErrorCode());
 					}
 				}
 
@@ -218,9 +224,6 @@ namespace SERVER {
 
 					// if there are no connections left
 					if (m_iAllocatedConnectionCount < m_iMaxConnectionCount) {
-						if (m_sqlConnectionList.capacity() < m_iMaxConnectionCount)
-							m_sqlConnectionList.reserve(m_iMaxConnectionCount);
-
 						try {
 							CSQLConnection newConnection(m_pSQLDriver->connect(m_sHostName, m_sUserName, m_sPassword));
 							newConnection.m_currentConnectionState = ECONNECTIONSTATE::E_UNABLE;
@@ -229,7 +232,7 @@ namespace SERVER {
 							return CSQLRealConnection(newConnection.m_pConnection, CSQLConnectionGC(this, m_iAllocatedConnectionCount++));
 						}
 						catch (sql::SQLException& exception) {
-							FUNCTIONS::LOG::Log::WriteLog(L"SQL Error - %s : %d", exception.what(), exception.getErrorCode());
+							FUNCTIONS::LOG::Log::WriteLog(L"SQL Error - %d", exception.getErrorCode());
 						}
 					}
 					return CSQLRealConnection(nullptr, CSQLConnectionGC(nullptr, 0));
@@ -237,7 +240,6 @@ namespace SERVER {
 
 
 			};
-
 		}
 	}
 }
