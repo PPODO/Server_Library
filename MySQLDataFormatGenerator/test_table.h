@@ -32,11 +32,11 @@ public:
 		return PreparedTableVariables(pStatement);
 	}
 
-	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const std::vector<std::string>&listOfField = {}, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {
+	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const std::vector<std::string>&listOfField, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
 		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}
 
-	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const std::vector<std::string>&listOfField = {}, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
+	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const std::vector<std::string>&listOfField, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {
 		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(test_table_TABLE_NAME, listOfField, listOfConditional)); 
 		if (pStatement) {
 			auto pResultSet = pStatement->executeQuery();
@@ -57,11 +57,15 @@ public:
 		return false;
 	}
 
-	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {
+	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput) {
+		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{});
+	}
+
+	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
 		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}
 
-	bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
+	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CTEST_TABLE>& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {
 		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(test_table_TABLE_NAME, {}, listOfConditional)); 
 		if (pStatement) {
 			auto pResultSet = pStatement->executeQuery();
@@ -77,11 +81,15 @@ public:
 		return false;
 	}
 
-	bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
+	static bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection) {
+		return ExecuteQueryForDelete(sqlRealConnection, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{});
+	}
+
+	static bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
 		return ExecuteQueryForDelete(sqlRealConnection, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}
 
-	bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {
+	static bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {
 		auto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForDelete(test_table_TABLE_NAME, listOfConditional)); 
 		if (pStatement && pStatement->executeQuery()) return true;
 		return false;

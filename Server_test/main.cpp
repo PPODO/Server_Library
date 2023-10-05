@@ -139,16 +139,19 @@ int main() {
 
 	{
 		auto connection = pool.GetConnection("testdb");
-		CTEST_TABLE table(12355);
+		CDBTEST_JON table(100, "Aespa is me");
+		CDBTEST_JON table1(100, "We can't become two");
+		CDBTEST_JON table2(200, "Monochrome to colors");
+		CDBTEST_JON table3(123128, "This is evo, evolution");
 
 		table.ExecuteQueryForInsert(connection.get());
-	}
 
-	{
-		auto connection = pool.GetConnection("testdb");
-		CDBTEST_JON table(63, "FUICK");
+		std::vector<CDBTEST_JON> select_result;
+		CDBTEST_JON::ExecuteQueryForSelect(connection.get(), select_result, {table.m_user_name.m_sColumnLabel}, { SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional("ID", "100")});
 
-		table.ExecuteQueryForInsert(connection.get());
+		for (auto& It : select_result) {
+			std::cout << It.m_ID.m_rawData << '\t' << It.m_user_name.m_rawData << std::endl;
+		}
 	}
 
 	return 0;

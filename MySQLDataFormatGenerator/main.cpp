@@ -240,12 +240,12 @@ int main() {
 		fileStream << "\t}\n\n";
 
 
-		fileStream << "\tbool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField = {}, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {\n";
 		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
 		fileStream << "\t}\n\n";
 
 
-		fileStream << "\tbool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField = {}, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {\n";
 		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(" << CACHED_TABLE_NAME << ", listOfField, listOfConditional)); \n";
 		fileStream << "\t\tif (pStatement) {\n";
 		fileStream << "\t\t\tauto pResultSet = pStatement->executeQuery();\n";
@@ -270,11 +270,15 @@ int main() {
 		fileStream << "\t\treturn false;\n\t}\n\n";
 
 
-		fileStream << "\tbool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional = SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional()) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput) {\n";
+		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{});\n";
+		fileStream << "\t}\n\n";
+
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {\n";
 		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, listOfOutput, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
 		fileStream << "\t}\n\n";
 
-		fileStream << "\tbool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {\n";
 		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(" << CACHED_TABLE_NAME << ", {}, listOfConditional)); \n";
 		fileStream << "\t\tif (pStatement) {\n";
 		fileStream << "\t\t\tauto pResultSet = pStatement->executeQuery();\n";
@@ -295,11 +299,15 @@ int main() {
 		fileStream << "\t\treturn false;\n\t}\n\n";
 
 
-		fileStream << "\tbool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection) {\n";
+		fileStream << "\t\treturn ExecuteQueryForDelete(sqlRealConnection, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{});\n";
+		fileStream << "\t}\n\n";
+
+		fileStream << "\tstatic bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {\n";
 		fileStream << "\t\treturn ExecuteQueryForDelete(sqlRealConnection, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
 		fileStream << "\t}\n\n";
 
-		fileStream << "\tbool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional = {}) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForDelete(sql::Connection* sqlRealConnection, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {\n";
 		fileStream << "\t\tauto pStatement = sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForDelete(" << CACHED_TABLE_NAME << ", listOfConditional)); \n";
 		fileStream << "\t\tif (pStatement && pStatement->executeQuery()) return true;\n";
 		fileStream << "\t\treturn false;\n";

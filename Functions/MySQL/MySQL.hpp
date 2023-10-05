@@ -73,7 +73,7 @@ namespace SERVER {
 						return sQuery;
 					}
 
-					std::string MakeQueryForSelect(const std::string& sTableName, const std::vector<std::string>& listOfField = {}, const std::vector<CQueryWhereConditional>& listOfConditional = {}) {
+					static std::string MakeQueryForSelect(const std::string& sTableName, const std::vector<std::string>& listOfField = {}, const std::vector<CQueryWhereConditional>& listOfConditional = {}) {
 						std::string sQuery;
 						size_t iConditionalListSize = listOfConditional.size();
 
@@ -99,7 +99,7 @@ namespace SERVER {
 						return sQuery;
 					}
 
-					std::string MakeQueryForDelete(const std::string& sTableName, const std::vector<CQueryWhereConditional>& listOfConditional = {}) {
+					static std::string MakeQueryForDelete(const std::string& sTableName, const std::vector<CQueryWhereConditional>& listOfConditional = {}) {
 						std::string sQuery;
 						size_t iConditionalListSize = listOfConditional.size();
 
