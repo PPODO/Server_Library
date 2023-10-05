@@ -34,6 +34,10 @@ public:
 		return PreparedTableVariables(pStatement);
 	}
 
+	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<std::string>&listOfField) {
+		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{});
+	}
+
 	static bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<CDBTEST_JON>& listOfOutput, const std::vector<std::string>&listOfField, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {
 		return ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });
 	}

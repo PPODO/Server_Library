@@ -240,6 +240,10 @@ int main() {
 		fileStream << "\t}\n\n";
 
 
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField) {\n";
+		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{});\n";
+		fileStream << "\t}\n\n";
+
 		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::Connection* sqlRealConnection, std::vector<" << 'C' << sTableName << ">& listOfOutput, const std::vector<std::string>&listOfField, const SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional& conditional) {\n";
 		fileStream << "\t\treturn ExecuteQueryForSelect(sqlRealConnection, listOfOutput, listOfField, std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>{ conditional });\n";
 		fileStream << "\t}\n\n";
