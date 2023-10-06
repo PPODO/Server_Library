@@ -82,7 +82,9 @@ void IOCP::IOCPWorkerThread() {
         void* pCompletionKey = nullptr;
         OVERLAPPED_EX* pOverlappedEx = nullptr;
 
-        bool bIOCPResult = GetQueuedCompletionStatus(m_hIOCP, &iRecvBytes, reinterpret_cast<PULONG_PTR>(&pCompletionKey), reinterpret_cast<LPOVERLAPPED*>(&pOverlappedEx), INFINITE);
+        bool bIOCPResult = GetQueuedCompletionStatus(m_hIOCP, &iRecvBytes, 
+                                                     reinterpret_cast<PULONG_PTR>(&pCompletionKey), 
+                                                     reinterpret_cast<LPOVERLAPPED*>(&pOverlappedEx), INFINITE);
 
         if (!pCompletionKey) // stop event
             break;
@@ -170,6 +172,17 @@ CONNECTION* IOCP::OnIOAccept(OVERLAPPED_EX* const pAcceptOverlapped) {
     return nullptr;
 }
 
+CONNECTION* IOCP::OnIOTryDisconnect(User_Server* const pClient) {
+    if (auto pConnection = GetConnectionFromList(pClient)) {
+        if (pConnection->m_pUser->SocketRecycle())
+            Log::WriteLog(L"Try Disconnect Client!");
+        else
+            OnIODisconnect(pClient);
+        return pConnection;
+    }
+    return nullptr;
+}
+
 CONNECTION* IOCP::OnIODisconnect(User_Server* const pClient) {
     if (auto pConnection = GetConnectionFromList(pClient)) {
         if (pClient->Initialize(*m_pServer.get())) {
@@ -217,17 +230,6 @@ CONNECTION* IOCP::OnIOReceiveFrom(OVERLAPPED_EX* const pReceiveFromOverlapped, c
 
         if (!pConnection->m_pUser->ReceiveFrom())
             pConnection->m_pUser->SocketRecycle();
-        return pConnection;
-    }
-    return nullptr;
-}
-
-CONNECTION* IOCP::OnIOTryDisconnect(User_Server* const pClient) {
-    if (auto pConnection = GetConnectionFromList(pClient)) {
-        if (pConnection->m_pUser->SocketRecycle())
-            Log::WriteLog(L"Try Disconnect Client!");
-        else
-            OnIODisconnect(pClient);
         return pConnection;
     }
     return nullptr;
