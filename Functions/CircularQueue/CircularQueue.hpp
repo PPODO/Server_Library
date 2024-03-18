@@ -35,8 +35,7 @@ namespace SERVER {
 
 			public:
 				const DATATYPE& Push(const DATATYPE& inData) {
-					if (m_bIsEnableCriticalSection)
-						CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
 
 					size_t iDataInsertedIndex = (m_iTail + 1) % MAX_QUEUE_LENGTH;
 					m_queueList[iDataInsertedIndex] = inData;
@@ -46,11 +45,10 @@ namespace SERVER {
 				}
 
 				bool Pop(DATATYPE& outData) {
+					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+
 					if (IsEmpty())
 						return false;
-
-					if (m_bIsEnableCriticalSection)
-						CRITICALSECTION::CriticalSectionGuard lock(m_lock);
 
 					size_t iDataPopIndex = (m_iHead + 1) % MAX_QUEUE_LENGTH;
 					outData = m_queueList[iDataPopIndex];
@@ -65,8 +63,7 @@ namespace SERVER {
 				}
 
 				void EnableCriticalSection(bool newValue) {
-					if (m_bIsEnableCriticalSection)
-						CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
 
 					m_bIsEnableCriticalSection = newValue;
 				}

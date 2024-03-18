@@ -72,13 +72,17 @@ std::string GetGetterNameByColumnType(int iCoulmnType) {
 }
 
 int main() {
-	std::string sHostName, sUserName, sPassword;
+	std::string sPassword;
+	{
+		std::cout << "Password : ";
+		std::cin >> sPassword;
+	}
 
 
 	sql::Driver* pDriver = get_driver_instance();
 	sql::Connection* pConnector = nullptr;
 	try {
-		pConnector = pDriver->connect("tcp://localhost:3306", "root", "a2233212.");
+		pConnector = pDriver->connect("tcp://localhost:3306", "root", sPassword.c_str());
 	}
 	catch (const sql::SQLException& exception) {
 		std::cout << "SQL Error - Cannot connect to MySQL! : " << exception.what() << '\n';
@@ -137,13 +141,13 @@ int main() {
 	// set file location
 	{
 		system("cls");
-		std::cout << "File Location(Absuolute) : ";
+		/*std::cout << "File Location(Absuolute) : ";
 		std::cin >> sAbsuoluteFileLocation;
-		system("cls");
+		system("cls");*/
 	}
 	
 	const std::string CACHED_TABLE_NAME(sTableName + std::string("_TABLE_NAME"));
-	std::ofstream fileStream(sAbsuoluteFileLocation + sTableName + ".h", std::ios_base::trunc);
+	std::ofstream fileStream(sTableName + ".h", std::ios_base::trunc);
 	if (fileStream.is_open()) {
 		boost::to_upper(sTableName);
 		fileStream << "#pragma once\n";

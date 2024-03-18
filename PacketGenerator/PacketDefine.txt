@@ -1,0 +1,12 @@
+VERSION=UserInfo
+{
+token=int
+user_name=string
+user_id=string
+user_password=string
+}
+
+VERSION=test
+{
+name=int
+}

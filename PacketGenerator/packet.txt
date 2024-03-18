@@ -1,0 +1,7 @@
+VERSION=AccountInfo
+{
+token=int
+user_id=string
+user_password=string
+user_name=string
+}

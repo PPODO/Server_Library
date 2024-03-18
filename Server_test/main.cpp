@@ -35,7 +35,7 @@ int main() {
 	return 0;
 }
 */
-
+/*
 #define _USER_PACKET_PROCESSOR_TYPE_
 #include <iostream>
 #include <NetworkModel/IOCP/IOCP.hpp>
@@ -117,10 +117,57 @@ public:
 	SERVER::NETWORKMODEL::IOCP::CONNECTION* m_pCommandESPConnection;
 
 };
+*/
+#include <thread>
+#include <Functions/CircularQueue/CircularQueue.hpp>
 
-#include <Functions/MySQL/MySQL.hpp>
-#include "../MySQLDataFormatGenerator/test_table.h"
-#include "../MySQLDataFormatGenerator/dbtest_jon.h"
+struct QWE : SERVER::FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::BaseData<QWE> {
+public:
+	int Data;
+
+public:
+	QWE() {}
+	QWE(int newData) :Data(newData) {};
+};
+
+class A {
+public:
+	SERVER::FUNCTIONS::CIRCULARQUEUE::CircularQueue<QWE> queue;
+
+	std::vector<std::thread> listofVector;
+
+
+public:
+	A() {
+		for (int i = 0; i < 2; i++) {
+			listofVector.push_back(std::thread(&A::Run, this));
+		}
+	}
+
+	~A() {
+		for (auto& It : listofVector) {
+			It.join();
+		}
+	}
+
+	void Run() {
+		while (true) {
+			if (queue.IsEmpty())
+				continue;
+
+			QWE data;
+			if (queue.Pop(data)) {
+
+				std::cout << data.Data;
+			}
+		}
+	}
+
+	void AddNewData(int data) {
+		queue.Push(QWE(data));
+	}
+
+};
 
 int main() {
 	/*SERVER::NETWORKMODEL::BASEMODEL::PACKETPROCESSOR list;
@@ -135,7 +182,7 @@ int main() {
 
 	iocp.Destroy();*/
 
-	SERVER::FUNCTIONS::MYSQL::CMySQLPool pool("tcp://localhost:3306", "root", "a2233212.", 2);
+/*	SERVER::FUNCTIONS::MYSQL::CMySQLPool pool("tcp://localhost:3306", "root", "a2233212.", 2);
 
 	{
 		auto connection = pool.GetConnection("testdb");
@@ -192,7 +239,13 @@ int main() {
 				std::cout << It.m_ID.m_rawData << '\t' << It.m_user_name.m_rawData << std::endl;
 			}
 		}
-	}
+	}*/
+	A a;
 
+	while (true) {
+		for (int i = 0; i < 5; i++) {
+			a.AddNewData(i);
+		}
+	}
 	return 0;
 }
