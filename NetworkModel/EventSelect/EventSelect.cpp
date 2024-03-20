@@ -41,6 +41,7 @@ bool EventSelect::InitializeEventHandle() {
 	// 0 is tcp, 1 is udp
 	m_hEventSelect[0] = hTcpEvent;
 	WSAEventSelect(m_client->GetTCPSocketHandle(), hTcpEvent, FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE);
+	m_threadForTCPSelectProcessor = std::thread(&EventSelect::EventSelectProcessorForTCP, this, m_hEventSelect[0]);
 
 	WSAEVENT hUdpEvent = WSACreateEvent();
 	if (hUdpEvent == WSA_INVALID_EVENT) {
@@ -49,6 +50,7 @@ bool EventSelect::InitializeEventHandle() {
 	}
 	m_hEventSelect[1] = hUdpEvent;
 	WSAEventSelect(m_client->GetUDPSocketHandle(), hUdpEvent, FD_READ | FD_WRITE);
+	m_threadForUDPSelectProcessor = std::thread(&EventSelect::EventSelectProcessorForUDP, this, m_hEventSelect[1]);
 
 	return true;
 }
@@ -104,7 +106,7 @@ void EventSelect::EventSelectProcessorForUDP(const WSAEVENT& hEventHandle) {
 				if (m_client->ReceiveFrom(sReceiveBuffer + iRemainReceivedBytes, iRecvBytes) &&
 					SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(m_client->GetUDPInstance(), m_serverAddress, sReceiveBuffer, iRemainReceivedBytes, m_iNextSendPacketNumber)) {
 					iRemainReceivedBytes += iRecvBytes;
-					BaseNetworkModel::ReceiveDataProcessing(EPROTOCOLTYPE::EPT_TCP, sReceiveBuffer, iRemainReceivedBytes, m_iNextSendPacketNumber, this);
+					BaseNetworkModel::ReceiveDataProcessing(EPROTOCOLTYPE::EPT_UDP, sReceiveBuffer, iRemainReceivedBytes, m_iNextSendPacketNumber, this);
 				}
 			}
 			break;

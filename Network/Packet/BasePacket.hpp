@@ -83,14 +83,13 @@ namespace SERVER {
 
 			namespace UTIL {
 				template<typename T>
-				PACKET_STRUCT Serialize(const T& packet) {
-
+				PACKET_STRUCT Serialize(const BasePacket& packet) {
 					std::string sTempBuffer;
 					{
 						boost::iostreams::stream<boost::iostreams::back_insert_device<std::string>> outStream(sTempBuffer);
 						boost::archive::binary_oarchive outArchive(outStream, boost::archive::no_header);
 
-						outArchive << packet;
+						outArchive << *reinterpret_cast<const T*>(&packet);
 					}
 
 					return PACKET_STRUCT(PACKET_INFORMATION(packet.m_iPacketType, sTempBuffer.length()), sTempBuffer);
