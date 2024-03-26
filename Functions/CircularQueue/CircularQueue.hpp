@@ -33,26 +33,38 @@ namespace SERVER {
 					CopyMemory(m_queueList, rhs.m_queueList, MAX_QUEUE_LENGTH);
 				}
 
+				~CircularQueue() {
+					ZeroMemory(m_queueList, sizeof(DATATYPE) * MAX_QUEUE_LENGTH);
+				}
+
 			public:
 				const DATATYPE& Push(const DATATYPE& inData) {
-					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
+					if (m_bIsEnableCriticalSection)
+						m_lock.Lock();
 
 					size_t iDataInsertedIndex = (m_iTail + 1) % MAX_QUEUE_LENGTH;
 					m_queueList[iDataInsertedIndex] = inData;
 					m_iTail = iDataInsertedIndex;
 
+					if (m_bIsEnableCriticalSection)
+						m_lock.UnLock();
+
 					return inData;
 				}
 
 				bool Pop(DATATYPE& outData) {
-					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
-
 					if (IsEmpty())
 						return false;
+
+					if (m_bIsEnableCriticalSection)
+						m_lock.Lock();
 
 					size_t iDataPopIndex = (m_iHead + 1) % MAX_QUEUE_LENGTH;
 					outData = m_queueList[iDataPopIndex];
 					m_iHead = iDataPopIndex;
+
+					if (m_bIsEnableCriticalSection)
+						m_lock.UnLock();
 
 					return true;
 				}

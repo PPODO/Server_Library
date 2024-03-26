@@ -59,7 +59,7 @@ namespace SERVER {
 
 				struct CBaseTable {
 				protected:
-					std::string MakeQueryForInsert(const std::string& sTableName, const std::string& sColumnLabels, const size_t iNumOFColumn) {
+					static std::string MakeQueryForInsert(const std::string& sTableName, const std::string& sColumnLabels, const size_t iNumOFColumn) {
 						std::string sQuery;
 						sQuery.append("INSERT INTO `" + sTableName + "` ");
 						sQuery.append("(" + sColumnLabels + ")");
@@ -116,6 +116,8 @@ namespace SERVER {
 						return sQuery;
 					}
 
+
+				public:
 					virtual bool PreparedTableVariables(sql::PreparedStatement* pPreparedStatement) {
 						pPreparedStatement->executeUpdate();
 

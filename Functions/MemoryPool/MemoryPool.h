@@ -92,6 +92,8 @@ namespace SERVER {
 				static void operator delete(void* const pPointer) {
 					CRITICALSECTION::CriticalSectionGuard lock(m_lock);
 
+					if (!pPointer) return;
+
 					if (m_memoryPool)
 						m_memoryPool->Delocate(pPointer);
 				}
