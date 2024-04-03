@@ -218,27 +218,27 @@ int main() {
 
 		fileStream << "public:\n";
 
-		fileStream << "\tbool ExecuteQueryForInsert(sql::PreparedStatement* pPreparedStatement) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForInsert(sql::PreparedStatement* pPreparedStatement" << "const C" << sTableName << "& data) {\n";
 		fileStream << "\t\ttry {\n";
 		fileStream << "\t\t\tif (pPreparedStatement) {\n";
 
 		for (size_t i = 1; i <= pTableMetaData->getColumnCount(); i++) {
 			sql::SQLString sColumnLabel = pTableMetaData->getColumnLabel(i);
 			sql::SQLString sColumnTypeName = pTableMetaData->getColumnTypeName(i);
-			fileStream << "\t\t\t\tpPreparedStatement->" << GetSetterNameByColumnType(pTableMetaData->getColumnType(i)) << "(" << i << ", " << "m_" << sColumnLabel << ".m_rawData" << ");\n";
+			fileStream << "\t\t\t\tpPreparedStatement->" << GetSetterNameByColumnType(pTableMetaData->getColumnType(i)) << "(" << i << ", " << "data.m_" << sColumnLabel << ".m_rawData" << ");\n";
 		}
 
 		fileStream << "\n\t\t\t\tpPreparedStatement->executeUpdate();\n\t\t\t\treturn true;\n";
 		fileStream << "\t\t\t}\n";
 		fileStream << "\t\t}\n" << "\t\tcatch(const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn false;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t\treturn false;\n";
 		fileStream << "\t}\n\n";
 
 
-		fileStream << "\tbool ExecuteQueryForSelect(sql::PreparedStatement* pPreparedStatement, std::vector<CUSER_INFO>& listOfOutput) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForSelect(sql::PreparedStatement* pPreparedStatement, std::vector<CUSER_INFO>& listOfOutput) {\n";
 		fileStream << "\t\ttry {\n";
 		fileStream << "\t\t\tif (pPreparedStatement) {\n";
 		fileStream << "\t\t\t\tauto pResultSet = pPreparedStatement->executeQuery();\n";
@@ -257,21 +257,21 @@ int main() {
 		fileStream << "\t\t\t\treturn true;\n";
 		fileStream << "\t\t\t}\n";
 		fileStream << "\t\t}\n\t\tcatch(const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn false;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t\treturn false;\n";
 		fileStream << "\t}\n\n";
 
 
-		fileStream << "\tbool ExecuteQueryForDelete(sql::PreparedStatement* pPreparedStatement) {\n";
+		fileStream << "\tstatic bool ExecuteQueryForDelete(sql::PreparedStatement* pPreparedStatement) {\n";
 		fileStream << "\t\ttry {\n";
 		fileStream << "\t\t\tif (pPreparedStatement) {\n";
 		fileStream << "\t\t\t\tpPreparedStatement->executeQuery();\n";
 		fileStream << "\t\t\t\treturn true;\n";
 		fileStream << "\t\t\t}\n";
 		fileStream << "\t\t}\n\t\tcatch(const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn false;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t\treturn false;\n";
@@ -296,7 +296,7 @@ int main() {
 		fileStream << "\", NUM_OF_COLUMN));\n";
 
 		fileStream << "\t\t}\n\t\tcatch (const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn nullptr;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t}\n\n";
@@ -315,7 +315,7 @@ int main() {
 		fileStream << "\t\ttry {\n";
 		fileStream << "\t\t\treturn sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(" << CACHED_TABLE_NAME << ", listOfField, listOfConditional)); \n";
 		fileStream << "\t\t}\n\t\tcatch (const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn nullptr;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t}\n\n";
@@ -331,9 +331,9 @@ int main() {
 
 		fileStream << "\tstatic sql::PreparedStatement* PreparedQueryForSelect(sql::Connection* sqlRealConnection, const std::vector<SERVER::FUNCTIONS::MYSQL::SQL::CQueryWhereConditional>& listOfConditional) {\n";
 		fileStream << "\t\ttry {\n";
-		fileStream << "\t\t\treturn sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(" << CACHED_TABLE_NAME << ", const std::vector<std::string>{}, listOfConditional)); \n";
+		fileStream << "\t\t\treturn sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForSelect(" << CACHED_TABLE_NAME << ", std::vector<std::string>{}, listOfConditional)); \n";
 		fileStream << "\t\t}\n\t\tcatch (const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn nullptr;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t}\n\n";
@@ -351,7 +351,7 @@ int main() {
 		fileStream << "\t\ttry {\n";
 		fileStream << "\t\t\treturn sqlRealConnection->prepareStatement(CBaseTable::MakeQueryForDelete(" << CACHED_TABLE_NAME << ", listOfConditional)); \n";
 		fileStream << "\t\t}\n\t\tcatch (const sql::SQLException& exce) {\n";
-		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(TEXT(\"SQL Error - %s\", exce.what()));\n";
+		fileStream << "\t\t\tSERVER::FUNCTIONS::LOG::Log::WriteLog(L\"SQL Error - %d\", exce.getErrorCode());\n";
 		fileStream << "\t\t\treturn nullptr;\n";
 		fileStream << "\t\t}\n";
 		fileStream << "\t}\n\n";

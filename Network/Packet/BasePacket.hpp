@@ -51,7 +51,7 @@ namespace SERVER {
 				friend boost::serialization::access;
 			public:
 				const uint8_t m_iPacketType;
-				uint8_t m_iMessageType;
+				uint32_t m_iMessageType;
 
 			protected:
 				template<typename Archive>
@@ -60,14 +60,14 @@ namespace SERVER {
 				}
 
 			public:
-				BasePacket(const uint8_t iPacketType, const uint8_t iMessageType) : m_iPacketType(iPacketType), m_iMessageType(iMessageType) {};
+				BasePacket(const uint8_t iPacketType, const uint32_t iMessageType) : m_iPacketType(iPacketType), m_iMessageType(iMessageType) {};
 				virtual ~BasePacket() = 0 {}
 			};
 
 			template<typename T>
 			struct Packet : public BasePacket, public FUNCTIONS::MEMORYMANAGER::MemoryManager<T> {
 			public:
-				Packet(const uint8_t iPacketType, const uint8_t iMessageType) : BasePacket(iPacketType, iMessageType) {};
+				Packet(const uint8_t iPacketType, const uint32_t iMessageType) : BasePacket(iPacketType, iMessageType) {};
 			};
 
 			struct PacketQueueData : public FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::BaseData<PacketQueueData, 500> {

@@ -102,7 +102,8 @@ int main() {
 
 			PacketDefineFile << "\npublic:\n";
 			PacketDefineFile << "\t" << It.m_StructureName << "() : Packet(0, 0) {};\n";
-			PacketDefineFile << "\t" << It.m_StructureName << "(uint8_t iPacketType, uint8_t iMessageType";
+			PacketDefineFile << "\t" << It.m_StructureName << "(uint8_t iPacketType, uint32_t iMessageType) : Packet(iPacketType, iMessageType) {};\n";
+			PacketDefineFile << "\t" << It.m_StructureName << "(uint8_t iPacketType, uint32_t iMessageType";
 
 			if (It.m_Structures.size() > 0)
 				PacketDefineFile << ", ";
