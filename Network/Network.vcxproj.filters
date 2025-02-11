@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일\NetworkProtocol">
+      <UniqueIdentifier>{27952d1d-cb82-4f63-ba97-8d3b3ff47ead}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\NetworkProtocol\Socket">
+      <UniqueIdentifier>{e1f2c696-8f1b-471e-ba26-ea8500a38446}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\UserSession">
+      <UniqueIdentifier>{c19d12a9-4738-4fb5-adfa-b2d95cb7ba57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\UserSession\Server">
+      <UniqueIdentifier>{45bf51b6-2155-4755-9a18-49b8831bfb47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Packet">
+      <UniqueIdentifier>{641a88fa-3804-472e-974b-13fa78ef792f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NetworkProtocol\TCPSocket.cpp">
+      <Filter>헤더 파일\NetworkProtocol</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkProtocol\UDPSocket.cpp">
+      <Filter>헤더 파일\NetworkProtocol</Filter>
+    </ClCompile>
+    <ClCompile Include="NetworkProtocol\Socket\Socket.cpp">
+      <Filter>헤더 파일\NetworkProtocol\Socket</Filter>
+    </ClCompile>
+    <ClCompile Include="Network.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="UserSession\User.cpp">
+      <Filter>헤더 파일\UserSession</Filter>
+    </ClCompile>
+    <ClCompile Include="UserSession\Server\User_Server.cpp">
+      <Filter>헤더 파일\UserSession\Server</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="NetworkProtocol\TCPSocket.hpp">
+      <Filter>헤더 파일\NetworkProtocol</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkProtocol\UDPSocket.hpp">
+      <Filter>헤더 파일\NetworkProtocol</Filter>
+    </ClInclude>
+    <ClInclude Include="NetworkProtocol\Socket\Socket.hpp">
+      <Filter>헤더 파일\NetworkProtocol\Socket</Filter>
+    </ClInclude>
+    <ClInclude Include="UserSession\User.hpp">
+      <Filter>헤더 파일\UserSession</Filter>
+    </ClInclude>
+    <ClInclude Include="UserSession\Server\User_Server.hpp">
+      <Filter>헤더 파일\UserSession\Server</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet\BasePacket.hpp">
+      <Filter>헤더 파일\Packet</Filter>
+    </ClInclude>
+    <ClInclude Include="Packet\Serialization\serialization.hpp">
+      <Filter>헤더 파일\Packet</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,108 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일\CircularQueue">
+      <UniqueIdentifier>{2f72a277-9671-4218-9404-7b9dae29f25c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CriticalSection">
+      <UniqueIdentifier>{bddad322-e137-477c-a380-a0b290686e91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Log">
+      <UniqueIdentifier>{1ac93fd8-c38e-4037-a4ae-0f2cd361b967}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\MemoryLeak">
+      <UniqueIdentifier>{ec12f84a-6629-4659-8773-1cb9b5be4992}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\MemoryPool">
+      <UniqueIdentifier>{ac77e00e-faf5-4604-a338-7bb588f4095a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Minidump">
+      <UniqueIdentifier>{673810be-df76-4793-ba23-3b4b27a8bc2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\SocketAddress">
+      <UniqueIdentifier>{2e34c047-b709-43d4-ab42-54146e516a08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Uncopyable">
+      <UniqueIdentifier>{951350bc-659b-4f94-9f69-bef3425dba23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\SQL">
+      <UniqueIdentifier>{f5d75d00-d8e4-479c-a2e5-ff52b8d9dce1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\SQL\MSSQL">
+      <UniqueIdentifier>{f4bceab6-4d3b-49cc-a541-bceba01e7d44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\SQL\MySQL">
+      <UniqueIdentifier>{6b2c4287-7bd4-4148-87bc-6d1ee583d0ad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\CircularLinkedList">
+      <UniqueIdentifier>{a27494e7-21f2-48e0-9a53-0129ebf19482}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\ThreadPool">
+      <UniqueIdentifier>{74191770-1522-44c1-bd22-20a7908eee1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\TimingWheel">
+      <UniqueIdentifier>{89106ea5-128a-47ca-a05e-85391d50c1ba}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Functions\Functions.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Functions\CircularQueue\CircularQueue.hpp">
+      <Filter>헤더 파일\CircularQueue</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\CriticalSection\CriticalSection.hpp">
+      <Filter>헤더 파일\CriticalSection</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\MemoryLeak\MemoryLeak.hpp">
+      <Filter>헤더 파일\MemoryLeak</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\MemoryPool\MemoryPool.h">
+      <Filter>헤더 파일\MemoryPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\Minidump\Minidump.hpp">
+      <Filter>헤더 파일\Minidump</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\Uncopyable\Uncopyable.hpp">
+      <Filter>헤더 파일\Uncopyable</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\SocketAddress\SocketAddress.hpp">
+      <Filter>헤더 파일\SocketAddress</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\Log\Log.hpp">
+      <Filter>헤더 파일\Log</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\SQL\SQL.hpp">
+      <Filter>헤더 파일\SQL</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\SQL\MSSQL\MSSQL.hpp">
+      <Filter>헤더 파일\SQL\MSSQL</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\SQL\MySQL\MySQL.hpp">
+      <Filter>헤더 파일\SQL\MySQL</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\CircularLinkedList\CircularLinkedList.hpp">
+      <Filter>헤더 파일\CircularLinkedList</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\ThreadPool\ThreadPool.hpp">
+      <Filter>헤더 파일\ThreadPool</Filter>
+    </ClInclude>
+    <ClInclude Include="Functions\TimingWheel\TimingWheel.hpp">
+      <Filter>헤더 파일\TimingWheel</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
