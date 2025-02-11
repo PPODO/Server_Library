@@ -45,7 +45,7 @@ namespace SERVER {
 			}
 
 			namespace BSD_SOCKET {
-				static const size_t MAX_BUFFER_SIZE = 1024;
+				static const size_t MAX_BUFFER_SIZE = 2048;
 
 				class BaseSocket {
 				private:

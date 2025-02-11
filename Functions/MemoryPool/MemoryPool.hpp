@@ -5,7 +5,10 @@
 #include <memory>
 #include <vector>
 #include <string>
-
+#include <atomic>
+// 메모리풀 전체 수정
+// 할당된 블럭이 부족하여 새로 할당할 경우 문제 발생
+// 이전 방식의 메모리 풀 코드로 돌아갈 듯.
 namespace SERVER {
 	namespace FUNCTIONS {
 		namespace MEMORYMANAGER {
@@ -20,27 +23,22 @@ namespace SERVER {
 
 				private:
 					void AllocateBlock() {
-						try {
-							m_pMemoryHead = new uint8_t[m_iMaxPoolCount * m_iAllocBlockSize];
-							uint8_t** pCurrent = reinterpret_cast<uint8_t**>(m_pMemoryHead);
-							uint8_t* pNext = m_pMemoryHead;
+						m_pMemoryHead = new uint8_t[m_iAllocBlockSize * m_iMaxPoolCount];
 
-							for (size_t i = 0; i < m_iMaxPoolCount - 1; i++) {
-								pNext += m_iAllocBlockSize;
-								*pCurrent = pNext;
-								pCurrent = reinterpret_cast<uint8_t**>(pNext);
-							}
-							*pCurrent = nullptr;
+						uint8_t** pCurrentPtr = reinterpret_cast<uint8_t**>(m_pMemoryHead);
+						uint8_t* pNextPtr = m_pMemoryHead;
+
+						for (size_t i = 0; i < m_iMaxPoolCount - 1; i++) {
+							pNextPtr += m_iAllocBlockSize;
+							*pCurrentPtr = pNextPtr;
+							pCurrentPtr = reinterpret_cast<uint8_t**>(pNextPtr);
 						}
-						catch (const std::bad_alloc& exception) {
-							LOG::Log::WriteLog(UTIL::MBToUni(exception.what()).c_str());
-						}
+						*pCurrentPtr = nullptr;
 					}
 
 				public:
 					CMemoryPool(const size_t& iMaxPoolCount, const size_t& iAllocBlockSize) : m_iMaxPoolCount(iMaxPoolCount), m_iAllocBlockSize(iAllocBlockSize), m_pMemoryHead(nullptr) {}
 					virtual ~CMemoryPool() {
-						
 					}
 
 				public:

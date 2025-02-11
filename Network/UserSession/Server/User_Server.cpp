@@ -1,4 +1,5 @@
 #include "User_Server.hpp"
+#define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
 
 using namespace SERVER::NETWORK::USER_SESSION::USER_SERVER;
 
@@ -24,7 +25,9 @@ bool User_Server::Initialize(FUNCTIONS::SOCKETADDRESS::SocketAddress& toAddress)
 }
 
 bool User_Server::Initialize(const User_Server& server) {
-	return m_pTCPSocekt->Accept(*server.m_pTCPSocekt, m_acceptOverlapped);
+	if (m_pTCPSocekt)
+		return m_pTCPSocekt->Accept(*server.m_pTCPSocekt, m_acceptOverlapped);
+	return false;
 }
 
 bool User_Server::RegisterIOCompletionPort(const HANDLE& hIOCP) {
@@ -61,11 +64,25 @@ bool User_Server::Send(const PACKET::PACKET_STRUCT& sendPacketStructure) {
 	return m_pTCPSocekt->Write(sendPacketStructure, m_sendOverlapped);
 }
 
-bool User_Server::SendTo(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT& sendPacketStructure) {
+bool User_Server::SendToReliable(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT& sendPacketStructure) {
 	sendPacketStructure.m_packetInfo.m_iPacketNumber = peerInformation.m_iLastPacketNumber;
 	return m_pUDPSocket->WriteToReliable(peerInformation.m_remoteAddress, sendPacketStructure);
 }
 
+bool User_Server::SendToUnReliable(const PeerInfo& peerInformation, PACKET::PACKET_STRUCT& sendPacketStructure) {
+	sendPacketStructure.m_packetInfo.m_iPacketNumber = 0;
+	return m_pUDPSocket->WriteToUnReliable(peerInformation.m_remoteAddress, sendPacketStructure);
+}
+
 bool User_Server::SocketRecycle() {
-	return m_pTCPSocekt->SocketRecycling(m_disconnectOverlapped);
+	if (m_pTCPSocekt)
+		return m_pTCPSocekt->SocketRecycling(m_disconnectOverlapped);
+	if (m_pUDPSocket) {
+		BOOL bNewBehavior = FALSE;
+		DWORD dwBytesReturned = 0;
+		WSAIoctl(m_pUDPSocket->GetSocket(), SIO_UDP_CONNRESET, &bNewBehavior, sizeof bNewBehavior, NULL, 0, &dwBytesReturned, NULL, NULL);
+
+		return true;
+	}
+	return false;
 }

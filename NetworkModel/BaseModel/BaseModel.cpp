@@ -27,7 +27,7 @@ void BaseNetworkModel::Run() {
 	for (int i = 0; i < m_iPacketProcessorLoopCount; i++) {
 		NETWORK::PACKET::PacketQueueData* pPacketData = nullptr;
 		if (m_pPacketProcessQueue->Pop(pPacketData)) {
-			auto processor = m_packetProcessorMap.find(pPacketData->m_packetData.m_packetInfo.m_iPacketType);
+			auto processor = m_packetProcessorMap.find(pPacketData->m_packetData->m_packetInfo.m_iPacketType);
 			if (processor != m_packetProcessorMap.cend())
 				processor->second(pPacketData);
 
@@ -52,22 +52,22 @@ void BaseNetworkModel::ReceiveDataProcessing(const EPROTOCOLTYPE protocolType, c
 	const size_t PACKET_INFO_STRUCT_SIZE = PACKET_INFORMATION::GetStructSize();
 
 	while (true) {
-		PACKET_STRUCT packetStruct;
+		PACKET_INFORMATION packetInfo;
 
 		// 패킷 헤더만큼 수신 했는지 확인 후, 수신 했다면 헤더 가져옴
 		if (iReceiveBytes > PACKET_INFO_STRUCT_SIZE) {
-			packetStruct.m_packetInfo = *reinterpret_cast<PACKET_INFORMATION*>(sReceiveBuffer);
+			packetInfo = *reinterpret_cast<PACKET_INFORMATION*>(sReceiveBuffer);
 
-			if ((iReceiveBytes - PACKET_INFO_STRUCT_SIZE) >= packetStruct.m_packetInfo.m_iPacketDataSize) {
-				uint16_t iPacketTotalBytes = PACKET_INFO_STRUCT_SIZE + packetStruct.m_packetInfo.m_iPacketDataSize;
-				if (packetStruct.m_packetInfo.m_iPacketNumber == iLastReceivePacketNumber) { // for udp, tcp has always 0
+			if ((iReceiveBytes - PACKET_INFO_STRUCT_SIZE) >= packetInfo.m_iPacketDataSize) {
+				uint16_t iPacketTotalBytes = PACKET_INFO_STRUCT_SIZE + packetInfo.m_iPacketDataSize;
+				if (packetInfo.m_iPacketNumber == iLastReceivePacketNumber) { // for udp, tcp has always 0
 					if (protocolType & EPROTOCOLTYPE::EPT_UDP)
 						InterlockedIncrement16(&iLastReceivePacketNumber);
-					CopyMemory(packetStruct.m_sPacketData, sReceiveBuffer + PACKET_INFO_STRUCT_SIZE, packetStruct.m_packetInfo.m_iPacketDataSize);
-
+					auto newPacketStructure = new PACKET_STRUCT(packetInfo);
+					CopyMemory(newPacketStructure->m_sPacketData, sReceiveBuffer + PACKET_INFO_STRUCT_SIZE, newPacketStructure->m_packetInfo.m_iPacketDataSize);
 
 					FUNCTIONS::CRITICALSECTION::CriticalSectionGuard lock(m_packetQueueLock);
-					m_pPacketStorageQueue->Push(new PacketQueueData(pOwner, packetStruct));
+					m_pPacketStorageQueue->Push(new PacketQueueData(pOwner, newPacketStructure));
 				}
 				iReceiveBytes -= iPacketTotalBytes;
 				MoveMemory(sReceiveBuffer, sReceiveBuffer + iPacketTotalBytes, iReceiveBytes);

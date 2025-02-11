@@ -94,6 +94,12 @@ bool UDPIPSocket::WriteTo(const SocketAddress& sendAddress, const PACKET_STRUCT&
 	return UTIL::UDP::SendTo(GetSocket(), sendAddress, m_sSendMessageBuffer, sizeof(int32_t) + sizeof(PACKET_INFORMATION) + sendPacketStructure.m_packetInfo.m_iPacketDataSize);
 }
 
+bool UDPIPSocket::WriteToUnReliable(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure) {
+	SetAckNumberToBuffer(sendPacketStructure, 1);
+
+	return UTIL::UDP::SendTo(GetSocket(), sendAddress, m_sSendMessageBuffer, sizeof(int32_t) + sizeof(PACKET_INFORMATION) + sendPacketStructure.m_packetInfo.m_iPacketDataSize);
+}
+
 bool UDPIPSocket::ReadFrom(char* const sReceiveBuffer, uint16_t& iRecvBytes) {
 	OVERLAPPED_EX receiveOverlapped;
 	return UTIL::UDP::ReceiveFrom(GetSocket(), sReceiveBuffer, iRecvBytes, receiveOverlapped);
@@ -109,10 +115,9 @@ bool UDPIPSocket::SendCompletion(const uint16_t iSendBytes) {
 	return true;
 }
 
-void UDPIPSocket::SetAckNumberToBuffer(const PACKET_STRUCT& sendPacketStructure) {
+void UDPIPSocket::SetAckNumberToBuffer(const PACKET_STRUCT& sendPacketStructure, const int16_t iAckNumber) {
 	ZeroMemory(m_sSendMessageBuffer, ::MAX_BUFFER_LENGTH);
 
-	int16_t iAckNumber = 0;
 	int32_t iPacketInfoHeader = (sendPacketStructure.m_packetInfo.m_iPacketNumber << 16) | iAckNumber;
 
 	CopyMemory(m_sSendMessageBuffer, reinterpret_cast<const char*>(&iPacketInfoHeader), sizeof(int32_t));
@@ -169,8 +174,8 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(OVERLAPPED_EX& overlapped) {
 		const int16_t iPacketNumber = static_cast<int16_t>(iPacketInfoHeader >> 16);
 
 		if (iAckNumber == 9999) {
-			if(overlapped.m_iLastReceivedPacketNumber <= iPacketNumber - 1)
-				overlapped.m_iLastReceivedPacketNumber = iPacketNumber;
+			if(overlapped.m_iLastReceivedPacketNumber == iPacketNumber - 1)
+				overlapped.m_iLastReceivedPacketNumber = iPacketNumber - 1;
 			overlapped.m_iRemainReceiveBytes -= sizeof(int32_t);
 
 			return pOwner->SendCompletion(EPROTOCOLTYPE::EPT_UDP, iPacketNumber - 1);
@@ -184,11 +189,16 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(OVERLAPPED_EX& overlapped) {
 
 			return pOwner->SendTo(overlapped.m_remoteAddress, reinterpret_cast<char* const>(&iSendPacektInfoHeader), sizeof(int32_t));
 		}
+		else if (iAckNumber == 1) {
+			overlapped.m_iRemainReceiveBytes -= sizeof(int32_t);
+			MoveMemory(overlapped.m_pReceiveBuffer, overlapped.m_pReceiveBuffer + sizeof(int32_t), overlapped.m_iRemainReceiveBytes);
+			return false;
+		}
 	}
 	return false;
 }
 
-bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(NETWORK::PROTOCOL::UDP::UDPIPSocket* const pUdpSocket, const FUNCTIONS::SOCKETADDRESS::SocketAddress& remoteAddress, char* const sReceviedBuffer, uint16_t& iReceivedBytes, int16_t iUpdatedPacketNumber) {
+bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(NETWORK::PROTOCOL::UDP::UDPIPSocket* const pUdpSocket, const FUNCTIONS::SOCKETADDRESS::SocketAddress& remoteAddress, char* const sReceviedBuffer, uint16_t& iReceivedBytes, int16_t& iUpdatedPacketNumber) {
 	if (pUdpSocket && sReceviedBuffer) {
 		const int32_t iPacketInfoHeader = *reinterpret_cast<int32_t*>(sReceviedBuffer);
 		const int16_t iAckNumber = static_cast<int16_t>(iPacketInfoHeader);
@@ -209,6 +219,11 @@ bool SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(NETWORK::PROTOCOL::UDP::UDPI
 			MoveMemory(sReceviedBuffer, sReceviedBuffer + sizeof(int32_t), iReceivedBytes);
 
 			return pUdpSocket->WriteTo(remoteAddress, reinterpret_cast<char* const>(&iSendPacektInfoHeader), sizeof(int32_t));
+		}
+		else if (iAckNumber == 1) {
+			iReceivedBytes -= sizeof(int32_t);
+			MoveMemory(sReceviedBuffer, sReceviedBuffer + sizeof(int32_t), iReceivedBytes);
+			return false;
 		}
 	}
 	return false;

@@ -5,7 +5,7 @@ using namespace SERVER::NETWORKMODEL::IOCP;
 using namespace SERVER::NETWORKMODEL::BASEMODEL;
 using namespace SERVER::FUNCTIONS::LOG;
 
-IOCP::IOCP(const BASEMODEL::PACKETPROCESSOR& packetProcessorMap, const size_t iWorkerThreadCount) : BaseNetworkModel(1, packetProcessorMap), m_pServer(nullptr), m_iWorkerThreadCount(iWorkerThreadCount), bEnableUDPAckCheck(false) {
+IOCP::IOCP(const BASEMODEL::PACKETPROCESSOR& packetProcessorMap, const size_t iWorkerThreadCount) : BaseNetworkModel(1, packetProcessorMap), m_hIOCP(INVALID_HANDLE_VALUE), m_pServer(nullptr), m_iWorkerThreadCount(iWorkerThreadCount), bEnableUDPAckCheck(false) {
 }
 
 IOCP::~IOCP() {
@@ -30,7 +30,7 @@ bool IOCP::Initialize(const EPROTOCOLTYPE protocolType, FUNCTIONS::SOCKETADDRESS
             if (!m_pServer->ReceiveFrom()) return false;
 
         if (protocolType & EPROTOCOLTYPE::EPT_TCP) {
-            for (size_t i = 0; i < 100; i++) {
+            for (size_t i = 0; i < 4000; i++) {
                 User_Server* pClient = new User_Server(EPROTOCOLTYPE::EPT_TCP);
                 if (!pClient->Initialize(*m_pServer)) return false;
 
@@ -212,9 +212,7 @@ CONNECTION* IOCP::OnIOReceive(OVERLAPPED_EX* const pReceiveOverlapped, const uin
 }
 
 CONNECTION* IOCP::OnIOReceiveFrom(OVERLAPPED_EX* const pReceiveFromOverlapped, const uint16_t iRecvBytes) {
-    CONNECTION* pConnection = GetConnectionFromList(pReceiveFromOverlapped->m_pOwner);
-    if (!pConnection)
-        pConnection = GetConnectionFromList(pReceiveFromOverlapped->m_remoteAddress);
+    CONNECTION* pConnection = GetConnectionFromList(pReceiveFromOverlapped->m_remoteAddress);
 
     if (pConnection) {
         pReceiveFromOverlapped->m_iRemainReceiveBytes += iRecvBytes;
@@ -228,8 +226,10 @@ CONNECTION* IOCP::OnIOReceiveFrom(OVERLAPPED_EX* const pReceiveFromOverlapped, c
             ReceiveDataProcessing(EPROTOCOLTYPE::EPT_UDP, pReceiveFromOverlapped->m_pReceiveBuffer, pReceiveFromOverlapped->m_iRemainReceiveBytes, pReceiveFromOverlapped->m_iLastReceivedPacketNumber, pConnection);
         }
 
-        if (!pConnection->m_pUser->ReceiveFrom())
+        if (!pConnection->m_pUser->ReceiveFrom()) {
             pConnection->m_pUser->SocketRecycle();
+            pConnection->m_pUser->ReceiveFrom();
+        }
         return pConnection;
     }
     return nullptr;

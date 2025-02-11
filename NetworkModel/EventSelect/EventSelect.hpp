@@ -39,6 +39,12 @@ namespace SERVER {
 						return false;
 					}
 
+					inline bool SendToUnReliable(const FUNCTIONS::SOCKETADDRESS::SocketAddress& serverAddress, const NETWORK::PACKET::PACKET_STRUCT& packet) {
+						if (m_pUDPSocket)
+							return m_pUDPSocket->WriteToUnReliable(serverAddress, packet);
+						return false;
+					}
+
 					inline bool SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& serverAddress, const char* const DataBuffer, const uint16_t& DataLength) {
 						if (m_pUDPSocket) {
 							return m_pUDPSocket->WriteTo(serverAddress, DataBuffer, DataLength);
@@ -92,6 +98,16 @@ namespace SERVER {
 				inline bool Send(const NETWORK::PACKET::PACKET_STRUCT& packet) {
 					if (m_client)
 						return m_client->Send(packet);
+					return false;
+				}
+
+				inline bool SendTo(const bool bReliable, const NETWORK::PACKET::PACKET_STRUCT& packet) {
+					if (m_client) {
+						if (bReliable)
+							return m_client->SendTo(m_serverAddress, const_cast<NETWORK::PACKET::PACKET_STRUCT&>(packet), m_iNextSendPacketNumber);
+						else
+							return m_client->SendToUnReliable(m_serverAddress, packet);
+					}
 					return false;
 				}
 

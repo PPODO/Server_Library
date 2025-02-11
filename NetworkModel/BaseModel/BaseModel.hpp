@@ -12,7 +12,7 @@ namespace SERVER {
 			typedef std::unordered_map<uint8_t, std::function<void(NETWORK::PACKET::PacketQueueData* const)>> PACKETPROCESSOR;
 
 			class BaseNetworkModel {
-				typedef FUNCTIONS::CIRCULARQUEUE::CircularQueue<NETWORK::PACKET::PacketQueueData*> PACKETQUEUE;
+				typedef FUNCTIONS::CIRCULARQUEUE::CircularQueue<NETWORK::PACKET::PacketQueueData*, 1000> PACKETQUEUE;
 			private:
 				const PACKETPROCESSOR& m_packetProcessorMap;
 				const int m_iPacketProcessorLoopCount;

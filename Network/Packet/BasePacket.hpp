@@ -4,21 +4,15 @@
 #include "../../Functions/MemoryPool/MemoryPool.h"
 
 #include "../NetworkProtocol/Socket/Socket.hpp"
-
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/device/back_inserter.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
 #include <boost/serialization/serialization.hpp>
-#include <boost/serialization/string.hpp>
-#include <boost/serialization/vector.hpp>
+
 #include <string>
 #include <climits>
 
 namespace SERVER {
 	namespace NETWORK {
 		namespace PACKET {
+#pragma pack(push, 1)
 			struct PACKET_INFORMATION {
 			public:
 				uint8_t m_iPacketType;
@@ -32,20 +26,39 @@ namespace SERVER {
 			public:
 				static size_t GetStructSize() { return sizeof(PACKET_INFORMATION); }
 			};
+#pragma pack(pop)
 
-			struct PACKET_STRUCT {
-				static const size_t BUFFER_LENGTH = SERVER::NETWORK::PROTOCOL::BSD_SOCKET::MAX_BUFFER_SIZE * 2;
+#pragma pack(push, 1)
+			struct PACKET_STRUCT : public SERVER::FUNCTIONS::MEMORYMANAGER::CMemoryManager<PACKET_STRUCT, 500> {
+				static const unsigned long BUFFER_LENGTH = SERVER::NETWORK::PROTOCOL::BSD_SOCKET::MAX_BUFFER_SIZE * 2;
 			public:
 				PACKET_INFORMATION m_packetInfo;
 				char m_sPacketData[BUFFER_LENGTH];
 
 			public:
 				PACKET_STRUCT() : m_packetInfo(), m_sPacketData() { ZeroMemory(m_sPacketData, BUFFER_LENGTH); };
+
+				PACKET_STRUCT(const PACKET_INFORMATION& packetInfo) : m_packetInfo(packetInfo) {
+					ZeroMemory(m_sPacketData, BUFFER_LENGTH);
+				}
+
 				PACKET_STRUCT(const PACKET_INFORMATION& packetInfo, const std::string& sPacketData) : m_packetInfo(packetInfo) {
 					ZeroMemory(m_sPacketData, BUFFER_LENGTH);
 					CopyMemory(m_sPacketData, sPacketData.c_str(), sPacketData.length());
 				};
+				
+				PACKET_STRUCT(const PACKET_INFORMATION& packetInfo, const uint8_t* sPacketData) : m_packetInfo(packetInfo) {
+					ZeroMemory(m_sPacketData, BUFFER_LENGTH);
+					CopyMemory(m_sPacketData, sPacketData, packetInfo.m_iPacketDataSize);
+				}
+
+				PACKET_STRUCT(const PACKET_STRUCT& rhs) : m_packetInfo(rhs.m_packetInfo) {
+					ZeroMemory(m_sPacketData, BUFFER_LENGTH);
+					CopyMemory(m_sPacketData, rhs.m_sPacketData, rhs.m_packetInfo.m_iPacketDataSize);
+				}
+
 			};
+#pragma pack(pop)
 
 			struct BasePacket {
 				friend boost::serialization::access;
@@ -65,7 +78,7 @@ namespace SERVER {
 			};
 
 			template<typename T>
-			struct Packet : public BasePacket, public FUNCTIONS::MEMORYMANAGER::MemoryManager<T> {
+			struct Packet : public BasePacket, public FUNCTIONS::MEMORYMANAGER::CMemoryManager<T> {
 			public:
 				Packet(const uint8_t iPacketType, const uint32_t iMessageType) : BasePacket(iPacketType, iMessageType) {};
 			};
@@ -73,37 +86,16 @@ namespace SERVER {
 			struct PacketQueueData : public FUNCTIONS::CIRCULARQUEUE::QUEUEDATA::BaseData<PacketQueueData, 500> {
 			public:
 				void* m_pOwner;
-				PACKET_STRUCT m_packetData;
+				std::shared_ptr<PACKET_STRUCT> m_packetData;
 
 			public:
 				PacketQueueData() : m_pOwner(nullptr) {};
-				PacketQueueData(void* const pOwner, const PACKET_STRUCT& packetData) : m_pOwner(pOwner), m_packetData(packetData) {}
+				PacketQueueData(void* const pOwner, const PACKET_STRUCT& packetData) : m_pOwner(pOwner), m_packetData(std::shared_ptr<PACKET_STRUCT>(new PACKET_STRUCT(packetData))) {}
+				PacketQueueData(void* const pOwner, PACKET_STRUCT* packetData) : m_pOwner(pOwner), m_packetData(packetData) {}
 
 			};
 
-			namespace UTIL {
-				template<typename T>
-				PACKET_STRUCT Serialize(const BasePacket& packet) {
-					std::string sTempBuffer;
-					{
-						boost::iostreams::stream<boost::iostreams::back_insert_device<std::string>> outStream(sTempBuffer);
-						boost::archive::binary_oarchive outArchive(outStream, boost::archive::no_header);
-
-						outArchive << *reinterpret_cast<const T*>(&packet);
-					}
-
-					return PACKET_STRUCT(PACKET_INFORMATION(packet.m_iPacketType, sTempBuffer.length()), sTempBuffer);
-				}
-
-				template<typename T>
-				void Deserialize(const PACKET_STRUCT& inPacketData, T& outputPacketResult) {
-					boost::iostreams::stream_buffer<boost::iostreams::basic_array_source<char>> inStream
-					(inPacketData.m_sPacketData, inPacketData.m_packetInfo.m_iPacketDataSize);
-					boost::archive::binary_iarchive inArchive(inStream, boost::archive::no_header);
-
-					inArchive >> outputPacketResult;
-				}
-			}
+			
 		}
 	}
 }

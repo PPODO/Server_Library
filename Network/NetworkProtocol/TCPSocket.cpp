@@ -13,6 +13,9 @@ TCPIPSocket::TCPIPSocket() : BaseSocket(UTIL::BSD_SOCKET::EPROTOCOLTYPE::EPT_TCP
 	option.l_linger = 0;
 
 	setsockopt(GetSocket(), SOL_SOCKET, SO_LINGER, reinterpret_cast<char*>(&option), sizeof(LINGER));
+
+	bool optionVar = true;
+	setsockopt(GetSocket(), IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&optionVar), sizeof(optionVar));
 }
 
 TCPIPSocket::~TCPIPSocket() {

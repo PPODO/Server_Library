@@ -33,6 +33,9 @@ namespace SERVER {
 
 				bool bEnableUDPAckCheck;
 
+			protected:
+				User_Server* const GetServerInstance() const { return m_pServer.get(); }
+
 			public:
 				IOCP(const BASEMODEL::PACKETPROCESSOR& packetProcessorMap, const size_t iWorkerThreadCount = 0);
 				virtual ~IOCP() override;

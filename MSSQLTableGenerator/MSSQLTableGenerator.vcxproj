@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>16.0</VCProjectVersion>
+    <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{73cb7df4-5da8-4a43-919c-28bb5811810e}</ProjectGuid>
-    <RootNamespace>Servertest</RootNamespace>
+    <ProjectGuid>{4766ff66-4341-43a2-b501-31a5be330a18}</ProjectGuid>
+    <RootNamespace>MSSQLTableGenerator</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,35 +70,16 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_81_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_81_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_83_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\user\Documents\boost_1_83_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\user\source\repos\Server_Library;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysqlx;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\mysql;C:\Program Files\MySQL\MySQL Connector C++ 8.0\include\jdbc;C:\Users\user\Documents\boost_1_83_0;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\user\source\repos\Server_Library\x64\Release;C:\Users\user\Documents\boost_1_83_0\stage\lib;C:\Program Files\MySQL\MySQL Connector C++ 8.0\lib64\vs14;$(LibraryPath)</LibraryPath>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\user\Documents\boost_1_81_0;C:\Users\user\source\repos\Server_Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -106,37 +87,30 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\user\Documents\boost_1_81_0;C:\Users\user\source\repos\Server_Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_81_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\user\Documents\boost_1_83_0;C:\Users\user\source\repos\Server_Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <AdditionalIncludeDirectories>C:\Users\sherl\source\repos\Server_Library-move;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_83_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <HeapCommitSize>20000000000</HeapCommitSize>
-      <StackCommitSize>20000000000</StackCommitSize>
-      <IgnoreSpecificDefaultLibraries>msvcrt.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>C:\Users\sherl\source\repos\Server_Library-move\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>Functions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -144,25 +118,23 @@
       <WarningLevel>Level3</WarningLevel>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>false</SDLCheck>
+      <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\user\Documents\boost_1_83_0;C:\Users\user\source\repos\Server_Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\user\Documents\boost_1_83_0\stage\lib;C:\Users\user\source\repos\Server_Library\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>Functions.lib;Network.lib;NetworkModel.lib;mysqlcppconn.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <HeapCommitSize>20000000000</HeapCommitSize>
-      <StackCommitSize>20000000000</StackCommitSize>
+      <AdditionalDependencies>Functions.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="user_info.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -27,7 +27,7 @@ namespace SERVER {
 					bool ReceiveFrom(const ::SOCKET hSocket, char* const sReceiveBuffer, uint16_t& iReceiveBytes, SERVER::NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped);
 
 					bool CheckAck(USER_SESSION::USER_SERVER::OVERLAPPED_EX& overlapped);
-					bool CheckAck(NETWORK::PROTOCOL::UDP::UDPIPSocket* const pUdpSocket, const FUNCTIONS::SOCKETADDRESS::SocketAddress& remoteAddress, char* const sReceviedBuffer, uint16_t& iReceivedBytes, int16_t iUpdatedPacketNumber);
+					bool CheckAck(NETWORK::PROTOCOL::UDP::UDPIPSocket* const pUdpSocket, const FUNCTIONS::SOCKETADDRESS::SocketAddress& remoteAddress, char* const sReceviedBuffer, uint16_t& iReceivedBytes, int16_t& iUpdatedPacketNumber);
 				}
 			}
 
@@ -58,7 +58,7 @@ namespace SERVER {
 					std::unique_ptr<RELIABLE::ReliableUDP> m_reliableProcessor;
 
 				private:
-					void SetAckNumberToBuffer(const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure);
+					void SetAckNumberToBuffer(const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure, const int16_t iAckNumber = 0);
 
 				public:
 					UDPIPSocket();
@@ -68,6 +68,7 @@ namespace SERVER {
 					bool WriteToReliable(const SocketAddress& sendAddress, const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure);
 					bool WriteTo(const SocketAddress& sendAddress, const char* const sSendData, const uint16_t iDataLength);
 					bool WriteTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure);
+					bool WriteToUnReliable(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, const NETWORK::PACKET::PACKET_STRUCT& sendPacketStructure);
 
 					bool ReadFrom(char* const sReceiveBuffer, uint16_t& iRecvBytes);
 					bool ReadFrom(NETWORK::USER_SESSION::USER_SERVER::OVERLAPPED_EX& receiveOverlapped);

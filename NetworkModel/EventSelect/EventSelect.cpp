@@ -18,9 +18,8 @@ bool EventSelect::Initialize(const EPROTOCOLTYPE protocolType, FUNCTIONS::SOCKET
 
 	bool optionVar = true;
 	if (m_client = std::make_unique<EventSelectClient>(protocolType)) {
-		setsockopt(m_client->GetTCPSocketHandle(), IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>(&optionVar), sizeof(optionVar));
-		if (!m_client->Connect(serverAddress)) return false;
-
+		if ((protocolType & EPROTOCOLTYPE::EPT_TCP) && !m_client->Connect(serverAddress)) return false;
+		
 		return InitializeEventHandle();
 	}
 	return false;
@@ -104,7 +103,7 @@ void EventSelect::EventSelectProcessorForUDP(const WSAEVENT& hEventHandle) {
 			if (networkEvent.lNetworkEvents & FD_READ) {
 				uint16_t iRecvBytes = 0;
 				if (m_client->ReceiveFrom(sReceiveBuffer + iRemainReceivedBytes, iRecvBytes) &&
-					SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(m_client->GetUDPInstance(), m_serverAddress, sReceiveBuffer, iRemainReceivedBytes, m_iNextSendPacketNumber)) {
+					SERVER::NETWORK::PROTOCOL::UTIL::UDP::CheckAck(m_client->GetUDPInstance(), m_serverAddress, sReceiveBuffer, iRecvBytes, m_iNextSendPacketNumber)) {
 					iRemainReceivedBytes += iRecvBytes;
 					BaseNetworkModel::ReceiveDataProcessing(EPROTOCOLTYPE::EPT_UDP, sReceiveBuffer, iRemainReceivedBytes, m_iNextSendPacketNumber, this);
 				}

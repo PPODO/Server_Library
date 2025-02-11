@@ -13,6 +13,13 @@ namespace SERVER {
 
 				return uniString;
 			}
+
+			static std::string UniToMB(const std::wstring& uniString) {
+				std::string mbString;
+				mbString.assign(uniString.begin(), uniString.end());
+
+				return mbString;
+			}
 		}
 
 		namespace LOG {
@@ -43,7 +50,7 @@ namespace SERVER {
 					std::wfstream fileStream(m_sCurrentFileName, std::ios::app);
 					if (!fileStream.is_open()) return false;
 
-					swprintf_s(sDebugLog, MAX_BUFFER_LENGTH, TEXT("[%s] %s\n"), sCurrentDate, logData.c_str());
+					swprintf_s(sDebugLog, MAX_BUFFER_LENGTH, TEXT("[%ls] %ls\n"), sCurrentDate, logData.c_str());
 
 					fileStream << sDebugLog;
 					fileStream.close();

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <Windows.h>
 #include <DbgHelp.h>
+#include <string>
 
 namespace SERVER {
 	namespace FUNCTIONS {
@@ -22,16 +23,15 @@ namespace SERVER {
 						MINIDUMPWRITEDUMP dump = (MINIDUMPWRITEDUMP)GetProcAddress(hDLLHandle, "MiniDumpWriteDump");
 
 						if (dump) {
-							TCHAR sDumpPath[MAX_PATH] = { TEXT("\0") };
 							SYSTEMTIME systemTime;
-
 							GetLocalTime(&systemTime);
 
-							swprintf_s(sDumpPath, MAX_PATH, 
-									   TEXT("%d-%d-%d %d_%d_%d.dmp"), systemTime.wYear, systemTime.wMonth, systemTime.wDay, 
-									   systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
+							TCHAR sDumpFileFormat[MAX_PATH];
+							swprintf_s(sDumpFileFormat, MAX_PATH,
+								TEXT("%ls\\%d-%d-%d %d_%d_%d.dmp"), GetDumpFilePath().c_str(), systemTime.wYear, systemTime.wMonth, systemTime.wDay,
+								systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
 
-							HANDLE hFileHandler = CreateFile(sDumpPath, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+							HANDLE hFileHandler = CreateFile(sDumpFileFormat, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 							if (hFileHandler != INVALID_HANDLE_VALUE) {
 								_MINIDUMP_EXCEPTION_INFORMATION dumpExceptionInfo;
 
@@ -59,6 +59,17 @@ namespace SERVER {
 
 				~Minidump() {
 					SetUnhandledExceptionFilter(m_pPrevExceptionFilter);
+				}
+
+				static std::wstring GetDumpFilePath() {
+					std::wstring sDumpPath(MAX_PATH, L'\0');
+					GetModuleFileName(NULL, &sDumpPath.at(0), MAX_PATH);
+
+					return sDumpPath.substr(0, sDumpPath.find_last_of(L'\\'));
+				}
+
+				static std::string GetDumpFilePathA() {
+					return UTIL::UniToMB(GetDumpFilePath());
 				}
 			};
 

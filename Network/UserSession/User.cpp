@@ -57,6 +57,6 @@ bool User::Send(char* const sSendData, const uint16_t iDataLength) {
 
 bool User::SendTo(const FUNCTIONS::SOCKETADDRESS::SocketAddress& sendAddress, char* const sSendData, const uint16_t iDataLength) {
 	if (m_pUDPSocket)
-		m_pUDPSocket->WriteTo(sendAddress, sSendData, iDataLength);
+		return m_pUDPSocket->WriteTo(sendAddress, sSendData, iDataLength);
 	return false;
 }

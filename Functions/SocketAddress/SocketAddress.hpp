@@ -42,6 +42,12 @@ namespace SERVER {
 					GetSocketAddress()->sin_port = htons(iPort);
 				}
 
+				SocketAddress(hostent* pHostInformation, const uint16_t iPort) {
+					CopyMemory(&(GetSocketAddress()->sin_addr), pHostInformation->h_addr, pHostInformation->h_length);
+					GetSocketAddress()->sin_family = pHostInformation->h_addrtype;
+					GetSocketAddress()->sin_port = htons(iPort);
+				}
+
 				SocketAddress(const uint16_t iPort) : SocketAddress("127.0.0.1", iPort) {}
 
 
