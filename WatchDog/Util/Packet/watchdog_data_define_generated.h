@@ -8,9 +8,9 @@
 
 // Ensure the included flatbuffers.h is the same version as when this file was
 // generated, otherwise it may not be compatible.
-static_assert(FLATBUFFERS_VERSION_MAJOR == 24 &&
-              FLATBUFFERS_VERSION_MINOR == 3 &&
-              FLATBUFFERS_VERSION_REVISION == 25,
+static_assert(FLATBUFFERS_VERSION_MAJOR == 25 &&
+              FLATBUFFERS_VERSION_MINOR == 2 &&
+              FLATBUFFERS_VERSION_REVISION == 10,
              "Non-compatible flatbuffers version included");
 
 namespace WatchDogPacket {
@@ -21,24 +21,27 @@ struct WatchDogClientInformationBuilder;
 enum PacketType : int8_t {
   PacketType_None = 0,
   PacketType_WatchDogStart = 1,
-  PacketType_WatchDogEnd = 2,
+  PacketType_WatchDogEndRequest = 2,
+  PacketType_WatchDogEnd = 3,
   PacketType_MIN = PacketType_None,
   PacketType_MAX = PacketType_WatchDogEnd
 };
 
-inline const PacketType (&EnumValuesPacketType())[3] {
+inline const PacketType (&EnumValuesPacketType())[4] {
   static const PacketType values[] = {
     PacketType_None,
     PacketType_WatchDogStart,
+    PacketType_WatchDogEndRequest,
     PacketType_WatchDogEnd
   };
   return values;
 }
 
 inline const char * const *EnumNamesPacketType() {
-  static const char * const names[4] = {
+  static const char * const names[5] = {
     "None",
     "WatchDogStart",
+    "WatchDogEndRequest",
     "WatchDogEnd",
     nullptr
   };

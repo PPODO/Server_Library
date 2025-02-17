@@ -26,17 +26,28 @@ namespace SERVER {
 			};
 			
 			class CWatchDogClient : public SERVER::NETWORKMODEL::EVENTSELECT::EventSelect {
-			private:
-				FWatchDogClientInformation m_clientInformation;
-
-				flatbuffers::FlatBufferBuilder m_flatbufferBuilder;
-
 			public:
 				CWatchDogClient(const std::string& sCommandLineArgv, const bool bEnableRestart);
 
 			public:
 				virtual bool Initialize(const EPROTOCOLTYPE protocolType, FUNCTIONS::SOCKETADDRESS::SocketAddress& serverAddress) override final;
 				virtual void Destroy() override final;
+
+			public:
+				void BeginDestroy(const bool bRestart);
+
+			public:
+				std::function<void()> m_OnDestroyCallback;
+
+			private:
+				void WatchDogEndResult(SERVER::NETWORK::PACKET::PacketQueueData* const pPacketData);
+
+			private:
+				PACKETPROCESSOR m_packetProcessor;
+
+				FWatchDogClientInformation m_clientInformation;
+
+				flatbuffers::FlatBufferBuilder m_flatbufferBuilder;
 
 			};
 
