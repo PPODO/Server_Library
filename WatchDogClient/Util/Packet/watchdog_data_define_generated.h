@@ -20,36 +20,39 @@ struct WatchDogClientInformationBuilder;
 
 enum PacketType : int8_t {
   PacketType_None = 0,
-  PacketType_WatchDogStart = 1,
-  PacketType_WatchDogEndRequest = 2,
-  PacketType_WatchDogEnd = 3,
+  PacketType_NewProcessDetected = 1,
+  PacketType_ProcessTerminated = 2,
+  PacketType_DumpFile = 3,
+  PacketType_Ping = 4,
   PacketType_MIN = PacketType_None,
-  PacketType_MAX = PacketType_WatchDogEnd
+  PacketType_MAX = PacketType_Ping
 };
 
-inline const PacketType (&EnumValuesPacketType())[4] {
+inline const PacketType (&EnumValuesPacketType())[5] {
   static const PacketType values[] = {
     PacketType_None,
-    PacketType_WatchDogStart,
-    PacketType_WatchDogEndRequest,
-    PacketType_WatchDogEnd
+    PacketType_NewProcessDetected,
+    PacketType_ProcessTerminated,
+    PacketType_DumpFile,
+    PacketType_Ping
   };
   return values;
 }
 
 inline const char * const *EnumNamesPacketType() {
-  static const char * const names[5] = {
+  static const char * const names[6] = {
     "None",
-    "WatchDogStart",
-    "WatchDogEndRequest",
-    "WatchDogEnd",
+    "NewProcessDetected",
+    "ProcessTerminated",
+    "DumpFile",
+    "Ping",
     nullptr
   };
   return names;
 }
 
 inline const char *EnumNamePacketType(PacketType e) {
-  if (::flatbuffers::IsOutRange(e, PacketType_None, PacketType_WatchDogEnd)) return "";
+  if (::flatbuffers::IsOutRange(e, PacketType_None, PacketType_Ping)) return "";
   const size_t index = static_cast<size_t>(e);
   return EnumNamesPacketType()[index];
 }
@@ -91,37 +94,24 @@ struct WatchDogClientInformation FLATBUFFERS_FINAL_CLASS : private ::flatbuffers
   typedef WatchDogClientInformationBuilder Builder;
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_PROGRAM_NAME = 4,
-    VT_PROGRAM_PATH = 6,
-    VT_DUMP_FILE_PATH = 8,
-    VT_COMMAND_LINE_ARGV = 10,
-    VT_ENABLE_RESTART = 12
+    VT_ENABLE_DISCORD_BOT = 6,
+    VT_DISCORD_BOT_CHANNE_ID = 8
   };
   const ::flatbuffers::String *program_name() const {
     return GetPointer<const ::flatbuffers::String *>(VT_PROGRAM_NAME);
   }
-  const ::flatbuffers::String *program_path() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_PROGRAM_PATH);
+  bool enable_discord_bot() const {
+    return GetField<uint8_t>(VT_ENABLE_DISCORD_BOT, 0) != 0;
   }
-  const ::flatbuffers::String *dump_file_path() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_DUMP_FILE_PATH);
-  }
-  const ::flatbuffers::String *command_line_argv() const {
-    return GetPointer<const ::flatbuffers::String *>(VT_COMMAND_LINE_ARGV);
-  }
-  bool enable_restart() const {
-    return GetField<uint8_t>(VT_ENABLE_RESTART, 0) != 0;
+  uint64_t discord_bot_channe_id() const {
+    return GetField<uint64_t>(VT_DISCORD_BOT_CHANNE_ID, 0);
   }
   bool Verify(::flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyOffset(verifier, VT_PROGRAM_NAME) &&
            verifier.VerifyString(program_name()) &&
-           VerifyOffset(verifier, VT_PROGRAM_PATH) &&
-           verifier.VerifyString(program_path()) &&
-           VerifyOffset(verifier, VT_DUMP_FILE_PATH) &&
-           verifier.VerifyString(dump_file_path()) &&
-           VerifyOffset(verifier, VT_COMMAND_LINE_ARGV) &&
-           verifier.VerifyString(command_line_argv()) &&
-           VerifyField<uint8_t>(verifier, VT_ENABLE_RESTART, 1) &&
+           VerifyField<uint8_t>(verifier, VT_ENABLE_DISCORD_BOT, 1) &&
+           VerifyField<uint64_t>(verifier, VT_DISCORD_BOT_CHANNE_ID, 8) &&
            verifier.EndTable();
   }
 };
@@ -133,17 +123,11 @@ struct WatchDogClientInformationBuilder {
   void add_program_name(::flatbuffers::Offset<::flatbuffers::String> program_name) {
     fbb_.AddOffset(WatchDogClientInformation::VT_PROGRAM_NAME, program_name);
   }
-  void add_program_path(::flatbuffers::Offset<::flatbuffers::String> program_path) {
-    fbb_.AddOffset(WatchDogClientInformation::VT_PROGRAM_PATH, program_path);
+  void add_enable_discord_bot(bool enable_discord_bot) {
+    fbb_.AddElement<uint8_t>(WatchDogClientInformation::VT_ENABLE_DISCORD_BOT, static_cast<uint8_t>(enable_discord_bot), 0);
   }
-  void add_dump_file_path(::flatbuffers::Offset<::flatbuffers::String> dump_file_path) {
-    fbb_.AddOffset(WatchDogClientInformation::VT_DUMP_FILE_PATH, dump_file_path);
-  }
-  void add_command_line_argv(::flatbuffers::Offset<::flatbuffers::String> command_line_argv) {
-    fbb_.AddOffset(WatchDogClientInformation::VT_COMMAND_LINE_ARGV, command_line_argv);
-  }
-  void add_enable_restart(bool enable_restart) {
-    fbb_.AddElement<uint8_t>(WatchDogClientInformation::VT_ENABLE_RESTART, static_cast<uint8_t>(enable_restart), 0);
+  void add_discord_bot_channe_id(uint64_t discord_bot_channe_id) {
+    fbb_.AddElement<uint64_t>(WatchDogClientInformation::VT_DISCORD_BOT_CHANNE_ID, discord_bot_channe_id, 0);
   }
   explicit WatchDogClientInformationBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
         : fbb_(_fbb) {
@@ -159,37 +143,26 @@ struct WatchDogClientInformationBuilder {
 inline ::flatbuffers::Offset<WatchDogClientInformation> CreateWatchDogClientInformation(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> program_name = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> program_path = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> dump_file_path = 0,
-    ::flatbuffers::Offset<::flatbuffers::String> command_line_argv = 0,
-    bool enable_restart = false) {
+    bool enable_discord_bot = false,
+    uint64_t discord_bot_channe_id = 0) {
   WatchDogClientInformationBuilder builder_(_fbb);
-  builder_.add_command_line_argv(command_line_argv);
-  builder_.add_dump_file_path(dump_file_path);
-  builder_.add_program_path(program_path);
+  builder_.add_discord_bot_channe_id(discord_bot_channe_id);
   builder_.add_program_name(program_name);
-  builder_.add_enable_restart(enable_restart);
+  builder_.add_enable_discord_bot(enable_discord_bot);
   return builder_.Finish();
 }
 
 inline ::flatbuffers::Offset<WatchDogClientInformation> CreateWatchDogClientInformationDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *program_name = nullptr,
-    const char *program_path = nullptr,
-    const char *dump_file_path = nullptr,
-    const char *command_line_argv = nullptr,
-    bool enable_restart = false) {
+    bool enable_discord_bot = false,
+    uint64_t discord_bot_channe_id = 0) {
   auto program_name__ = program_name ? _fbb.CreateString(program_name) : 0;
-  auto program_path__ = program_path ? _fbb.CreateString(program_path) : 0;
-  auto dump_file_path__ = dump_file_path ? _fbb.CreateString(dump_file_path) : 0;
-  auto command_line_argv__ = command_line_argv ? _fbb.CreateString(command_line_argv) : 0;
   return WatchDogPacket::CreateWatchDogClientInformation(
       _fbb,
       program_name__,
-      program_path__,
-      dump_file_path__,
-      command_line_argv__,
-      enable_restart);
+      enable_discord_bot,
+      discord_bot_channe_id);
 }
 
 inline const WatchDogPacket::WatchDogClientInformation *GetWatchDogClientInformation(const void *buf) {

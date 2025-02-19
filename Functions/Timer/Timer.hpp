@@ -33,12 +33,14 @@ namespace SERVER {
 				CTimerSystem() : m_bThreadRunState(true) {
 					m_timerThread = std::thread([&]() {
 						SERVER::FUNCTIONS::LOG::Log::WriteLog(L"Timer IO Context Start!");
+						workGuard = std::make_shared<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>>(boost::asio::make_work_guard(m_ioContext));
 						m_ioContext.run();
 						});
 				}
 
 				~CTimerSystem() {
 					m_bThreadRunState = false;
+					workGuard.reset();
 					m_ioContext.stop();
 
 					if (m_timerThread.joinable())
@@ -80,6 +82,7 @@ namespace SERVER {
 				}
 
 			private:
+				std::shared_ptr<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>> workGuard;
 				boost::asio::io_context m_ioContext;
 
 				SERVER::FUNCTIONS::CRITICALSECTION::CriticalSection m_csForTimerList;
@@ -102,7 +105,8 @@ namespace SERVER {
 					if (pTimerInformation && m_bThreadRunState && !errorCode.failed()) {
 						pTimerInformation->m_callback();
 
-						BindTimer(pTimerInformation);
+						if (pTimerInformation->m_bIsLoop)
+							BindTimer(pTimerInformation);
 					}
 				}
 

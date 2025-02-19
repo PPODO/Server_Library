@@ -28,7 +28,7 @@ namespace SERVER {
 
 							TCHAR sDumpFileFormat[MAX_PATH];
 							swprintf_s(sDumpFileFormat, MAX_PATH,
-								TEXT("%ls\\%d-%d-%d %d_%d_%d.dmp"), GetDumpFilePath().c_str(), systemTime.wYear, systemTime.wMonth, systemTime.wDay,
+								TEXT("%ls\\PID-%d_%d-%d-%d %d_%d_%d.dmp"), GetDumpFilePath().c_str(), GetCurrentProcessId(), systemTime.wYear, systemTime.wMonth, systemTime.wDay,
 								systemTime.wHour, systemTime.wMinute, systemTime.wSecond);
 
 							HANDLE hFileHandler = CreateFile(sDumpFileFormat, GENERIC_WRITE, FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

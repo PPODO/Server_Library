@@ -1,0 +1,12 @@
+{
+  "ProgramInformation": [
+    {
+      "ProgramName": "ProjectMF-Test-Matching-Server.exe",
+      "ProgramPath": "E:\\Visual Studio\\MF-Server\\x64\\Release",
+      "CommandLineArgv": "ProjectMF-Test-Matching-Server.exe",
+      "EnableRestart": false,
+
+      "DiscordBotChannelID": 1257338938025181274
+    }
+  ]
+}

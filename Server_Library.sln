@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NetworkModel", "NetworkMode
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MSSQLTableGenerator", "MSSQLTableGenerator\MSSQLTableGenerator.vcxproj", "{4766FF66-4341-43A2-B501-31A5BE330A18}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WatchDog", "WatchDog\WatchDog.vcxproj", "{E773F6BA-0691-4B56-B28A-7171A0C53724}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WatchDogClient", "WatchDogClient\WatchDogClient.vcxproj", "{662906BB-E8AB-410D-B01D-01A864884B9E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,14 +53,14 @@ Global
 		{4766FF66-4341-43A2-B501-31A5BE330A18}.Release|x64.Build.0 = Release|x64
 		{4766FF66-4341-43A2-B501-31A5BE330A18}.Release|x86.ActiveCfg = Release|Win32
 		{4766FF66-4341-43A2-B501-31A5BE330A18}.Release|x86.Build.0 = Release|Win32
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Debug|x64.ActiveCfg = Debug|x64
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Debug|x64.Build.0 = Debug|x64
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Debug|x86.ActiveCfg = Debug|Win32
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Debug|x86.Build.0 = Debug|Win32
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Release|x64.ActiveCfg = Release|x64
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Release|x64.Build.0 = Release|x64
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Release|x86.ActiveCfg = Release|Win32
-		{E773F6BA-0691-4B56-B28A-7171A0C53724}.Release|x86.Build.0 = Release|Win32
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Debug|x64.ActiveCfg = Debug|x64
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Debug|x64.Build.0 = Debug|x64
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Debug|x86.ActiveCfg = Debug|Win32
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Debug|x86.Build.0 = Debug|Win32
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Release|x64.ActiveCfg = Release|x64
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Release|x64.Build.0 = Release|x64
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Release|x86.ActiveCfg = Release|Win32
+		{662906BB-E8AB-410D-B01D-01A864884B9E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
