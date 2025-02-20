@@ -2,7 +2,7 @@
 
 int main() {
     SERVER::WATCHDOG::CLIENT::CWatchDogClient watchDogClient("Config//Config.json");
-    SocketAddress serverAddress("127.0.0.1", 3590);
+    SocketAddress serverAddress("13.209.119.115", 19980);
 
     if (watchDogClient.Initialize(EPROTOCOLTYPE::EPT_TCP, serverAddress)) {
         while (watchDogClient.GetClientRunState())
